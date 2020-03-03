@@ -10,6 +10,10 @@
     <properties> <!--I believe properties need to be before dependencies-->
         <maven.compiler.source>1.11</maven.compiler.source>
         <maven.compiler.target>1.11</maven.compiler.target>
+        <!--The three properties below may not be necessary-->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <antlr4.visitor>true</antlr4.visitor>
+        <antlr4.listener>true</antlr4.listener>
     </properties>
 
     <dependencies>
@@ -43,7 +47,7 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.7</version>
                 <configuration>
-                    <outputDirectory>${basedir}/src/main/java/parsing/antlrParser</outputDirectory>
+                    <outputDirectory>src/main/java/antlrgen</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
