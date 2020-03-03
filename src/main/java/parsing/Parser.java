@@ -10,13 +10,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 public class Parser {
-    Network stringToNetwork(String networkDescription){
+    public static Network stringToNetwork(String networkDescription){
         NetworkParser.NetworkContext networkAST = parseNetwork(networkDescription);
         return NetworkASTToNetwork.toNetwork(networkAST);
     }
 
-    @SuppressWarnings("deprecated")
-    NetworkParser.NetworkContext parseNetwork(String network) {
+    @SuppressWarnings("deprecation")
+    private static NetworkParser.NetworkContext parseNetwork(String network) {
         //The non-deprecated ANTLRInputStream do not work for some reason.
         ANTLRInputStream inputStream = null;
         try {

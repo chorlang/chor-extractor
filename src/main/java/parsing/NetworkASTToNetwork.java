@@ -45,7 +45,7 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
     }
 
     @Override public Behaviour visitSelection(SelectionContext ctx){
-        return new Selection(ctx.process().getText(), ctx.process().getText(), visit(ctx.behaviour()));
+        return new Selection(ctx.process().getText(), ctx.expression().getText(), visit(ctx.behaviour()));
     }
 
     @Override public Behaviour visitOffering(OfferingContext ctx){
