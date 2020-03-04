@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Network implements Behaviour {
-    HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
+    public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
 
     /**
      * A Network object stores a mapping from process names to process terms (procedures).
@@ -47,7 +47,7 @@ public class Network implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.Network)
+        if (other.getAction() != Action.network)
             return false;
         Network otherNetwork = (Network) other;
         if (processes.size() != otherNetwork.processes.size())

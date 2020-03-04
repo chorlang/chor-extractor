@@ -3,8 +3,8 @@ package network;
 import java.util.HashMap;
 
 public class ProcessTerm implements Behaviour {
-    private HashMap<String, Behaviour> procedures;   //Map from procedure names to their behaviours
-    private Behaviour main;                          //The main behaviour for the procedure
+    public HashMap<String, Behaviour> procedures;   //Map from procedure names to their behaviours
+    public Behaviour main;                          //The main behaviour for the procedure
 
     /**
      * Constructor for ProcessTerm
@@ -48,7 +48,7 @@ public class ProcessTerm implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)          //If it is the same object
             return true;
-        if (other.getAction() != Action.ProcessTerm)
+        if (other.getAction() != Action.processTerm)
             return false;
         ProcessTerm otherProcessTerm = (ProcessTerm) other;
         if (main != otherProcessTerm.main)     //The main Behaviours must be identical
@@ -67,6 +67,6 @@ public class ProcessTerm implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.ProcessTerm;
+        return Action.processTerm;
     }
 }

@@ -37,6 +37,12 @@
             <artifactId>antlr4-maven-plugin</artifactId>
             <version>4.7.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+
 
     </dependencies>
 

@@ -37,7 +37,7 @@ public class Termination implements Behaviour {
     }
 
     public boolean equals(Behaviour other){
-        return other.getAction() == Action.Termination;
+        return other.getAction() == Action.termination;
     }
 
     public int hashCode(){
@@ -45,6 +45,6 @@ public class Termination implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.Termination;
+        return Action.termination;
     }
 }

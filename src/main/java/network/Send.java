@@ -33,7 +33,7 @@ public class Send implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.Send)
+        if (other.getAction() != Action.send)
             return false;
         Send otherS = (Send)other;
         return receiver.equals(otherS.receiver) &&
@@ -50,6 +50,6 @@ public class Send implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.Send;
+        return Action.send;
     }
 }

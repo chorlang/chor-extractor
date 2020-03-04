@@ -1,5 +1,6 @@
 package executable;
 
+import extraction.Strategy;
 import network.Network;
 import parsing.Parser;
 
@@ -13,5 +14,7 @@ public class Main {
         System.out.println("Hello World");
         Network network = Parser.stringToNetwork(testNetwork);
         System.out.println(network.toString());
+        Strategy st = Strategy.InteractionFirst;
+
     }
 }

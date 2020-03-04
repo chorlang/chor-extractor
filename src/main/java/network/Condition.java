@@ -24,7 +24,7 @@ public class Condition implements Behaviour {
     }
 
     public Action getAction() {
-        return Action.Condition;
+        return Action.condition;
     }
 
     public Behaviour copy() {
@@ -34,7 +34,7 @@ public class Condition implements Behaviour {
     public boolean equals(Behaviour other) {
         if (this == other)
             return true;
-        if (other.getAction() != Action.Condition)
+        if (other.getAction() != Action.condition)
             return false;
         Condition otherC = (Condition)other;
         return expression.equals(otherC.expression) &&

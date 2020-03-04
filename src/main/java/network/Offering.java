@@ -44,7 +44,7 @@ public class Offering implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.Offering)
+        if (other.getAction() != Action.offering)
             return false;
         Offering otherO = (Offering)other;
         if (!sender.equals(otherO.sender))
@@ -59,6 +59,6 @@ public class Offering implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.Offering;
+        return Action.offering;
     }
 }
