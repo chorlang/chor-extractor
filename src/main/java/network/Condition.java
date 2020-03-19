@@ -4,8 +4,8 @@ package network;
  * Stores conditional behavior, along with the "then" and "else" branches
  */
 public class Condition implements Behaviour {
-    String expression;
-    Behaviour thenBehaviour, elseBehaviour;
+    public String expression;
+    public Behaviour thenBehaviour, elseBehaviour;
 
     /**
      * Behavior to store conditional statements

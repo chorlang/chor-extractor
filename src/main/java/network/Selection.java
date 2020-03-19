@@ -6,8 +6,8 @@ package network;
  * Note that the variable "process" in the original implementation is "receiver"
  */
 public class Selection implements Behaviour {
-    String receiver, label;
-    Behaviour continuation;
+    public String receiver, label;
+    public Behaviour continuation;
 
     /**
      * Constructor for the Selection behavior, aka sending a label to another process.

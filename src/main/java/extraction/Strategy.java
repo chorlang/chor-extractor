@@ -16,7 +16,7 @@ import static network.Behaviour.Action.*;
 public enum Strategy {
     Default {
         @Override
-        public HashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network) {
+        public LinkedHashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network) {
             return InteractionFirst.copyAndSort(network);
         }
     },
@@ -26,8 +26,8 @@ public enum Strategy {
      */
     InteractionFirst{
         @Override
-        public HashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network){
-            HashMap<String, ProcessTerm> sortedNetwork = new LinkedHashMap<>(network.size());
+        public LinkedHashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network){
+            LinkedHashMap<String, ProcessTerm> sortedNetwork = new LinkedHashMap<>(network.size());
 
             network.forEach((String processName, ProcessTerm process) -> {
                 if (process.main.getAction() == send
@@ -48,5 +48,5 @@ public enum Strategy {
         }
     };
 
-    public abstract HashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network);
+    public abstract LinkedHashMap<String, ProcessTerm> copyAndSort(HashMap<String, ProcessTerm> network);
 }

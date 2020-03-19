@@ -1,5 +1,10 @@
 package extraction;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public abstract class Label {
 
     enum LabelType{
@@ -11,6 +16,9 @@ public abstract class Label {
     public LabelType labelType;
 
     public boolean flipped = false;
+
+    public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
+    public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
 
     static abstract class ConditionLabel extends Label{
         public String process, expression;
@@ -59,31 +67,31 @@ public abstract class Label {
             labelType = type;
         }
 
-        static class CommunicationLabel extends InteractionLabel{
-            public CommunicationLabel(String sender, String receiver, String expression){
+        static class CommunicationLabel extends InteractionLabel {
+            public CommunicationLabel(String sender, String receiver, String expression) {
                 super(sender, receiver, expression, LabelType.COMMUNICATION);
             }
 
-            public Label copy(){
+            public Label copy() {
                 return new CommunicationLabel(sender, receiver, expression);
             }
 
-            public String toString(){
+            public String toString() {
                 return String.format("%s,%s->%s", sender, receiver, expression);
             }
+        }
 
-            static class SelectionLabel extends InteractionLabel{
-                public SelectionLabel(String sender, String receiver, String label){
-                    super(sender, receiver, label, LabelType.SELECTION);
-                }
+        static class SelectionLabel extends InteractionLabel{
+            public SelectionLabel(String sender, String receiver, String label){
+                super(sender, receiver, label, LabelType.SELECTION);
+            }
 
-                public Label copy(){
-                    return new SelectionLabel(sender, receiver, expression);
-                }
+            public Label copy(){
+                return new SelectionLabel(sender, receiver, expression);
+            }
 
-                public String toString(){
-                    return String.format("%s->%s[%s]", sender, receiver, expression);
-                }
+            public String toString(){
+                return String.format("%s->%s[%s]", sender, receiver, expression);
             }
         }
     }

@@ -9,8 +9,8 @@ import java.util.HashMap;
  * The "process" variable from the Kotlin implementation is equal to "sender"
  */
 public class Offering implements Behaviour {
-    String sender;
-    HashMap<String, Behaviour> branches;
+    public String sender;
+    public HashMap<String, Behaviour> branches;
 
     /**
      * Creates an Offering object, aka receive a label, and switch on that label.

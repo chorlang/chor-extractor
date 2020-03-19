@@ -6,8 +6,8 @@ package network;
  * Note that the variable "process" from the Kotlin implementation is "receiver"
  */
 public class Send implements Behaviour {
-    String receiver, expression;
-    Behaviour continuation;
+    public String receiver, expression;
+    public Behaviour continuation;
 
     /**
      * Constructs a send behavior, which represents evaluates an

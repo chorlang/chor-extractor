@@ -4,7 +4,7 @@ package network;
  * Simple Behavior that calls a procedure
  */
 public class ProcedureInvocation implements Behaviour {
-    String procedure;
+    public String procedure;
 
     /**
      * Constructor for the ProcedureInvocation Behavior.
