@@ -1,13 +1,11 @@
 package extraction;
 
+import extraction.GraphBuilder;
 import network.Network;
-import network.ProcessTerm;
-import extraction.Node.*;
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DirectedPseudograph;
 import parsing.Parser;
 
-import java.util.HashMap;
+import java.util.Set;
 
 /**
  * This class is made for interfacing with the choreography extraction algorithm.
@@ -22,7 +20,7 @@ public class Extraction {
 
     public void extractChoreography(String networkDescription){
         Network network = Parser.stringToNetwork(networkDescription);
-        GraphBuilder builder = new GraphBuilder(Strategy.Default);
+        GraphBuilder builder = new GraphBuilder(Strategy.Default, Set.of());
         Graph<Node, Label> graph = builder.makeGraph(network);
     }
 
