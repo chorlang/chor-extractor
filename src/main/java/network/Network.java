@@ -52,7 +52,14 @@ public class Network implements Behaviour {
         Network otherNetwork = (Network) other;
         if (processes.size() != otherNetwork.processes.size())
             return false;
-        return processes.equals(otherNetwork.processes);
+
+        for (var processName : processes.keySet()){
+            var otherProcess = otherNetwork.processes.get(processName);
+            if (otherProcess == null || !otherProcess.equals(processes.get(processName)))
+                return false;
+        }
+        return true;
+        //return processes.equals(otherNetwork.processes);
     }
 
     /**
@@ -74,6 +81,6 @@ public class Network implements Behaviour {
     }
 
     public Action getAction() {
-        return null;
+        return Action.network;
     }
 }

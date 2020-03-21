@@ -34,13 +34,13 @@ public enum Strategy {
                 || process.main.getAction() == receive
                 || process.main.getAction() == selection
                 || process.main.getAction() == offering){
-                    sortedNetwork.put(processName, process);
+                    sortedNetwork.put(processName, process.copy());
                 }
             });
 
             network.forEach((String processName, ProcessTerm process) -> {
                 if (!sortedNetwork.containsKey(processName)){
-                    sortedNetwork.put(processName, process);
+                    sortedNetwork.put(processName, process.copy());
                 }
             });
 

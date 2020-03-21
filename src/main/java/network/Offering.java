@@ -35,7 +35,7 @@ public class Offering implements Behaviour {
     }
 
     public Offering copy(){
-        HashMap<String, Behaviour> branchesCopy = new HashMap<>(branches.size());
+        var branchesCopy = new HashMap<String, Behaviour>(branches.size());
         branches.forEach((key, value) ->
                 branchesCopy.put(key, value.copy()));
         return new Offering(sender, branchesCopy);
@@ -46,10 +46,17 @@ public class Offering implements Behaviour {
             return true;
         if (other.getAction() != Action.offering)
             return false;
-        Offering otherO = (Offering)other;
-        if (!sender.equals(otherO.sender))
+        Offering otherOffer = (Offering)other;
+        if (!sender.equals(otherOffer.sender))
             return false;
-        return branches.equals(otherO.branches);
+        for (String label : branches.keySet()){
+            var thisOption = branches.get(label);
+            var otherOption = otherOffer.branches.get(label);
+            if (label == null || !thisOption.equals(otherOption))
+                return false;
+        }
+        return true;
+        //return branches.equals(otherOffer.branches);
     }
 
     public int hashCode(){

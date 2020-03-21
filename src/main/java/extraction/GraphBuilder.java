@@ -18,12 +18,16 @@ public class GraphBuilder {
         strategy = extractionStrategy;
     }
 
-    DirectedPseudograph<Node, Label> makeGraph(Network n, Set<String> services){
+    public DirectedPseudograph<Node, Label> makeGraph(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
+        n.processes.forEach((processName, processTerm) -> {
+            marking.put(processName, processTerm.main.getAction() == Behaviour.Action.termination || services.contains(processName));
+        });
         var node = new ConcreteNode(n,"0", 0, new HashSet<>(), marking);
         expander = new GraphExpander(services, this, node);
 
         BuildGraphResult buildResult = buildGraph(node);
+        System.out.println(buildResult);
 
         return expander.getGraph();
     }
@@ -35,7 +39,6 @@ public class GraphBuilder {
         processes.forEach((processName, processTerm) -> {
             if (unfold(processTerm))
                 unfoldedProcesses.add(processName);
-
         });
 
 
@@ -177,8 +180,8 @@ public class GraphBuilder {
 
     private CommunicationContainer consumeSelection(HashMap<String, ProcessTerm> processes, ProcessTerm offerTerm, ProcessTerm selectTerm){
         var processesCopy = copyProcesses(processes);
-        Selection selector = (Selection)offerTerm.main;
-        Offering offer = (Offering)selectTerm.main;
+        Selection selector = (Selection)selectTerm.main;
+        Offering offer = (Offering)offerTerm.main;
 
         Behaviour offeringBehaviour = offer.branches.get(selector.label);
         if (offeringBehaviour == null)
@@ -193,7 +196,7 @@ public class GraphBuilder {
     }
 
     private HashMap<String, ProcessTerm> copyProcesses(HashMap<String, ProcessTerm> processes){
-        HashMap<String, ProcessTerm> copy = new HashMap<>(processes.size());
+        var copy = new HashMap<String, ProcessTerm>(processes.size());
         processes.forEach((processName, processTerm) -> copy.put(processName, processTerm.copy()));
         return copy;
     }
@@ -226,11 +229,13 @@ public class GraphBuilder {
             unfold(processTerm);
         }
         return true;
-
     }
 
     private void fold(HashSet<String> unfoldedProcesses, Network targetNetwork, ConcreteNode node){
-        unfoldedProcesses.forEach(process -> targetNetwork.processes.get(process).main = node.network.processes.get(process).main.copy());
+        for (String processName : unfoldedProcesses){
+            targetNetwork.processes.get(processName).main = node.network.processes.get(processName).main.copy();
+        }
+        //unfoldedProcesses.forEach(process -> targetNetwork.processes.get(process).main = node.network.processes.get(process).main.copy());
     }
 
     private LinkedHashMap<String, ProcessTerm> copyAndSortProcesses(Node.ConcreteNode node){

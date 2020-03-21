@@ -20,8 +20,8 @@ public class Extraction {
 
     public void extractChoreography(String networkDescription){
         Network network = Parser.stringToNetwork(networkDescription);
-        GraphBuilder builder = new GraphBuilder(Strategy.Default, Set.of());
-        Graph<Node, Label> graph = builder.makeGraph(network);
+        GraphBuilder builder = new GraphBuilder(Strategy.Default);
+        Graph<Node, Label> graph = builder.makeGraph(network, Set.of());
     }
 
 

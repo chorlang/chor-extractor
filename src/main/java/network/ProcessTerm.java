@@ -34,7 +34,7 @@ public class ProcessTerm implements Behaviour {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        HashMap<String, Behaviour> proceduresCopy = new HashMap<>(procedures.size());
+        var proceduresCopy = new HashMap<String, Behaviour>(procedures.size());
         procedures.forEach((key, value) ->
                 proceduresCopy.put(key, value.copy()));
         return new ProcessTerm(proceduresCopy, main.copy());
@@ -51,9 +51,15 @@ public class ProcessTerm implements Behaviour {
         if (other.getAction() != Action.processTerm)
             return false;
         ProcessTerm otherProcessTerm = (ProcessTerm) other;
-        if (main != otherProcessTerm.main)     //The main Behaviours must be identical
+        if (!main.equals(otherProcessTerm.main))     //The main Behaviours must be identical
             return false;
-        return procedures.equals(otherProcessTerm.procedures); //They are equal if the mapping is equal
+        for (String procedureName : procedures.keySet()){
+            var otherBehaviour = otherProcessTerm.procedures.get(procedureName);
+            if (otherBehaviour == null || !otherBehaviour.equals(procedures.get(procedureName)))
+                return false;
+        }
+        return true;
+        //return procedures.equals(otherProcessTerm.procedures); //They are equal if the mapping is equal
     }
 
     /**

@@ -34,10 +34,10 @@ public class Selection implements Behaviour {
             return true;
         if (other.getAction() != Action.selection)
             return false;
-        Selection otherS = (Selection)other;
-        return receiver.equals(otherS.receiver) &&
-                label.equals(otherS.label) &&
-                continuation.equals(otherS.continuation);
+        Selection otherSelect = (Selection)other;
+        return receiver.equals(otherSelect.receiver) &&
+                label.equals(otherSelect.label) &&
+                continuation.equals(otherSelect.continuation);
     }
 
     public int hashCode(){

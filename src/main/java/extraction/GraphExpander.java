@@ -24,6 +24,7 @@ public class GraphExpander {
 
         graph.addVertex(rootNode);
         addToChoicePathsMap(rootNode);
+        addToNodeHashes(rootNode);
     }
 
     DirectedPseudograph<Node, Label> getGraph(){
@@ -171,7 +172,7 @@ public class GraphExpander {
     }
 
     private boolean addNodeAndEdgeToGraph(ConcreteNode currentNode, ConcreteNode newNode, Label label){
-        if (graph.addVertex(currentNode)){
+        if (graph.addVertex(newNode)){
             if (graph.addEdge(currentNode, newNode, label)){
                 addToChoicePathsMap(newNode);
                 addToNodeHashes(newNode);
@@ -207,8 +208,11 @@ public class GraphExpander {
      */
     private void flipAndResetMarking(Label l, HashMap<String, Boolean> marking, Network n){
         l.flipped = true;
-        marking.replaceAll((processName, v) -> isTerminated(n.processes.get(processName).main, n.processes.get(processName).procedures)
-                || services.contains(processName));
+        for (String key : marking.keySet()){
+            marking.put(key, isTerminated(n.processes.get(key).main, n.processes.get(key).procedures) || services.contains(key));
+        }
+        /*marking.replaceAll((processName, v) -> isTerminated(n.processes.get(processName).main, n.processes.get(processName).procedures)
+                || services.contains(processName));*/
     }
 
     private boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
@@ -228,11 +232,25 @@ public class GraphExpander {
      * @return A matching concreteNode or null if none found.
      */
     private ConcreteNode findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode node){
+        Integer hash = hashMarkedNetwork(network, marking);
         List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
-        return viableNodes.stream().filter(otherNode ->
+        if (viableNodes == null){
+            return null;
+        }
+        for (ConcreteNode otherNode : viableNodes){
+            boolean path = node.choicePath.startsWith(otherNode.choicePath);
+            boolean net = otherNode.network.equals(network);
+            boolean mark = otherNode.marking.equals(marking);
+            if (node.choicePath.startsWith(otherNode.choicePath) &&
+                    otherNode.network.equals(network) &&
+                    otherNode.marking.equals(marking))
+                return otherNode;
+        }
+        return null;
+        /*return viableNodes.stream().filter(otherNode ->
                 node.choicePath.startsWith(otherNode.choicePath) &&
                         otherNode.network.equals(network) &&
-                        otherNode.marking.equals(marking)).findFirst().orElse(null);
+                        otherNode.marking.equals(marking)).findFirst().orElse(null);*/
     }
 
     /**
