@@ -41,4 +41,10 @@ public class Condition implements Behaviour {
                 thenBehaviour.equals(otherC.thenBehaviour) &&
                 elseBehaviour.equals(otherC.elseBehaviour);
     }
+
+    public int hashCode(){
+        int hash = expression.hashCode() * 31;
+        hash += thenBehaviour.hashCode();
+        return hash * 31 + elseBehaviour.hashCode();
+    }
 }

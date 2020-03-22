@@ -13,17 +13,17 @@ public class Main {
                     "a { def X {c?; s?; if s then c+ok; s+ok; stop else c+ko; s+ko; X} main {X}} | " +
                     "s { def X {a!<s>; a&{ok: c!<t>; stop, ko:X}} main {X}}";
     static String testNetwork2 =
-            "c { def X {a!<pwd>; a&{ok: stop, ko: X}} main {X}} | " +
-                    "a { def X {c?; if c then c+ok; stop else c+ko; X} main {X}}";
+            "a { def X {b!<pwd>; b&{ok: stop, ko: X}} main {X}} | " +
+                    "b { def X {a?; if a then a+ok; stop else a+ko; X} main {X}}";
     static String simpleNetwork =
             "a { def X {b!<pwd>; stop} main {X}} | " +
                     "b {def X {a?; stop} main {X}}";
     static String offeringNetwork =
             "a { def X {b+ok; b+ko; stop} main {X}}" +
-                    "| b {def X {a&{ok: X, ko: stop} main {X}}";
+                    "| b {def X {a&{ok: X, ko: stop}} main {X}}";
     static String conditionalNetwork =
-            "a { def X {b!<pwd>; b?; if b then stop else X} main {X}}" +
-                    "| b { def X {a?; if a then a!<no>; stop else a!<yes>; X} main {X}}";
+            "a { def X {b!<pwd>; b?; if b then stop else stop} main {X}}" +
+                    "| b { def X {a?; if a then a!<no>; stop else a!<yes>; stop} main {X}}";
     static String triProcesses =
             "a { def X {b!<y>; c!<z>; b?; c?; stop} main {X}}" +
                     "| b { def X {a?; c?; a!<ok>; stop} main {X}}" +
@@ -37,14 +37,14 @@ public class Main {
 
     public static void main(String []args){
         System.out.println("Hello World");
-        Network network = Parser.stringToNetwork(testNetwork2);
+        Network network = Parser.stringToNetwork(testNetwork);
         System.out.println(network.toString());
         Behaviour pi = new ProcedureInvocation("X");
-        checkEquals(pi);
+        //checkEquals(pi);
         var snd = new Send("b", "msg", pi);
-        checkEquals(snd);
+        //checkEquals(snd);
         var rcv = new Receive("a", pi);
-        checkEquals(rcv);
+        //checkEquals(rcv);
         checkEquals(network);
         //*
         Strategy st = Strategy.InteractionFirst;

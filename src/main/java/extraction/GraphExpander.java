@@ -235,6 +235,7 @@ public class GraphExpander {
         Integer hash = hashMarkedNetwork(network, marking);
         List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
         if (viableNodes == null){
+            //verifyUniqueness(network, marking);
             return null;
         }
         for (ConcreteNode otherNode : viableNodes){
@@ -251,6 +252,40 @@ public class GraphExpander {
                 node.choicePath.startsWith(otherNode.choicePath) &&
                         otherNode.network.equals(network) &&
                         otherNode.marking.equals(marking)).findFirst().orElse(null);*/
+    }
+
+    private void verifyUniqueness(Network network, HashMap<String, Boolean> marking){
+        for (var nodeList : nodeHashes.values()){
+            for (var node : nodeList){
+                if (node.network.equals(network)
+                        && equalMarking(marking, node.marking))
+                    System.out.println("Matching nodes");
+            }
+        }
+    }
+
+    /*private void verifyUniqueness(){
+        for (var nodeList : nodeHashes.values()){
+            for (var node : nodeList){
+                for (var otherList : nodeHashes.values()){
+                    for (var otherNode : otherList){
+                        if (node != otherNode){
+                            if (node.network.equals(otherNode.network)
+                                    && equalMarking(node, otherNode))
+                                System.out.println("Matching nodes");
+                        }
+                    }
+                }
+            }
+        }
+    }*/
+
+    private boolean equalMarking(HashMap<String, Boolean> firstMarking, HashMap<String, Boolean> secondMarking){
+        for (String processName : firstMarking.keySet()){
+            if (!firstMarking.get(processName).equals(secondMarking.get(processName)))
+                return false;
+        }
+        return true;
     }
 
     /**
