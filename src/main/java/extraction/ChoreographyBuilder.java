@@ -30,7 +30,7 @@ public class ChoreographyBuilder {
 
         var procedures = new ArrayList<ProcedureDefinition>();
         for (var invNode : invocationNodes)
-            procedures.add(new ProcedureDefinition(invNode.procedureName, buildChoreographyBody(invNode.node), new HashSet<String>()));
+            procedures.add(new ProcedureDefinition(invNode.procedureName, buildChoreographyBody(invNode.node), new HashSet<>()));
 
         return new Choreography(main, procedures);
     }

@@ -9,7 +9,7 @@ public class Termination extends ChoreographyBody {
         return instance;
     }
 
-    private String termination = "stop";
+    private static final String termination = "stop";
 
     @Override
     public String toString() {

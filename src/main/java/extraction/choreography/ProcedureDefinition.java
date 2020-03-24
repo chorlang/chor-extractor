@@ -2,7 +2,7 @@ package extraction.choreography;
 
 import java.util.HashSet;
 
-public class ProcedureDefinition implements Comparable{
+public class ProcedureDefinition implements Comparable<ProcedureDefinition>{
     public String name;
     public ChoreographyBody body;
     public HashSet<String> usedProcesses;
@@ -18,13 +18,9 @@ public class ProcedureDefinition implements Comparable{
     }
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(ProcedureDefinition o) {
         if (o == null)
             throw new NullPointerException("Cannot compare ProcedureDefinition to null");
-        if (o.getClass() != this.getClass())
-            throw new ClassCastException("Object tested for equality with ProcedureDefinition is not a ProcedureDefinition");
-        var other = (ProcedureDefinition)o;
-
-        return name.compareTo(other.name);
+        return name.compareTo(o.name);
     }
 }

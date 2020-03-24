@@ -18,11 +18,9 @@ public class GraphBuilder {
         strategy = extractionStrategy;
     }
 
-    public DirectedPseudograph<Node, Label> networkGraphGenerator(Network n, Set<String> services){
+    public DirectedPseudograph<Node, Label> networkGraphBuilder(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
-        n.processes.forEach((processName, processTerm) -> {
-            marking.put(processName, processTerm.main.getAction() == Behaviour.Action.termination || services.contains(processName));
-        });
+        n.processes.forEach((processName, processTerm) -> marking.put(processName, processTerm.main.getAction() == Behaviour.Action.termination || services.contains(processName)));
         var node = new ConcreteNode(n,"0", 0, new HashSet<>(), marking);
         expander = new GraphExpander(services, this, node);
 

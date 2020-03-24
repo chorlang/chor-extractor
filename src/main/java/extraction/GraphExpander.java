@@ -7,6 +7,11 @@ import extraction.GraphBuilder.BuildGraphResult;
 
 import java.util.*;
 
+/**
+ * This class is highly coupled with GraphBuilder, and should not be interfaced with by anything else. Always interface with GraphBuilder instead.
+ *
+ * This class creates, contains, and modifies the network graph, so that GraphBuilder can specialize in prospecting, and abstractly manage the graph building process.
+ */
 public class GraphExpander {
     private DirectedPseudograph<Node, Label> graph;
     private HashMap<String, ArrayList<ConcreteNode>> choicePaths = new HashMap<>();
@@ -16,6 +21,14 @@ public class GraphExpander {
     private int nextNodeID;
 
 
+    /**
+     * GraphExpander is solely intended as an auxiliary for GraphBuilder.
+     * This class should not be instantiated outside of GraphBuilder.
+     * Instantiating GraphBuilder internally creates a GraphExpander instance.
+     * @param services The names of all processes which are services. Services are allowed to be livelocked.
+     * @param parent The GraphBuilder instance which uses this instance. Parse <i>this</i> when instantiating from GraphBuilder.
+     * @param rootNode The Node containing the initial network.
+     */
     GraphExpander(Set<String> services, GraphBuilder parent, ConcreteNode rootNode){
         this.services = services;
         this.parent = parent;
@@ -27,6 +40,10 @@ public class GraphExpander {
         addToNodeHashes(rootNode);
     }
 
+    /**
+     * Returns a reference to the graph stored within this instance. Intended to use after graph generation has completed, and should not be modified before then.
+     * @return Reference to internally stored graph.
+     */
     DirectedPseudograph<Node, Label> getGraph(){
         return graph;
     }
@@ -37,11 +54,19 @@ public class GraphExpander {
        ==================================================================== */
 
     /**
-     * Expands the graph with a new node, and an edge noting communication.
-     * @param targetNetwork
-     * @param label
-     * @param currentNode
-     * @return
+     * Expands the graph with a communication, storing label in the created edge.
+     * It creates a marking, targetMarking, which is a copy of currentNode's marking, but where the label's sender and receiver are marked,
+     * and flips the marking if all processes are marked. It then tries to find a node already in the graph that has the same
+     * Network as targetNetwork, marking as targetMarking, and which begins with the same choicePath as currentNode.
+     * If successful, it adds an edge between the two nodes. Otherwise, it creates a new ConcreteNode, and add that
+     * as well as a new edge to the graph.
+     *
+     * If a new node was successfully created, buildGraph is called on that node, and its return value is this methods return value.
+     *
+     * @param targetNetwork The network resulting from the interaction.
+     * @param label The label denoting the interaction, and to be stored in the new edge.
+     * @param currentNode The node that the new edge originates from, and that contains a previous state of the network.
+     * @return OK if a new edge and/or node was added; otherwise, the graph is unchanged. BADLOOP if the new edge and/or node results in a bad loop, and the algorithm must backtrack. FAIL if a choreography cannot be extracted.
      */
     BuildGraphResult buildCommunication(Network targetNetwork, Label.InteractionLabel label, ConcreteNode currentNode){
         //Mark involved processes, and flip the marking if everything is marked
@@ -78,6 +103,28 @@ public class GraphExpander {
         Code for building conditionals
        ==================================================================== */
 
+    /**
+     * Expands the graph with a conditional, storing the respective labels in the two new edges respectively.
+     * It creates a marking, targetMarking, which is a copy of currentNode's marking, but where the thenLabel's process is marked,
+     * and flips the marking if all processes are marked. It then tries to find a node already in the graph that has the same
+     * Network as thenNetwork, marking as targetMarking, and which begins with the same choicePath as currentNode.
+     * If successful, it adds an edge between the two nodes. Otherwise, it creates a new ConcreteNode, and add that
+     * as well as a new edge to the graph.
+     *
+     * If a new node was created, it calls buildGraph on it. If buildGraph returns OK, it tries to find a node for the elseNetwork
+     * and continues on like with the thenNetwork, except it uses the same targetMarking.
+     * If this also creates a new node, buildGraph is called on that too.
+     *
+     * If at any point the conditional cannot be build, either in this method, or because buildGraph do not return OK,
+     * then the graph is reverted to be identical to wat it was before this method call.
+     *
+     * @param thenNetwork The network resulting from the then case.
+     * @param thenLabel The label denoting the expression, and to be stored in the then edge.
+     * @param elseNetwork The network resulting from the else case.
+     * @param elseLabel The label denoting the expression, and to be stored in the else edge.
+     * @param currentNode The node that the two new edges originate from, and that contains the previous state of the network, before the condition is evaluated.
+     * @return OK if both edges and/or node(s) was added; otherwise the graph is unchanged. BADLOOP if adding either edges would result in a bad loop, and the algorithm must backtrack. FAIL if a choreography cannot be extracted.
+     */
     BuildGraphResult buildConditional(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel,
                                               Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel, ConcreteNode currentNode){
         var targetMarking = new HashMap<>(currentNode.marking);
@@ -136,6 +183,10 @@ public class GraphExpander {
         return BuildGraphResult.OK;
     }
 
+    /**
+     * Removes all nodes from the graph originating from a specific choice path.
+     * @param choicePathPrefix All nodes in the graph whose choice path begins with this string are removed.
+     */
     private void removeNodesFromGraph(String choicePathPrefix){
         choicePaths.forEach((path, nodeList) -> {
             if (path.startsWith(choicePathPrefix)){
@@ -190,6 +241,13 @@ public class GraphExpander {
         return false;
     }
 
+    /**
+     * Checks if adding a new edge from source to target with the label would result in a bad loop.
+     * @param source The hypothetical edge source.
+     * @param target The hypothetical edge target.
+     * @param label The label that is to be stored in the hypothetical edge.
+     * @return true, if the label is flipped, or the target node is not one of source's bad nodes.
+     */
     private boolean checkLoop(ConcreteNode source, ConcreteNode target, Label label){
         if (label.flipped)
             return true;
@@ -199,22 +257,27 @@ public class GraphExpander {
     }
 
     /**
-     * If all processes in the Network of a node have been accounted for, the node can form a
-     * good loop. To indicate this. all markings are removed. The Label is furthermore
-     * "flipped" to indicate this.
-     * @param l
-     * @param marking
-     * @param n
+     * When all processes have been involved in at least one graph expansion, (all are marked), the graph can form a valid loop.
+     * This function marks the label as flipped (in a valid loop), and resets the marking to only be true for terminated or livelocked processes (services).
+     * @param l The label to flip.
+     * @param marking The marking to reset.
+     * @param n The network containing information needed to expand ProcedureInvocations to see if the eventually lead to Termination.
      */
     private void flipAndResetMarking(Label l, HashMap<String, Boolean> marking, Network n){
         l.flipped = true;
-        for (String key : marking.keySet()){
+        /*for (String key : marking.keySet()){
             marking.put(key, isTerminated(n.processes.get(key).main, n.processes.get(key).procedures) || services.contains(key));
-        }
-        /*marking.replaceAll((processName, v) -> isTerminated(n.processes.get(processName).main, n.processes.get(processName).procedures)
-                || services.contains(processName));*/
+        }*/
+        marking.replaceAll((processName, __) -> isTerminated(n.processes.get(processName).main, n.processes.get(processName).procedures)
+                || services.contains(processName));
     }
 
+    /**
+     * Checks if the Behaviour is Termination, or an ProcedureInvocation that expands to Termination.
+     * @param b The Behaviour to check.
+     * @param procedures The procedures in the network, in case the Behaviour is ProcedureInvocation, and it needs to be expanded (recursively) until it reach Termination or something else.
+     * @return true if the Behaviour is Termination, or expands into Termination.
+     */
     static boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
         if (b.getAction() == Behaviour.Action.termination)
             return true;
@@ -224,12 +287,12 @@ public class GraphExpander {
     }
 
     /**
-     * Searches the graph for a node with same Network, marking, and which begins with the same choicePath.
+     * Searches the graph for a node with same Network, marking, and which begins with the same choicePath as the node, of the parameters.
      * There should be at most one matching node, as it would otherwise not be added to the graph.
-     * @param network The network we want to compare to
-     * @param marking The marking we want to compare to
+     * @param network The Network the matching node should have.
+     * @param marking The marking the matching node should have
      * @param node The node with a choicePath beginning with the choicePath of the node we are searching for.
-     * @return A matching concreteNode or null if none found.
+     * @return A matching ConcreteNode or null if none found.
      */
     private ConcreteNode findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode node){
         List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
@@ -237,7 +300,6 @@ public class GraphExpander {
             return null;
         }
         for (ConcreteNode otherNode : viableNodes){
-            boolean path = node.choicePath.startsWith(otherNode.choicePath);
             if (node.choicePath.startsWith(otherNode.choicePath) &&
                     otherNode.network.equals(network) &&
                     otherNode.marking.equals(marking))
@@ -246,21 +308,13 @@ public class GraphExpander {
         return null;
     }
 
-    private boolean equalMarking(HashMap<String, Boolean> firstMarking, HashMap<String, Boolean> secondMarking){
-        for (String processName : firstMarking.keySet()){
-            if (!firstMarking.get(processName).equals(secondMarking.get(processName)))
-                return false;
-        }
-        return true;
-    }
-
     /**
-     * Creates a new ConcreteNode to add to the graph (this function will not do that for you)
-     * @param network The nodes network
-     * @param label The label intended for the edge to this node
+     * Creates a new ConcreteNode to add to the graph (this method will not do that for you)
+     * @param network The node's network
+     * @param label The label intended for the edge going to this node
      * @param predecessor The node that will have an edge to the new node
      * @param marking The process marking for this mode
-     * @return
+     * @return A new ConcreteNode instance
      */
     private ConcreteNode createNode(Network network, Label label, ConcreteNode predecessor, HashMap<String, Boolean> marking){
         String choicePath = predecessor.choicePath;
