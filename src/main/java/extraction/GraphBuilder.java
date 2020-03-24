@@ -18,7 +18,7 @@ public class GraphBuilder {
         strategy = extractionStrategy;
     }
 
-    public DirectedPseudograph<Node, Label> makeGraph(Network n, Set<String> services){
+    public DirectedPseudograph<Node, Label> networkGraphGenerator(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
         n.processes.forEach((processName, processTerm) -> {
             marking.put(processName, processTerm.main.getAction() == Behaviour.Action.termination || services.contains(processName));

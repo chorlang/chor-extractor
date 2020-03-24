@@ -13,7 +13,7 @@ import java.util.HashSet;
  */
 public interface Node {
     enum NodeType{
-        concrete, invocation
+        CONCRETE, INVOCATION
     }
 
     NodeType getNodeType();
@@ -35,7 +35,7 @@ public interface Node {
 
         @Override
         public NodeType getNodeType() {
-            return NodeType.concrete;
+            return NodeType.CONCRETE;
         }
     }
 
@@ -50,7 +50,7 @@ public interface Node {
 
         @Override
         public NodeType getNodeType(){
-            return NodeType.invocation;
+            return NodeType.INVOCATION;
         }
     }
 }

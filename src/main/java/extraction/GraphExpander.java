@@ -215,7 +215,7 @@ public class GraphExpander {
                 || services.contains(processName));*/
     }
 
-    private boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
+    static boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
         if (b.getAction() == Behaviour.Action.termination)
             return true;
         else if (b.getAction() == Behaviour.Action.procedureInvocation)
@@ -232,53 +232,19 @@ public class GraphExpander {
      * @return A matching concreteNode or null if none found.
      */
     private ConcreteNode findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode node){
-        Integer hash = hashMarkedNetwork(network, marking);
         List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
         if (viableNodes == null){
-            //verifyUniqueness(network, marking);
             return null;
         }
         for (ConcreteNode otherNode : viableNodes){
             boolean path = node.choicePath.startsWith(otherNode.choicePath);
-            boolean net = otherNode.network.equals(network);
-            boolean mark = otherNode.marking.equals(marking);
             if (node.choicePath.startsWith(otherNode.choicePath) &&
                     otherNode.network.equals(network) &&
                     otherNode.marking.equals(marking))
                 return otherNode;
         }
         return null;
-        /*return viableNodes.stream().filter(otherNode ->
-                node.choicePath.startsWith(otherNode.choicePath) &&
-                        otherNode.network.equals(network) &&
-                        otherNode.marking.equals(marking)).findFirst().orElse(null);*/
     }
-
-    private void verifyUniqueness(Network network, HashMap<String, Boolean> marking){
-        for (var nodeList : nodeHashes.values()){
-            for (var node : nodeList){
-                if (node.network.equals(network)
-                        && equalMarking(marking, node.marking))
-                    System.out.println("Matching nodes");
-            }
-        }
-    }
-
-    /*private void verifyUniqueness(){
-        for (var nodeList : nodeHashes.values()){
-            for (var node : nodeList){
-                for (var otherList : nodeHashes.values()){
-                    for (var otherNode : otherList){
-                        if (node != otherNode){
-                            if (node.network.equals(otherNode.network)
-                                    && equalMarking(node, otherNode))
-                                System.out.println("Matching nodes");
-                        }
-                    }
-                }
-            }
-        }
-    }*/
 
     private boolean equalMarking(HashMap<String, Boolean> firstMarking, HashMap<String, Boolean> secondMarking){
         for (String processName : firstMarking.keySet()){

@@ -39,7 +39,7 @@ public abstract class Label {
             }
 
             public String toString() {
-                return String.format("if %s,%s then ", process, expression);
+                return String.format("if %s.%s then ", process, expression);
             }
         }
 
@@ -53,7 +53,7 @@ public abstract class Label {
             }
 
             public String toString() {
-                return String.format("if %s,%s else ", process, expression);
+                return String.format("if %s.%s else ", process, expression);
             }
         }
     }
@@ -77,7 +77,7 @@ public abstract class Label {
             }
 
             public String toString() {
-                return String.format("%s,%s->%s", sender, receiver, expression);
+                return String.format("%s.%s->%s", sender, expression, receiver);
             }
         }
 
