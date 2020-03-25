@@ -19,6 +19,7 @@ public class Extraction {
 
     public Choreography extractChoreography(String networkDescription){
         Network network = Parser.stringToNetwork(networkDescription);
+        NetworkPurger.purgeNetwork(network);
 
         if (!WellFormedness.compute(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
