@@ -1,7 +1,7 @@
 package parsing;
 
 import antlrgen.NetworkBaseVisitor;
-import network.*;
+import extraction.network.*;
 import antlrgen.NetworkParser.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
 

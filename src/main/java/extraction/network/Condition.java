@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * Stores conditional behavior, along with the "then" and "else" branches

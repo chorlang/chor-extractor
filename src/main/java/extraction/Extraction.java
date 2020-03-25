@@ -1,8 +1,7 @@
 package extraction;
 
 import extraction.choreography.Choreography;
-import extraction.choreography.WellFormedness;
-import network.Network;
+import extraction.network.Network;
 import parsing.Parser;
 
 import java.util.Set;
@@ -25,7 +24,7 @@ public class Extraction {
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return null;
         }
-        System.out.println("The network is well-formed and extraction can proceed");
+        System.out.println("The extraction.network is well-formed and extraction can proceed");
 
         GraphBuilder builder = new GraphBuilder(Strategy.Default);
         var executionGraphResult = builder.executionGraphBuilder(network, Set.of());

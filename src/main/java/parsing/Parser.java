@@ -2,7 +2,7 @@ package parsing;
 
 import antlrgen.NetworkLexer;
 import antlrgen.NetworkParser;
-import network.*;
+import extraction.network.*;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -22,7 +22,7 @@ public class Parser {
         try {
             inputStream = new ANTLRInputStream(new ByteArrayInputStream(network.getBytes()));
         } catch (IOException e) {
-            System.out.println("The network input string created an exception when converting to Stream, somehow.");
+            System.out.println("The extraction.network input string created an exception when converting to Stream, somehow.");
             e.printStackTrace();
             System.exit(1);
         }

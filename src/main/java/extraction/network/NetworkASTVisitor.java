@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 public interface NetworkASTVisitor<T> {
     T visit(Network n);

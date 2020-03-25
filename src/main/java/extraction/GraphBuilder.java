@@ -1,6 +1,6 @@
 package extraction;
 
-import network.*;
+import extraction.network.*;
 import extraction.Node.*;
 import org.jgrapht.graph.DirectedPseudograph;
 
@@ -8,7 +8,7 @@ import java.util.*;
 
 /**
  * Class for extracting a graph from a Network using a specific extraction strategy.
- * The graph symbolises the networks states throughout execution, and the communication between the network's processes.
+ * The graph symbolises the networks states throughout execution, and the communication between the extraction.network's processes.
  * The graph is intended to be used for choreography extraction.
  */
 public class GraphBuilder {
@@ -29,9 +29,9 @@ public class GraphBuilder {
 
     /**
      * Constructs a graph symbolizing the execution of the Network AST parsed to this method.
-     * @param n The network to construct a graph from.
+     * @param n The extraction.network to construct a graph from.
      * @param services A list of processes that are allowed to be livelocked.
-     * @return A directed graph where each vertex symbolizes a state of the network, and the edges the interactions that change from the state in one vertex to the other. It also returns the root node of the graph.
+     * @return A directed graph where each vertex symbolizes a state of the extraction.network, and the edges the interactions that change from the state in one vertex to the other. It also returns the root node of the graph.
      */
     public ExecutionGraphResult executionGraphBuilder(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();

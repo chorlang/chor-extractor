@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 import java.util.HashMap;
 

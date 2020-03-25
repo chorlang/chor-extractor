@@ -2,7 +2,7 @@ package executable;
 
 import extraction.Extraction;
 import extraction.Strategy;
-import network.*;
+import extraction.network.*;
 import parsing.Parser;
 
 public class Main {

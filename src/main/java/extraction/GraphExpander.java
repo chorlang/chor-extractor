@@ -1,7 +1,7 @@
 package extraction;
 
 import extraction.Node.ConcreteNode;
-import network.*;
+import extraction.network.*;
 import org.jgrapht.graph.DirectedPseudograph;
 import extraction.GraphBuilder.BuildGraphResult;
 
@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * This class is highly coupled with GraphBuilder, and should not be interfaced with by anything else. Always interface with GraphBuilder instead.
  *
- * This class creates, contains, and modifies the network graph, so that GraphBuilder can specialize in prospecting, and abstractly manage the graph building process.
+ * This class creates, contains, and modifies the extraction.network graph, so that GraphBuilder can specialize in prospecting, and abstractly manage the graph building process.
  */
 public class GraphExpander {
     private DirectedPseudograph<Node, Label> graph;
@@ -27,7 +27,7 @@ public class GraphExpander {
      * Instantiating GraphBuilder internally creates a GraphExpander instance.
      * @param services The names of all processes which are services. Services are allowed to be livelocked.
      * @param parent The GraphBuilder instance which uses this instance. Parse <i>this</i> when instantiating from GraphBuilder.
-     * @param rootNode The Node containing the initial network.
+     * @param rootNode The Node containing the initial extraction.network.
      */
     GraphExpander(Set<String> services, GraphBuilder parent, ConcreteNode rootNode){
         this.services = services;
@@ -63,9 +63,9 @@ public class GraphExpander {
      *
      * If a new node was successfully created, buildGraph is called on that node, and its return value is this methods return value.
      *
-     * @param targetNetwork The network resulting from the interaction.
+     * @param targetNetwork The extraction.network resulting from the interaction.
      * @param label The label denoting the interaction, and to be stored in the new edge.
-     * @param currentNode The node that the new edge originates from, and that contains a previous state of the network.
+     * @param currentNode The node that the new edge originates from, and that contains a previous state of the extraction.network.
      * @return OK if a new edge and/or node was added; otherwise, the graph is unchanged. BADLOOP if the new edge and/or node results in a bad loop, and the algorithm must backtrack. FAIL if a choreography cannot be extracted.
      */
     BuildGraphResult buildCommunication(Network targetNetwork, Label.InteractionLabel label, ConcreteNode currentNode){
@@ -118,11 +118,11 @@ public class GraphExpander {
      * If at any point the conditional cannot be build, either in this method, or because buildGraph do not return OK,
      * then the graph is reverted to be identical to wat it was before this method call.
      *
-     * @param thenNetwork The network resulting from the then case.
+     * @param thenNetwork The extraction.network resulting from the then case.
      * @param thenLabel The label denoting the expression, and to be stored in the then edge.
-     * @param elseNetwork The network resulting from the else case.
+     * @param elseNetwork The extraction.network resulting from the else case.
      * @param elseLabel The label denoting the expression, and to be stored in the else edge.
-     * @param currentNode The node that the two new edges originate from, and that contains the previous state of the network, before the condition is evaluated.
+     * @param currentNode The node that the two new edges originate from, and that contains the previous state of the extraction.network, before the condition is evaluated.
      * @return OK if both edges and/or node(s) was added; otherwise the graph is unchanged. BADLOOP if adding either edges would result in a bad loop, and the algorithm must backtrack. FAIL if a choreography cannot be extracted.
      */
     BuildGraphResult buildConditional(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel,
@@ -261,7 +261,7 @@ public class GraphExpander {
      * This function marks the label as flipped (in a valid loop), and resets the marking to only be true for terminated or livelocked processes (services).
      * @param l The label to flip.
      * @param marking The marking to reset.
-     * @param n The network containing information needed to expand ProcedureInvocations to see if the eventually lead to Termination.
+     * @param n The extraction.network containing information needed to expand ProcedureInvocations to see if the eventually lead to Termination.
      */
     private void flipAndResetMarking(Label l, HashMap<String, Boolean> marking, Network n){
         l.flipped = true;
@@ -275,7 +275,7 @@ public class GraphExpander {
     /**
      * Checks if the Behaviour is Termination, or an ProcedureInvocation that expands to Termination.
      * @param b The Behaviour to check.
-     * @param procedures The procedures in the network, in case the Behaviour is ProcedureInvocation, and it needs to be expanded (recursively) until it reach Termination or something else.
+     * @param procedures The procedures in the extraction.network, in case the Behaviour is ProcedureInvocation, and it needs to be expanded (recursively) until it reach Termination or something else.
      * @return true if the Behaviour is Termination, or expands into Termination.
      */
     static boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
@@ -310,7 +310,7 @@ public class GraphExpander {
 
     /**
      * Creates a new ConcreteNode to add to the graph (this method will not do that for you)
-     * @param network The node's network
+     * @param network The node's extraction.network
      * @param label The label intended for the edge going to this node
      * @param predecessor The node that will have an edge to the new node
      * @param marking The process marking for this mode

@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -64,7 +64,7 @@ public class Network extends Behaviour {
 
     /**
      * Calculates a hashcode from the process names and process terms.
-     * @return Hash of this network mapping
+     * @return Hash of this extraction.network mapping
      */
     public int hashCode(){
         /*Why do the ordering matter?*/

@@ -1,14 +1,14 @@
 package extraction;
 
-import network.ProcessTerm;
+import extraction.network.ProcessTerm;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import static network.Behaviour.Action.*;
+import static extraction.network.Behaviour.Action.*;
 
 /**
- * This enum class contains different implementations of copyAndSort() which takes a network
+ * This enum class contains different implementations of copyAndSort() which takes a extraction.network
  * in the form of a HashMap, and returns a HashMap that is sorted according to a specific
  * strategy. The returned HashMap is a LinkedHashMap, as that retains the order that values
  * are put into it.

@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * Simple Behavior that calls a procedure

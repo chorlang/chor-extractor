@@ -2,8 +2,8 @@ package executable;
 
 import extraction.Extraction;
 import extraction.Strategy;
-import network.Behaviour;
-import network.Network;
+import extraction.network.Behaviour;
+import extraction.network.Network;
 import parsing.Parser;
 
 public class SimpleTest {
@@ -12,7 +12,7 @@ public class SimpleTest {
                     "a { def X {c?; s?; if s then c+ok; s+ok; stop else c+ko; s+ko; X} main {X}} | " +
                     "s { def X {a!<s>; a&{ok: c!<t>; stop, ko:X}} main {X}}";
     public static void main(String[] args){
-        System.out.println("Begins simple testing.\nTest network to extract from:");
+        System.out.println("Begins simple testing.\nTest extraction.network to extract from:");
         System.out.println(testNetwork + "\n");
 
         Network network = Parser.stringToNetwork(testNetwork);

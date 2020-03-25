@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * Behavior for evaluating an expression and seninding the result ot another process.

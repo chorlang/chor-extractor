@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * This behavior represents sending a label to a process

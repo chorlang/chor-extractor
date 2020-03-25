@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * Behavior for receiving information from another process.

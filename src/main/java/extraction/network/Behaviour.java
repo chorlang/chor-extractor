@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 public abstract class Behaviour implements TreeHost<Behaviour>{
 

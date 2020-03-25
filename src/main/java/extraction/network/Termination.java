@@ -1,4 +1,4 @@
-package network;
+package extraction.network;
 
 /**
  * Behavior representing termination of a process

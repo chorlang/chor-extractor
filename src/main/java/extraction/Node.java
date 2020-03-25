@@ -1,6 +1,6 @@
 package extraction;
 
-import network.Network;
+import extraction.network.Network;
 
 import java.util.HashMap;
 import java.util.HashSet;
