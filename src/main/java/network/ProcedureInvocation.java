@@ -3,7 +3,7 @@ package network;
 /**
  * Simple Behavior that calls a procedure
  */
-public class ProcedureInvocation implements Behaviour {
+public class ProcedureInvocation extends Behaviour {
     public String procedure;
 
     /**

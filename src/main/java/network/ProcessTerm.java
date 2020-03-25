@@ -2,7 +2,7 @@ package network;
 
 import java.util.HashMap;
 
-public class ProcessTerm implements Behaviour {
+public class ProcessTerm extends Behaviour {
     public HashMap<String, Behaviour> procedures;   //Map from procedure names to their behaviours
     public Behaviour main;                          //The main behaviour for the procedure
 

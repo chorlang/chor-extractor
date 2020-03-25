@@ -1,8 +1,12 @@
 package network;
 
-public interface Behaviour {
+public abstract class Behaviour implements TreeHost<Behaviour>{
 
-    enum Action {
+    public <T> T accept(TreeVisitor<T, Behaviour> visitor) {
+        return visitor.Visit(this);
+    }
+
+    public enum Action {
         CONDITION,
         OFFERING,
         PROCEDURE_INVOCATION,
@@ -19,34 +23,34 @@ public interface Behaviour {
      * helps identify the type when working with generic Behavior.
      * @return enum Action of the type of class
      */
-    Action getAction();
+    public abstract Action getAction();
 
     /**
      * Performs a deep copy of this behavior
      * @return A deep copy of same type
      */
-    Behaviour copy();
+    public abstract Behaviour copy();
 
     /**
      * Behaviors are expected to overwrite their hashcode
      * to take relevant data into account.
      * @return Hash of relevant stored data structures.
      */
-    int hashCode();
+    public abstract int hashCode();
 
     /**
      * Performs proper comparison of objects, rather than reference comparison.
      * @param other Behavior to compare to
      * @return true of the objects are equivalent, false otherwise
      */
-    boolean equals(Behaviour other);
+    public abstract boolean equals(Behaviour other);
 
     /**
      * Behaviors are expected to overwrite the toString() methods
      * to better print the expressions they contain.
      * @return String of contained expressions, operations, and procedures.
      */
-    String toString();
+    public abstract String toString();
 
 
 }

@@ -8,7 +8,7 @@ import java.util.HashMap;
  *
  * The "process" variable from the Kotlin implementation is equal to "sender"
  */
-public class Offering implements Behaviour {
+public class Offering extends Behaviour {
     public String sender;
     public HashMap<String, Behaviour> branches;
 

@@ -3,7 +3,7 @@ package network;
 /**
  * Stores conditional behavior, along with the "then" and "else" branches
  */
-public class Condition implements Behaviour {
+public class Condition extends Behaviour {
     public String expression;
     public Behaviour thenBehaviour, elseBehaviour;
 

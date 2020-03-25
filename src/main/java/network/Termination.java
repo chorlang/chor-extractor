@@ -7,7 +7,7 @@ package network;
  * make the constructor return a reference to the same object,
  * I can make a method that returns the first instance
  */
-public class Termination implements Behaviour {
+public class Termination extends Behaviour {
     static Termination instance = new Termination();
     //The String representation in networks:
     static String terminationTerm = "stop";

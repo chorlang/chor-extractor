@@ -3,7 +3,7 @@ package network;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-public class Network implements Behaviour {
+public class Network extends Behaviour {
     public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
 
     /**

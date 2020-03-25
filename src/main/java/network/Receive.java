@@ -5,7 +5,7 @@ package network;
  *
  * Note that the "process" variable from the kotlin implementation is "sender"
  */
-public class Receive implements Behaviour {
+public class Receive extends Behaviour {
     public String sender;
     public Behaviour continuation;
 

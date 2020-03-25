@@ -5,7 +5,7 @@ package network;
  *
  * Note that the variable "process" in the original implementation is "receiver"
  */
-public class Selection implements Behaviour {
+public class Selection extends Behaviour {
     public String receiver, label;
     public Behaviour continuation;
 
