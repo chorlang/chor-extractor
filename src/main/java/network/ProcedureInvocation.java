@@ -26,7 +26,7 @@ public class ProcedureInvocation implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.procedureInvocation)
+        if (other.getAction() != Action.PROCEDURE_INVOCATION)
             return false;
         ProcedureInvocation otherPI = (ProcedureInvocation)other;
         return procedure.equals(otherPI.procedure);
@@ -37,6 +37,6 @@ public class ProcedureInvocation implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.procedureInvocation;
+        return Action.PROCEDURE_INVOCATION;
     }
 }

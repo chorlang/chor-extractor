@@ -1,11 +1,9 @@
 package executable;
 
-import extraction.GraphBuilder;
+import extraction.Extraction;
 import extraction.Strategy;
 import network.*;
 import parsing.Parser;
-
-import java.util.Set;
 
 public class Main {
     static String testNetwork =
@@ -48,9 +46,10 @@ public class Main {
         checkEquals(network);
         //*
         Strategy st = Strategy.InteractionFirst;
-        var builder = new GraphBuilder(st);
-        var graph = builder.makeGraph(network, Set.of());//*/
-        System.out.println("Done");
+        var extractor = new Extraction(st);
+        var choreography = extractor.extractChoreography(testNetwork);
+        String chor = choreography.toString();
+        System.out.println(chor);
 
     }
 

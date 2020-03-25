@@ -47,7 +47,7 @@ public class Network implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.network)
+        if (other.getAction() != Action.NETWORK)
             return false;
         Network otherNetwork = (Network) other;
         if (processes.size() != otherNetwork.processes.size())
@@ -81,6 +81,6 @@ public class Network implements Behaviour {
     }
 
     public Action getAction() {
-        return Action.network;
+        return Action.NETWORK;
     }
 }

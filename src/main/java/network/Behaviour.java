@@ -3,15 +3,15 @@ package network;
 public interface Behaviour {
 
     enum Action {
-        condition,
-        offering,
-        procedureInvocation,
-        receive,
-        selection,
-        send,
-        termination,
-        network,
-        processTerm
+        CONDITION,
+        OFFERING,
+        PROCEDURE_INVOCATION,
+        RECEIVE,
+        SELECTION,
+        SEND,
+        TERMINATION,
+        NETWORK,
+        PROCESS_TERM
     }
 
     /**

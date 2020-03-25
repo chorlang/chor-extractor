@@ -84,7 +84,7 @@ public class GraphExpander {
             if (addEdgeToGraph(currentNode, node, label))
                 return BuildGraphResult.OK;
             else
-                return BuildGraphResult.BADLOOP;
+                return BuildGraphResult.BAD_LOOP;
 
         }
 
@@ -149,7 +149,7 @@ public class GraphExpander {
         }
         else{
             if (!addEdgeToGraph(currentNode, thenNode, thenLabel))
-                return BuildGraphResult.BADLOOP;
+                return BuildGraphResult.BAD_LOOP;
         }
 
 
@@ -176,7 +176,7 @@ public class GraphExpander {
                     removeNodesFromGraph(thenNode.choicePath);
                 else
                     graph.removeEdge(currentNode, thenNode);
-                return BuildGraphResult.BADLOOP;
+                return BuildGraphResult.BAD_LOOP;
             }
         }
 
@@ -279,9 +279,9 @@ public class GraphExpander {
      * @return true if the Behaviour is Termination, or expands into Termination.
      */
     static boolean isTerminated(Behaviour b, HashMap<String, Behaviour> procedures){
-        if (b.getAction() == Behaviour.Action.termination)
+        if (b.getAction() == Behaviour.Action.TERMINATION)
             return true;
-        else if (b.getAction() == Behaviour.Action.procedureInvocation)
+        else if (b.getAction() == Behaviour.Action.PROCEDURE_INVOCATION)
             return isTerminated(procedures.get(((ProcedureInvocation)b).procedure), procedures);
         return false;
     }

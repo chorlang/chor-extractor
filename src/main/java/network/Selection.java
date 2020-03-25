@@ -32,7 +32,7 @@ public class Selection implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.selection)
+        if (other.getAction() != Action.SELECTION)
             return false;
         Selection otherSelect = (Selection)other;
         return receiver.equals(otherSelect.receiver) &&
@@ -49,6 +49,6 @@ public class Selection implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.selection;
+        return Action.SELECTION;
     }
 }

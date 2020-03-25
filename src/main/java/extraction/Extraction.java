@@ -1,8 +1,7 @@
 package extraction;
 
-import extraction.GraphBuilder;
+import extraction.choreography.Choreography;
 import network.Network;
-import org.jgrapht.Graph;
 import parsing.Parser;
 
 import java.util.Set;
@@ -18,17 +17,19 @@ public class Extraction {
         extractionStrategy = strategy;
     }
 
-    public void extractChoreography(String networkDescription){
+    public Choreography extractChoreography(String networkDescription){
         Network network = Parser.stringToNetwork(networkDescription);
         GraphBuilder builder = new GraphBuilder(Strategy.Default);
-        Graph<Node, Label> graph = builder.makeGraph(network, Set.of());
+        var executionGraphResult = builder.executionGraphBuilder(network, Set.of());
+        if (executionGraphResult.buildGraphResult != GraphBuilder.BuildGraphResult.OK){
+            System.out.println("Could not build execution graph");
+            return null;
+        }
+        var graph = executionGraphResult.graph;
+        var rootNode = executionGraphResult.rootNode;
+        var chorExtractor = new ChoreographyBuilder();
+        var choreography = chorExtractor.buildChoreography(rootNode, graph);
+        return choreography;
     }
-
-
-    /* ==================
-        Helper functions
-       ================== */
-
-
 
 }

@@ -19,6 +19,6 @@ public class Selection extends ChoreographyBody.Interaction {
 
     @Override
     public String toString() {
-        return String.format("%s->%s[%s]", sender, receiver, label);
+        return String.format("%s->%s[%s]; %s", sender, receiver, label, continuation.toString());
     }
 }

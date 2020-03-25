@@ -48,7 +48,7 @@ public class ProcessTerm implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)          //If it is the same object
             return true;
-        if (other.getAction() != Action.processTerm)
+        if (other.getAction() != Action.PROCESS_TERM)
             return false;
         ProcessTerm otherProcessTerm = (ProcessTerm) other;
         if (!main.equals(otherProcessTerm.main))     //The main Behaviours must be identical
@@ -73,6 +73,6 @@ public class ProcessTerm implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.processTerm;
+        return Action.PROCESS_TERM;
     }
 }

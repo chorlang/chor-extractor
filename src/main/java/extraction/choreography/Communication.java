@@ -19,6 +19,6 @@ public class Communication extends ChoreographyBody.Interaction{
 
     @Override
     public String toString() {
-        return String.format("%s.%s->%s", sender, expression, receiver);
+        return String.format("%s.%s->%s; %s", sender, expression, receiver, continuation.toString());
     }
 }

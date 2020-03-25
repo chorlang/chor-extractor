@@ -30,7 +30,7 @@ public class Receive implements Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.receive)
+        if (other.getAction() != Action.RECEIVE)
             return false;
         Receive otherR = (Receive)other;
         return sender.equals(otherR.sender) && continuation.equals(otherR.continuation);
@@ -43,6 +43,6 @@ public class Receive implements Behaviour {
     }
 
     public Action getAction(){
-        return Action.receive;
+        return Action.RECEIVE;
     }
 }

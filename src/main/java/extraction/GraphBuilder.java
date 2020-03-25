@@ -16,7 +16,7 @@ public class GraphBuilder {
     private GraphExpander expander;
 
     enum BuildGraphResult{
-        OK, BADLOOP, FAIL
+        OK, BAD_LOOP, FAIL
     }
 
     /**
@@ -31,18 +31,29 @@ public class GraphBuilder {
      * Constructs a graph symbolizing the execution of the Network AST parsed to this method.
      * @param n The network to construct a graph from.
      * @param services A list of processes that are allowed to be livelocked.
-     * @return A directed graph where each vertex symbolizes a state of the network, and the edges the interactions that change from the state in one vertex to the other.
+     * @return A directed graph where each vertex symbolizes a state of the network, and the edges the interactions that change from the state in one vertex to the other. It also returns the root node of the graph.
      */
-    public DirectedPseudograph<Node, Label> networkGraphBuilder(Network n, Set<String> services){
+    public ExecutionGraphResult executionGraphBuilder(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
-        n.processes.forEach((processName, processTerm) -> marking.put(processName, processTerm.main.getAction() == Behaviour.Action.termination || services.contains(processName)));
+        n.processes.forEach((processName, processTerm) -> marking.put(processName, processTerm.main.getAction() == Behaviour.Action.TERMINATION || services.contains(processName)));
         var node = new ConcreteNode(n,"0", 0, new HashSet<>(), marking);
         expander = new GraphExpander(services, this, node);
 
         BuildGraphResult buildResult = buildGraph(node);
         System.out.println(buildResult);
 
-        return expander.getGraph();
+        return new ExecutionGraphResult(expander.getGraph(), node, buildResult);
+    }
+
+    public static class ExecutionGraphResult{
+        public DirectedPseudograph<Node, Label> graph;
+        public ConcreteNode rootNode;
+        public BuildGraphResult buildGraphResult;
+        public ExecutionGraphResult(DirectedPseudograph<Node, Label> graph, ConcreteNode rootNode, BuildGraphResult buildGraphResult){
+            this.graph = graph;
+            this.rootNode = rootNode;
+            this.buildGraphResult = buildGraphResult;
+        }
     }
 
     /**
@@ -76,7 +87,7 @@ public class GraphBuilder {
                 fold(unfoldedProcessesCopy, targetNetwork, currentNode);
 
                 var result = expander.buildCommunication(targetNetwork, label, currentNode);
-                if (result == BuildGraphResult.BADLOOP)
+                if (result == BuildGraphResult.BAD_LOOP)
                     continue;
                 return result;
             }
@@ -94,7 +105,7 @@ public class GraphBuilder {
                 fold(unfoldedProcessesCopy, elseNetwork, currentNode);
 
                 var result = expander.buildConditional(thenNetwork, thenLabel, elseNetwork, elseLabel, currentNode);
-                if (result == BuildGraphResult.BADLOOP)
+                if (result == BuildGraphResult.BAD_LOOP)
                     continue;
                 return result;
             }
@@ -126,7 +137,7 @@ public class GraphBuilder {
      * @return A ConditionContainer with labels and Networks resulting from the then case, and else case.
      */
     private ConditionContainer findConditional(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm){
-        if (processTerm.main.getAction() != Behaviour.Action.condition)
+        if (processTerm.main.getAction() != Behaviour.Action.CONDITION)
             return null;
 
         var thenProcessMap = new HashMap<>(processes);
@@ -146,7 +157,7 @@ public class GraphBuilder {
 
     private boolean allTerminated(HashMap<String, ProcessTerm> network){
         for (ProcessTerm process : network.values()) {
-            if (process.main.getAction() != Behaviour.Action.termination)
+            if (process.main.getAction() != Behaviour.Action.TERMINATION)
                 return false;
         }
         return true;
@@ -163,34 +174,34 @@ public class GraphBuilder {
     private CommunicationContainer findCommunication(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm){
         Behaviour main = processTerm.main;
         switch (main.getAction()){
-            case send:
+            case SEND:
                 String recipientProcessName = ((Send)main).receiver;
                 ProcessTerm receiveTerm  = processes.get(recipientProcessName);
-                if (receiveTerm.main.getAction() == Behaviour.Action.receive &&
+                if (receiveTerm.main.getAction() == Behaviour.Action.RECEIVE &&
                         ((Receive)receiveTerm.main).sender.equals(processName)){
                     return consumeCommunication(processes, processTerm, receiveTerm);
                 }
                 break;
-            case receive:
+            case RECEIVE:
                 String sendingProcessName = ((Receive)main).sender;
                 ProcessTerm senderTerm = processes.get(sendingProcessName);
-                if (senderTerm.main.getAction() == Behaviour.Action.send &&
+                if (senderTerm.main.getAction() == Behaviour.Action.SEND &&
                         ((Send)senderTerm.main).receiver.equals(processName)){
                     return consumeCommunication(processes, senderTerm, processTerm);
                 }
                 break;
-            case selection:
+            case SELECTION:
                 String offeringProcessName = ((Selection)main).receiver;
                 ProcessTerm offerTerm = processes.get(offeringProcessName);
-                if (offerTerm.main.getAction() == Behaviour.Action.offering &&
+                if (offerTerm.main.getAction() == Behaviour.Action.OFFERING &&
                         ((Offering)offerTerm.main).sender.equals(processName)){
                     return consumeSelection(processes, offerTerm, processTerm);
                 }
                 break;
-            case offering:
+            case OFFERING:
                 String selectingProcessName = ((Offering)main).sender;
                 ProcessTerm selectionTerm = processes.get(selectingProcessName);
-                if (selectionTerm.main.getAction() == Behaviour.Action.selection &&
+                if (selectionTerm.main.getAction() == Behaviour.Action.SELECTION &&
                     ((Selection)selectionTerm.main).receiver.equals(processName)){
                     return consumeSelection(processes, processTerm, selectionTerm);
                 }
@@ -252,7 +263,7 @@ public class GraphBuilder {
     private boolean unfold(ProcessTerm processTerm){
         Behaviour main = processTerm.main;
 
-        if (main.getAction() != Behaviour.Action.procedureInvocation)
+        if (main.getAction() != Behaviour.Action.PROCEDURE_INVOCATION)
             return false;
 
         ProcedureInvocation mainProcedure = (ProcedureInvocation)main;
@@ -263,7 +274,7 @@ public class GraphBuilder {
 
         processTerm.main = procedureBehaviour.copy();
 
-        if (procedureBehaviour.getAction() == Behaviour.Action.procedureInvocation){
+        if (procedureBehaviour.getAction() == Behaviour.Action.PROCEDURE_INVOCATION){
             unfold(processTerm);
         }
         return true;
