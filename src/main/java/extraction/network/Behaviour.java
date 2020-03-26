@@ -1,6 +1,9 @@
 package extraction.network;
 
-public abstract class Behaviour implements TreeHost<Behaviour>{
+import extraction.network.utils.TreeHost;
+import extraction.network.utils.TreeVisitor;
+
+public abstract class Behaviour implements TreeHost<Behaviour> {
 
     public <T> T accept(TreeVisitor<T, Behaviour> visitor) {
         return visitor.Visit(this);

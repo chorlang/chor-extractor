@@ -1,6 +1,7 @@
-package extraction;
+package extraction.network.utils;
 
 import extraction.network.*;
+import extraction.network.utils.TreeVisitor;
 
 import javax.naming.OperationNotSupportedException;
 import java.util.HashSet;
@@ -58,7 +59,7 @@ public class WellFormedness{
      * This tree visitor is intended to traverse Network AST's to ensure that it is well formed.
      * The choreography extraction algorithm assumes the extraction.network is well formed.
      */
-    private static class WellFormedChecker implements TreeVisitor<Boolean, Behaviour>{
+    private static class WellFormedChecker implements TreeVisitor<Boolean, Behaviour> {
         //The name of the process currently being checked
         private String checkingProcessName;
         public WellFormedChecker(String processName){

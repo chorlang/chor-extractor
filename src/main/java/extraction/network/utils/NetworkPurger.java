@@ -1,4 +1,4 @@
-package extraction;
+package extraction.network.utils;
 
 import extraction.network.Behaviour;
 import extraction.network.Network;
@@ -13,7 +13,7 @@ public class NetworkPurger {
      * terminate before performing any useful work.
      * @param network The network to purge for useless processes.
      */
-    static void purgeNetwork(Network network){
+    public static void purgeNetwork(Network network){
         /*
         Creates a new HashMap, then for each entry in the Networks processes, add it to the new map if it do not
         immediately terminate, or is a procedure invocation that immediately terminates.
