@@ -2,8 +2,11 @@ package executable;
 
 import extraction.Extraction;
 import extraction.Strategy;
+import extraction.choreography.Choreography;
 import extraction.network.*;
 import parsing.Parser;
+
+import java.util.Set;
 
 public class Main {
     static String testNetwork =
@@ -47,7 +50,7 @@ public class Main {
         //*
         Strategy st = Strategy.InteractionFirst;
         var extractor = new Extraction(st);
-        var choreography = extractor.extractChoreography(testNetwork);
+        var choreography = extractor.extractChoreography(testNetwork, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
 

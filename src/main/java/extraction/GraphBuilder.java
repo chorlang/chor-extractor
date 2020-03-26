@@ -23,7 +23,7 @@ public class GraphBuilder {
      * Instantiates a new GraphBuilder
      * @param extractionStrategy The Strategy used to extract a graph from the Network with networkGraphBuilder().
      */
-    public GraphBuilder(Strategy extractionStrategy){
+    GraphBuilder(Strategy extractionStrategy){
         strategy = extractionStrategy;
     }
 
@@ -33,7 +33,7 @@ public class GraphBuilder {
      * @param services A list of processes that are allowed to be livelocked.
      * @return A directed graph where each vertex symbolizes a state of the extraction.network, and the edges the interactions that change from the state in one vertex to the other. It also returns the root node of the graph.
      */
-    public ExecutionGraphResult executionGraphBuilder(Network n, Set<String> services){
+    public ExecutionGraphResult buildExecutionGraph(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
         n.processes.forEach((processName, processTerm) -> marking.put(processName, processTerm.main.getAction() == Behaviour.Action.TERMINATION || services.contains(processName)));
         var node = new ConcreteNode(n,"0", 0, new HashSet<>(), marking);
@@ -42,17 +42,19 @@ public class GraphBuilder {
         BuildGraphResult buildResult = buildGraph(node);
         System.out.println(buildResult);
 
-        return new ExecutionGraphResult(expander.getGraph(), node, buildResult);
+        return new ExecutionGraphResult(expander.getGraph(), node, buildResult, expander.badLoopCounter);
     }
 
     public static class ExecutionGraphResult{
         public DirectedPseudograph<Node, Label> graph;
         public ConcreteNode rootNode;
         public BuildGraphResult buildGraphResult;
-        public ExecutionGraphResult(DirectedPseudograph<Node, Label> graph, ConcreteNode rootNode, BuildGraphResult buildGraphResult){
+        public int badLoopCounter;
+        public ExecutionGraphResult(DirectedPseudograph<Node, Label> graph, ConcreteNode rootNode, BuildGraphResult buildGraphResult, int badLoopCounter){
             this.graph = graph;
             this.rootNode = rootNode;
             this.buildGraphResult = buildGraphResult;
+            this.badLoopCounter = badLoopCounter;
         }
     }
 

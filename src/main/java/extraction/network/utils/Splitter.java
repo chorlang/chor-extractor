@@ -82,7 +82,6 @@ public class Splitter {
 
         @Override
         public HashSet<String> Visit(Behaviour hostNode) {
-
             switch (hostNode.getAction()){
                 case PROCESS_TERM:{
                     var term = (ProcessTerm)hostNode;

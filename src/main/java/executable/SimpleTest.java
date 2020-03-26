@@ -6,6 +6,8 @@ import extraction.network.Behaviour;
 import extraction.network.Network;
 import parsing.Parser;
 
+import java.util.Set;
+
 public class SimpleTest {
     static String testNetwork =
             "c { def X {a!<pwd>; a&{ok: s?; stop, ko: X}} main {X}} | " +
@@ -25,9 +27,9 @@ public class SimpleTest {
         System.out.println("Testing choreography extraction with InteractionFirst strategy...");
         Strategy st = Strategy.InteractionFirst;
         var extractor = new Extraction(st);
-        var choreography = extractor.extractChoreography(testNetwork);
+        var program = extractor.extractChoreography(testNetwork, Set.of());
         System.out.println("Choreography AST generated. Result:");
-        System.out.println(choreography.toString());
+        System.out.println(program.toString());
     }
 
     static boolean checkEquals(Behaviour b){

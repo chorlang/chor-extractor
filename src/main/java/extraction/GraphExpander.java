@@ -19,6 +19,7 @@ public class GraphExpander {
     private Set<String> services;
     private GraphBuilder parent;
     private int nextNodeID;
+    int badLoopCounter = 0;
 
 
     /**
@@ -238,6 +239,7 @@ public class GraphExpander {
     private boolean addEdgeToGraph(ConcreteNode source, ConcreteNode target, Label label){
         if (checkLoop(source, target, label))
             return graph.addEdge(source, target, label);
+        badLoopCounter++;
         return false;
     }
 
