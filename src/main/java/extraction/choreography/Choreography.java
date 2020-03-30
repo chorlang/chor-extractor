@@ -23,6 +23,6 @@ public class Choreography {
         procedures.sort(null);
         StringBuilder procedureText = new StringBuilder();
         procedures.forEach(procDef -> procedureText.append(procDef.toString()).append(' '));
-        return String.format("%smain {%s}", procedureText.toString(), main);
+        return String.format("%s"+"main {%s}", procedureText.toString(), main);
     }
 }

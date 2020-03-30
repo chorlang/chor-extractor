@@ -303,6 +303,6 @@ public class GraphBuilder {
      * @return A ordered HashMap sorted after this instances extraction strategy.
      */
     private LinkedHashMap<String, ProcessTerm> copyAndSortProcesses(Node.ConcreteNode node){
-        return strategy.copyAndSort(node.network.processes);
+        return strategy.copyAndSort(node);
     }
 }
