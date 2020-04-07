@@ -1,5 +1,7 @@
 package executable;
 
+import executable.tests.CruzFilipeLarsenMontesi17;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -17,7 +19,7 @@ public class ExtractionTesting {
 
     private static Map<String, Command> commands = Map.of(
             "help", new Command(ExtractionTesting::printHelp, "Prints this help information"),
-            "theory", new Command()
+            "theory", new Command(() -> runTests(CruzFilipeLarsenMontesi17.class), "Run the tests from the original theoretical paper [Cruz-Filipe, Larsen, Montesi @ FoSSaCS 2017]")
     );
 
     public static void main(String []args){

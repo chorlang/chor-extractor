@@ -1,21 +1,9 @@
 package executable.tests;
 
 import extraction.Extraction;
+import static executable.tests.TestUtil.printExtractionResult;
 
-class CruzFilipeLarsenMontesi17 {
-    private void printExtractionResult(String network, String choreography, String expected){
-        if (!expected.equals(choreography)) {
-            System.out.println("ERROR: Extracted choreography do not mach expected varue");
-            System.out.println("Expected choreography:\n" + expected);
-            System.out.println("Extracted choreography:\n" + choreography);
-        }
-        else
-            printExtractionResult(network, choreography);
-    }
-
-    private void printExtractionResult(String network, String choreography){
-        System.out.println("input network:\n\t" + network + "\nOutput choreography\n\t" + choreography);
-    }
+public class CruzFilipeLarsenMontesi17 {
 
     public void ex2() {
         var test = "c { def X {a!<pwd>; a&{ok: s?; stop, ko: X}} main {X}} | " +
