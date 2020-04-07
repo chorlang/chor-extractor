@@ -21,6 +21,16 @@ public class Extraction {
         extractionStrategy = strategy;
     }
 
+    public static Program extract(String networkDescription){
+        return extract(networkDescription, Strategy.Default);
+    }
+    public static Program extract(String networkDescription, Strategy extractionStrategy){
+        return extract(networkDescription, extractionStrategy, Set.of());
+    }
+    public static Program extract(String networkDescription, Strategy extractionStrategy, Set<String> services){
+        return new Extraction(extractionStrategy).extractChoreography(networkDescription, services);
+    }
+
     public Program extractChoreography(String networkDescription, Set<String> services){
         Network network = Parser.stringToNetwork(networkDescription);
         NetworkPurger.purgeNetwork(network);
