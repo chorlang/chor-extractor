@@ -72,8 +72,9 @@ public class Extraction {
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }
+        System.out.println("The extraction.network is well-formed and extraction can proceed");
 
-        ChorStatsPair result = extract(network, Set.of());
+        ChorStatsPair result = extract(network, services);
         return new Program(List.of(result.chor), List.of(result.stats));
     }
 

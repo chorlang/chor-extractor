@@ -56,7 +56,8 @@ public class CruzFilipeLarsenMontesi17 {
         printExtractionResult(test,actual,expected);
     }
 
-//    public void
+//    public
+//   void
 //   ex8() { /* 2-bit protocol*/
 //        var test = "a { def X {b?;b!<0>;b?;b!<1>;X} main {b!<0>;b!<1>;X}} | " +
 //                "b { def Y {a?;a!<ack0>;a?;a!<ack1>;Y} main {Y}}"

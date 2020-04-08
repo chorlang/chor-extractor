@@ -40,7 +40,7 @@ public class GraphBuilder {
         expander = new GraphExpander(services, this, node);
 
         BuildGraphResult buildResult = buildGraph(node);
-        System.out.println(buildResult);
+        System.out.println("Graph building result: " + buildResult);
 
         return new ExecutionGraphResult(expander.getGraph(), node, buildResult, expander.badLoopCounter);
     }
