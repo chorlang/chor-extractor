@@ -20,8 +20,15 @@ public class TestUtil {
         System.out.println("input network:\n\t" + network + "\nOutput choreography\n\t" + choreography);
     }
 
-    public static void runExtractionTest(String network, String ... services){
+    static void runExtractionTest(String network, String ... services){
         printExtractionResult(network,
-                Extraction.extract(network, Strategy.Default, Set.of(services)).toString());
+                Extraction.extractChoreography(network, Strategy.Default, Set.of(services)).toString());
+    }
+
+    static void runSequentialExtractionTest(String network, String ... services){
+        printExtractionResult(network,
+                new Extraction(Strategy.Default).extractChoreographySequentially(
+                        network, Set.of(services)
+                ).toString());
     }
 }

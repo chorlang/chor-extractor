@@ -21,13 +21,13 @@ public class Extraction {
         extractionStrategy = strategy;
     }
 
-    public static Program extract(String networkDescription){
-        return extract(networkDescription, Strategy.Default);
+    public static Program extractChoreography(String networkDescription){
+        return extractChoreography(networkDescription, Strategy.Default);
     }
-    public static Program extract(String networkDescription, Strategy extractionStrategy){
-        return extract(networkDescription, extractionStrategy, Set.of());
+    public static Program extractChoreography(String networkDescription, Strategy extractionStrategy){
+        return extractChoreography(networkDescription, extractionStrategy, Set.of());
     }
-    public static Program extract(String networkDescription, Strategy extractionStrategy, Set<String> services){
+    public static Program extractChoreography(String networkDescription, Strategy extractionStrategy, Set<String> services){
         return new Extraction(extractionStrategy).extractChoreography(networkDescription, services);
     }
 
@@ -37,14 +37,14 @@ public class Extraction {
 
         if (!WellFormedness.compute(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
-            return null;
+            return new Program(List.of(), List.of());
         }
         System.out.println("The extraction.network is well-formed and extraction can proceed");
 
         var parallelNetworks = Splitter.splitNetwork(network);
         if (parallelNetworks == null){
             System.out.println("The network could not be split into parallel networks, and extraction has been aborted");
-            return null;
+            return new Program(List.of(), List.of());
         }
         System.out.println("The input network as successfully been split into parallel independent networks");
 
@@ -62,26 +62,19 @@ public class Extraction {
         });
 
         return new Program(choreographies, statistics);
+    }
 
+    public Program extractChoreographySequentially(String networkDescription, Set<String> services){
+        Network network = Parser.stringToNetwork(networkDescription);
+        NetworkPurger.purgeNetwork(network);
 
-
-
-
-
-       /* var result = parallelNetworks.parallelStream().map(net ->
-                new ArrayList<GraphBuilder.ExecutionGraphResult>(
-                        new GraphBuilder(extractionStrategy).buildExecutionGraph(net, services))).reduce();
-
-        GraphBuilder builder = new GraphBuilder(Strategy.Default);
-        var executionGraphResult = builder.buildExecutionGraph(network, Set.of());
-        if (executionGraphResult.buildGraphResult != GraphBuilder.BuildGraphResult.OK){
-            System.out.println("Could not build execution graph");
-            return null;
+        if (!WellFormedness.compute(network)){
+            System.out.println("Network is not well-formed, and can therefore not be extracted");
+            return new Program(List.of(), List.of());
         }
-        var graph = executionGraphResult.graph;
-        var rootNode = executionGraphResult.rootNode;
-        var chorExtractor = new ChoreographyBuilder();
-        return chorExtractor.buildChoreography(rootNode, graph);*/
+
+        ChorStatsPair result = extract(network, Set.of());
+        return new Program(List.of(result.chor), List.of(result.stats));
     }
 
     private ChorStatsPair extract(Network network, Set<String> services){
