@@ -13,8 +13,10 @@ public abstract class ChoreographyBody extends ChoreographyASTNode {
     as well as another ChoreographyBody. Instead, I made those two classes extend this one, so they contain the
     continuation themselves. If nod needed, it can just be null.
      */
-    abstract static class Interaction extends ChoreographyBody{
+    public abstract static class Interaction extends ChoreographyBody{
         public ChoreographyBody continuation;
+        public abstract String getSender();
+        public abstract String getReceiver();
     }
 
 }

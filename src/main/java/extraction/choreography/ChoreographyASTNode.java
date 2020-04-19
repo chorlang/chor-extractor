@@ -19,5 +19,5 @@ public abstract class ChoreographyASTNode implements TreeHost<ChoreographyASTNod
         TERMINATION
     }
 
-    public Type chorType;
+    public abstract Type getType();
 }

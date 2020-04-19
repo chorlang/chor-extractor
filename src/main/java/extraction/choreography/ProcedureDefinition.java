@@ -7,7 +7,10 @@ public class ProcedureDefinition extends ChoreographyASTNode implements Comparab
     public ChoreographyBody body;
     public HashSet<String> usedProcesses;
 
-    public final Type chorType = Type.PROCEDURE_DEFINITION;
+    private final Type chorType = Type.PROCEDURE_DEFINITION;
+    public Type getType(){
+        return chorType;
+    }
 
     public ProcedureDefinition(String name, ChoreographyBody body, HashSet<String> usedProcesses){
         this.name = name;

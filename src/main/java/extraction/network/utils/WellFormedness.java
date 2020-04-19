@@ -1,7 +1,6 @@
 package extraction.network.utils;
 
 import extraction.network.*;
-import extraction.network.utils.TreeVisitor;
 
 import javax.naming.OperationNotSupportedException;
 import java.util.HashSet;

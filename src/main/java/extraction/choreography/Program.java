@@ -6,7 +6,10 @@ public class Program extends ChoreographyASTNode{
     public List<Choreography> choreographies;
     public List<GraphStatistics> statistics;
 
-    public final Type chorType = Type.PROGRAM;
+    private final Type chorType = Type.PROGRAM;
+    public Type getType(){
+        return chorType;
+    }
 
     public Program(List<Choreography> choreographies, List<GraphStatistics> statistics){
         this.choreographies = choreographies;

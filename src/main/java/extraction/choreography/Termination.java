@@ -3,7 +3,10 @@ package extraction.choreography;
 public class Termination extends ChoreographyBody {
     private static Termination instance = new Termination();
 
-    public final Type chorType = Type.TERMINATION;
+    private final Type chorType = Type.TERMINATION;
+    public Type getType(){
+        return chorType;
+    }
 
     public static Termination getInstance(){
         return instance;

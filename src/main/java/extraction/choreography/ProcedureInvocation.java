@@ -3,7 +3,10 @@ package extraction.choreography;
 public class ProcedureInvocation extends ChoreographyBody {
     public final String procedure;
 
-    public final Type chorType = Type.PROCEDURE_INVOCATION;
+    private final Type chorType = Type.PROCEDURE_INVOCATION;
+    public Type getType(){
+        return chorType;
+    }
 
     public ProcedureInvocation(String procedure){
         this.procedure = procedure;

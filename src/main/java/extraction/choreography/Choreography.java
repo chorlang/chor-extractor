@@ -9,7 +9,12 @@ public class Choreography extends ChoreographyASTNode{
     public List<ProcedureDefinition> procedures;
     public Set<String> processes;
 
-    public final Type chorType = Type.CHOREOGRAPHY;
+    private final Type chorType = Type.CHOREOGRAPHY;
+
+    @Override
+    public Type getType() {
+        return chorType;
+    }
 
     public Choreography(ChoreographyBody main, List<ProcedureDefinition> procedures, Set<String> processes){
         this.main = main;
