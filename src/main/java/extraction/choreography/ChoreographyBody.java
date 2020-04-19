@@ -1,16 +1,6 @@
 package extraction.choreography;
 
-public abstract class ChoreographyBody {
-    public enum Type {
-        COMMUNICATION,
-        CONDITION,
-        PROCEDURE_INVOCATION,
-        SELECTION,
-        TERMINATION
-    }
-
-    //This might not be needed. Also it should be an abstract getter to ensure it would be overwritten.
-    public Type chorType;
+public abstract class ChoreographyBody extends ChoreographyASTNode {
 
     public int hashCode(){
         return toString().hashCode();

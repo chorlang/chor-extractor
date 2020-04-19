@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Choreography {
+public class Choreography extends ChoreographyASTNode{
     public ChoreographyBody main;
     public List<ProcedureDefinition> procedures;
     public Set<String> processes;
+
+    public final Type chorType = Type.CHOREOGRAPHY;
 
     public Choreography(ChoreographyBody main, List<ProcedureDefinition> procedures, Set<String> processes){
         this.main = main;

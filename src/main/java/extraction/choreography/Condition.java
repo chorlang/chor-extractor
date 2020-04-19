@@ -4,7 +4,7 @@ public class Condition extends ChoreographyBody {
     public String process, expression;
     public ChoreographyBody thenChoreography, elseChoreography;
 
-    public Type chorType = Type.CONDITION;
+    public final Type chorType = Type.CONDITION;
 
     public Condition(String process, String expression, ChoreographyBody thenChoreography, ChoreographyBody elseChoreography){
         this.process = process;

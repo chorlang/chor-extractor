@@ -5,7 +5,7 @@ public class Selection extends ChoreographyBody.Interaction {
 
     public ChoreographyBody continuation;
 
-    public Type chorType = Type.SELECTION;
+    public final Type chorType = Type.SELECTION;
 
     public Selection(String sender, String receiver, String label, ChoreographyBody continuation){
         this.sender = sender;

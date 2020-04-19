@@ -5,7 +5,7 @@ public class Communication extends ChoreographyBody.Interaction{
 
     public ChoreographyBody continuation;
 
-    public Type chorType = Type.COMMUNICATION;
+    public final Type chorType = Type.COMMUNICATION;
 
     public Communication(String sender, String receiver, String expression, ChoreographyBody continuation){
         this.sender = sender;

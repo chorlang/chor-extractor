@@ -2,9 +2,11 @@ package extraction.choreography;
 
 import java.util.List;
 
-public class Program {
+public class Program extends ChoreographyASTNode{
     public List<Choreography> choreographies;
     public List<GraphStatistics> statistics;
+
+    public final Type chorType = Type.PROGRAM;
 
     public Program(List<Choreography> choreographies, List<GraphStatistics> statistics){
         this.choreographies = choreographies;

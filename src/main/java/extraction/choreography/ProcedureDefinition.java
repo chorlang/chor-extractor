@@ -2,10 +2,12 @@ package extraction.choreography;
 
 import java.util.HashSet;
 
-public class ProcedureDefinition implements Comparable<ProcedureDefinition>{
+public class ProcedureDefinition extends ChoreographyASTNode implements Comparable<ProcedureDefinition>{
     public String name;
     public ChoreographyBody body;
     public HashSet<String> usedProcesses;
+
+    public final Type chorType = Type.PROCEDURE_DEFINITION;
 
     public ProcedureDefinition(String name, ChoreographyBody body, HashSet<String> usedProcesses){
         this.name = name;
