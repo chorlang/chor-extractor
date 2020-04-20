@@ -17,7 +17,7 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
             case COMMUNICATION:
             case SELECTION:
                 var host = (ChoreographyBody.Interaction)hostNode;
-                return host.continuation.accept(this) + 1;
+                return host.getContinuation().accept(this) + 1;
 
             case TERMINATION:
             case PROCEDURE_INVOCATION:

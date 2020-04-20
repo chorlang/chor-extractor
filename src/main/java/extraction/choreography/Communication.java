@@ -5,6 +5,11 @@ public class Communication extends ChoreographyBody.Interaction{
 
     public ChoreographyBody continuation;
 
+    public ChoreographyBody getContinuation(){
+        return continuation;
+    }
+    public void setContinuation(ChoreographyBody continuation) {this.continuation = continuation;}
+
     private final Type chorType = Type.COMMUNICATION;
     public Type getType(){
         return chorType;

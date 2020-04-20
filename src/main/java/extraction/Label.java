@@ -7,7 +7,7 @@ import java.util.List;
 
 public abstract class Label {
 
-    enum LabelType{
+    public enum LabelType{
         THEN, ELSE, COMMUNICATION, SELECTION
     }
 
@@ -20,7 +20,7 @@ public abstract class Label {
     public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
     public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
 
-    static abstract class ConditionLabel extends Label{
+    public static abstract class ConditionLabel extends Label{
         public String process, expression;
 
         public ConditionLabel(String process, String expression, LabelType type){
@@ -29,7 +29,7 @@ public abstract class Label {
             labelType = type;
         }
 
-        static class ThenLabel extends ConditionLabel{
+        public static class ThenLabel extends ConditionLabel{
             public ThenLabel(String process, String expression){
                 super(process, expression, LabelType.THEN);
             }
@@ -43,7 +43,7 @@ public abstract class Label {
             }
         }
 
-        static class ElseLabel extends ConditionLabel{
+        public static class ElseLabel extends ConditionLabel{
             public ElseLabel(String process, String expression){
                 super(process, expression, LabelType.ELSE);
             }
@@ -58,7 +58,7 @@ public abstract class Label {
         }
     }
 
-    static abstract class InteractionLabel extends Label{
+    public static abstract class InteractionLabel extends Label{
         public String sender, receiver, expression;
         public InteractionLabel(String sender, String receiver, String expression, LabelType type){
             this.sender = sender;
@@ -67,7 +67,7 @@ public abstract class Label {
             labelType = type;
         }
 
-        static class CommunicationLabel extends InteractionLabel {
+        public static class CommunicationLabel extends InteractionLabel {
             public CommunicationLabel(String sender, String receiver, String expression) {
                 super(sender, receiver, expression, LabelType.COMMUNICATION);
             }
@@ -81,7 +81,7 @@ public abstract class Label {
             }
         }
 
-        static class SelectionLabel extends InteractionLabel{
+        public static class SelectionLabel extends InteractionLabel{
             public SelectionLabel(String sender, String receiver, String label){
                 super(sender, receiver, label, LabelType.SELECTION);
             }

@@ -12,7 +12,7 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return (Program)(new ChoreographyASTToProgram().getProgram(tree));
     }
 
-    ChoreographyASTNode getProgram(ParseTree tree){
+    public ChoreographyASTNode getProgram(ParseTree tree){
         return this.visit(tree);
     }
 

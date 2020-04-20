@@ -25,7 +25,7 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
             case COMMUNICATION:
             case SELECTION: {
                 var host = (ChoreographyBody.Interaction) hostNode;
-                Set<String> freeProcesses = host.continuation.accept(this);
+                Set<String> freeProcesses = host.getContinuation().accept(this);
                 freeProcesses.add(host.getSender());
                 freeProcesses.add(host.getReceiver());
                 return freeProcesses;

@@ -18,7 +18,7 @@ public class NumberOfConditionals implements TreeVisitor<Integer, ChoreographyAS
             case COMMUNICATION:
             case SELECTION:
                 var host = (ChoreographyBody.Interaction)hostNode;
-                return host.continuation.accept(this);
+                return host.getContinuation().accept(this);
 
             case TERMINATION:
             case PROCEDURE_INVOCATION:

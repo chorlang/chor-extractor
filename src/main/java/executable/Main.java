@@ -1,5 +1,6 @@
 package executable;
 
+import executable.tests.BenchHelper;
 import extraction.Extraction;
 import extraction.Strategy;
 import extraction.choreography.Choreography;
@@ -38,6 +39,7 @@ public class Main {
 
     public static void main(String []args){
         System.out.println("Hello World");
+        /*
         Network network = Parser.stringToNetwork(testNetwork);
         System.out.println(network.toString());
         Behaviour pi = new ProcedureInvocation("X");
@@ -53,6 +55,7 @@ public class Main {
         var choreography = extractor.extractChoreography(testNetwork, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
+        //*/
 
     }
 

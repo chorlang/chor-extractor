@@ -1,5 +1,6 @@
 package executable;
 
+import executable.tests.BenchHelper;
 import executable.tests.CruzFilipeLarsenMontesi17;
 import executable.tests.LangeTuostoYoshida15;
 import executable.tests.LangeTuostoYoshida15Sequential;
@@ -24,7 +25,8 @@ public class ExtractionTesting {
             "help", new Command(ExtractionTesting::printHelp, "Prints this help information"),
             "theory", new Command(() -> runTests(new CruzFilipeLarsenMontesi17()), "Run the tests from the original theoretical paper [Cruz-Filipe, Larsen, Montesi @ FoSSaCS 2017]"),
             "lty15", new Command(() -> runTests(new LangeTuostoYoshida15()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015]"),
-            "lty15-seq", new Command(() -> runTests(new LangeTuostoYoshida15Sequential()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015] *with parallelization disabled*")
+            "lty15-seq", new Command(() -> runTests(new LangeTuostoYoshida15Sequential()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015] *with parallelization disabled*"),
+            "benchmark", new Command(ExtractionTesting::runBenchmarks, "Run the extraction benchmarking suite")
     );
 
     public static void main(String []args){
@@ -79,5 +81,10 @@ public class ExtractionTesting {
     private static void printHelp() {
         System.out.println("List of available commands (<name of command>\t<description>)");
         commands.forEach((key, value) -> System.out.println("\t" + key + "\t\t" + value.description));
+    }
+
+    private static void runBenchmarks(){
+        System.out.println("=== Extracting all test networks from directory tests ===\n");
+        BenchHelper.INSTANCE.extractionTest();
     }
 }

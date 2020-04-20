@@ -38,7 +38,7 @@ public class Parser {
         return ChoreographyASTToProgram.toProgram(parseChoreography(choreographyDescription));
     }
 
-    private static ChoreographyParser.ProgramContext parseChoreography(String choreographyDescription){
+    public static ChoreographyParser.ProgramContext parseChoreography(String choreographyDescription){
         var stream = new ANTLRInputStream(choreographyDescription);
         var lexer = new ChoreographyLexer(stream);
         var parser = new ChoreographyParser(new CommonTokenStream(lexer));
