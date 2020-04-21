@@ -1,13 +1,12 @@
 package executable;
 
-import executable.tests.BenchHelper;
+import executable.tests.Benchmarks;
 import executable.tests.CruzFilipeLarsenMontesi17;
 import executable.tests.LangeTuostoYoshida15;
 import executable.tests.LangeTuostoYoshida15Sequential;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -85,6 +84,6 @@ public class ExtractionTesting {
 
     private static void runBenchmarks(){
         System.out.println("=== Extracting all test networks from directory tests ===\n");
-        BenchHelper.INSTANCE.extractionTest();
+        Benchmarks.extractionTest();
     }
 }

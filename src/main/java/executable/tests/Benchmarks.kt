@@ -20,7 +20,7 @@ import java.nio.file.Paths
 import java.text.ParseException
 import java.util.*
 
-object BenchHelper {
+object Benchmarks {
     //data class StatHeader(val length: String, val numOfProcesses: String, val numOfCondition: String, val numOfProcedures: String)
 
     data class ScrewedExecutionStatistics(val choreographyId: String,
