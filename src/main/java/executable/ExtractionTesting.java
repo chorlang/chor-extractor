@@ -84,6 +84,6 @@ public class ExtractionTesting {
 
     private static void runBenchmarks(){
         System.out.println("=== Extracting all test networks from directory tests ===\n");
-        Benchmarks.extractionTest();
+        Benchmarks.INSTANCE.extractionTest();
     }
 }

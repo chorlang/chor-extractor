@@ -1,6 +1,5 @@
 package executable;
 
-import executable.tests.BenchHelper;
 import extraction.Extraction;
 import extraction.Strategy;
 import extraction.choreography.Choreography;
