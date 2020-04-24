@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Set;
 
 public class Choreography extends ChoreographyASTNode{
-    public ChoreographyBody main;
-    public List<ProcedureDefinition> procedures;
-    public Set<String> processes;
+    public final ChoreographyBody main;
+    public final List<ProcedureDefinition> procedures;
+    public final Set<String> processes;
 
     private final Type chorType = Type.CHOREOGRAPHY;
 

@@ -3,8 +3,9 @@ package extraction.network;
 import java.util.HashMap;
 
 public class ProcessTerm extends Behaviour {
-    public HashMap<String, Behaviour> procedures;   //Map from procedure names to their behaviours
-    public Behaviour main;                          //The main behaviour for the procedure
+    public final HashMap<String, Behaviour> procedures;   //Map from procedure names to their behaviours
+    public Behaviour main;                                //The main behaviour for the procedure
+    //main cannot be static as it is modified
 
     /**
      * Constructor for ProcessTerm
@@ -38,6 +39,7 @@ public class ProcessTerm extends Behaviour {
         procedures.forEach((key, value) ->
                 proceduresCopy.put(key, value.copy()));
         return new ProcessTerm(proceduresCopy, main.copy());
+        //return this;
     }
 
     /**

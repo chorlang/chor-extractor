@@ -9,8 +9,8 @@ import java.util.HashMap;
  * The "process" variable from the Kotlin implementation is equal to "sender"
  */
 public class Offering extends Behaviour {
-    public String sender;
-    public HashMap<String, Behaviour> branches;
+    public final String sender;
+    public final HashMap<String, Behaviour> branches;
 
     /**
      * Creates an Offering object, aka receive a label, and switch on that label.
@@ -35,10 +35,11 @@ public class Offering extends Behaviour {
     }
 
     public Offering copy(){
-        var branchesCopy = new HashMap<String, Behaviour>(branches.size());
+        /*var branchesCopy = new HashMap<String, Behaviour>(branches.size());
         branches.forEach((key, value) ->
                 branchesCopy.put(key, value.copy()));
-        return new Offering(sender, branchesCopy);
+        return new Offering(sender, branchesCopy);*/
+        return this;
     }
 
     public boolean equals(Behaviour other){

@@ -3,8 +3,10 @@ package utility;
 import extraction.Label;
 import extraction.Label.LabelType;
 import extraction.choreography.*;
+import extraction.network.Behaviour;
 import parsing.Parser;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -147,6 +149,19 @@ public class Bisimulation {
         throw new IllegalArgumentException("ERROR: Unrecognized label type " + label.getClass().getName());
     }
 
+    private static ChoreographyBody.Interaction copyInteraction(ChoreographyBody.Interaction oldInteraction, ChoreographyBody newContinuation){
+        switch (oldInteraction.getType()){
+            case SELECTION:
+                var s = (Selection)oldInteraction;
+                return new Selection(s.sender,s.receiver,s.label, newContinuation);
+            case COMMUNICATION:
+                var c = (Communication)oldInteraction;
+                return new Communication(c.sender, c.receiver, c.expression, newContinuation);
+            default:
+                throw new InvalidParameterException("ERROR: Unknown ChoreographyBody.Interaction subtype: " + oldInteraction.getClass().getName() + ". Not supported by copyInteraction in Bisimulation");
+        }
+    }
+
     static ChoreographyBody getContinuation( ChoreographyBody c, Label label, List<ProcedureDefinition> procedures) {
         switch ( c.getType() ) {
             case PROCEDURE_INVOCATION: {
@@ -163,7 +178,7 @@ public class Bisimulation {
                 if ( procedureBody == null )
                     return null;
                 else
-                    getContinuation( procedureBody, label, proceduresCopy );
+                    return getContinuation( procedureBody, label, proceduresCopy );
             }
             case COMMUNICATION:
             case SELECTION:{
@@ -179,9 +194,7 @@ public class Bisimulation {
                     if ( cont == null )
                         return null;
                     else{
-                        //Unsure if it needs to be a copy of interaction instead.
-                        interaction.setContinuation(cont);
-                        return interaction;
+                        return copyInteraction(interaction, cont);
                     }
                 }
             }

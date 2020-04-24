@@ -1,8 +1,8 @@
 package extraction.choreography;
 
 public class Condition extends ChoreographyBody {
-    public String process, expression;
-    public ChoreographyBody thenChoreography, elseChoreography;
+    public final String process, expression;
+    public final ChoreographyBody thenChoreography, elseChoreography;
 
     private final Type chorType = Type.CONDITION;
     public Type getType(){

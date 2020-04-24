@@ -3,8 +3,8 @@ package extraction.choreography;
 import java.util.List;
 
 public class Program extends ChoreographyASTNode{
-    public List<Choreography> choreographies;
-    public List<GraphStatistics> statistics;
+    public final List<Choreography> choreographies;
+    public final List<GraphStatistics> statistics;
 
     private final Type chorType = Type.PROGRAM;
     public Type getType(){

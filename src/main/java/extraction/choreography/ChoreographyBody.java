@@ -15,7 +15,6 @@ public abstract class ChoreographyBody extends ChoreographyASTNode {
      */
     public abstract static class Interaction extends ChoreographyBody{
         public abstract ChoreographyBody getContinuation();
-        public abstract void setContinuation(ChoreographyBody continuation);
         public abstract String getSender();
         public abstract String getReceiver();
     }

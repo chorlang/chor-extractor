@@ -4,7 +4,7 @@ package extraction.network;
  * Simple Behavior that calls a procedure
  */
 public class ProcedureInvocation extends Behaviour {
-    public String procedure;
+    public final String procedure;
 
     /**
      * Constructor for the ProcedureInvocation Behavior.
@@ -20,7 +20,8 @@ public class ProcedureInvocation extends Behaviour {
     }
 
     public ProcedureInvocation copy(){
-        return new ProcedureInvocation(procedure);
+        //return new ProcedureInvocation(procedure);
+        return this;
     }
 
     public boolean equals(Behaviour other){

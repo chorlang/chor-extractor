@@ -6,8 +6,8 @@ package extraction.network;
  * Note that the variable "process" from the Kotlin implementation is "receiver"
  */
 public class Send extends Behaviour {
-    public String receiver, expression;
-    public Behaviour continuation;
+    public final String receiver, expression;
+    public final Behaviour continuation;
 
     /**
      * Constructs a send behavior, which represents evaluates an
@@ -27,7 +27,8 @@ public class Send extends Behaviour {
     }
 
     public Send copy(){
-        return new Send(receiver, expression, continuation.copy());
+        //return new Send(receiver, expression, continuation.copy());
+        return this;
     }
 
     public boolean equals(Behaviour other){

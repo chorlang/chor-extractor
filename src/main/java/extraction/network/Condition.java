@@ -4,8 +4,8 @@ package extraction.network;
  * Stores conditional behavior, along with the "then" and "else" branches
  */
 public class Condition extends Behaviour {
-    public String expression;
-    public Behaviour thenBehaviour, elseBehaviour;
+    public final String expression;
+    public final Behaviour thenBehaviour, elseBehaviour;
 
     /**
      * Behavior to store conditional statements
@@ -28,7 +28,8 @@ public class Condition extends Behaviour {
     }
 
     public Behaviour copy() {
-        return new Condition(expression, thenBehaviour.copy(), elseBehaviour.copy());
+        //return new Condition(expression, thenBehaviour.copy(), elseBehaviour.copy());
+        return this;
     }
 
     public boolean equals(Behaviour other) {

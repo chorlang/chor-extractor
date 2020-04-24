@@ -6,8 +6,8 @@ package extraction.network;
  * Note that the variable "process" in the original implementation is "receiver"
  */
 public class Selection extends Behaviour {
-    public String receiver, label;
-    public Behaviour continuation;
+    public final String receiver, label;
+    public final Behaviour continuation;
 
     /**
      * Constructor for the Selection behavior, aka sending a label to another process.
@@ -26,7 +26,8 @@ public class Selection extends Behaviour {
     }
 
     public Selection copy(){
-        return new Selection(receiver, label, continuation.copy());
+        //return new Selection(receiver, label, continuation.copy());
+        return this;
     }
 
     public boolean equals(Behaviour other){

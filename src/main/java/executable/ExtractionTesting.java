@@ -25,7 +25,8 @@ public class ExtractionTesting {
             "theory", new Command(() -> runTests(new CruzFilipeLarsenMontesi17()), "Run the tests from the original theoretical paper [Cruz-Filipe, Larsen, Montesi @ FoSSaCS 2017]"),
             "lty15", new Command(() -> runTests(new LangeTuostoYoshida15()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015]"),
             "lty15-seq", new Command(() -> runTests(new LangeTuostoYoshida15Sequential()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015] *with parallelization disabled*"),
-            "benchmark", new Command(ExtractionTesting::runBenchmarks, "Run the extraction benchmarking suite")
+            "benchmark", new Command(ExtractionTesting::runBenchmarks, "Run the extraction benchmarking suite"),
+            "exit", new Command(() -> System.out.println("Goodbye"), "Closes the application")
     );
 
     public static void main(String []args){
@@ -54,7 +55,6 @@ public class ExtractionTesting {
             if (toExecute == null){
                 System.out.println("Could not recognize command");
                 printHelp();
-                System.out.println("\texit\t\tCloses the application");
             }
             else{
                 toExecute.runnable.run();

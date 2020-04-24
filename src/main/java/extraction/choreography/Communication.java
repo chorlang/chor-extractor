@@ -1,16 +1,16 @@
 package extraction.choreography;
 
 public class Communication extends ChoreographyBody.Interaction{
-    public String sender, receiver, expression;
+    public final String sender, receiver, expression;
 
-    public ChoreographyBody continuation;
+    public final ChoreographyBody continuation;
 
-    public ChoreographyBody getContinuation(){
+    public final ChoreographyBody getContinuation(){
         return continuation;
     }
-    public void setContinuation(ChoreographyBody continuation) {this.continuation = continuation;}
 
     private final Type chorType = Type.COMMUNICATION;
+
     public Type getType(){
         return chorType;
     }

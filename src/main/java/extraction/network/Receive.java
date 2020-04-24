@@ -6,8 +6,8 @@ package extraction.network;
  * Note that the "process" variable from the kotlin implementation is "sender"
  */
 public class Receive extends Behaviour {
-    public String sender;
-    public Behaviour continuation;
+    public final String sender;
+    public final Behaviour continuation;
 
     /**
      * Constructs a Behavior for receiving messages
@@ -24,7 +24,8 @@ public class Receive extends Behaviour {
     }
 
     public Receive copy(){
-        return new Receive(sender, continuation.copy());
+        //return new Receive(sender, continuation.copy());
+        return this;
     }
 
     public boolean equals(Behaviour other){

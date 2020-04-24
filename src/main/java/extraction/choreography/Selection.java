@@ -1,14 +1,13 @@
 package extraction.choreography;
 
 public class Selection extends ChoreographyBody.Interaction {
-    public String sender, receiver, label;
+    public final String sender, receiver, label;
 
-    public ChoreographyBody continuation;
+    public final ChoreographyBody continuation;
 
     public ChoreographyBody getContinuation(){
         return continuation;
     }
-    public void setContinuation(ChoreographyBody continuation) {this.continuation = continuation;}
 
 
     private final Type chorType = Type.SELECTION;
