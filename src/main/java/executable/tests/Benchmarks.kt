@@ -10,6 +10,7 @@ import utility.Bisimulation
 import utility.choreographyStatistics.ChoreographyStatistics
 import utility.choreographyStatistics.LengthOfProcedures
 import utility.choreographyStatistics.NumberOfActions
+import utility.fuzzing.NetworkFuzzer
 import utility.networkRefactor.NetworkShifter
 import utility.networkRefactor.NetworkUnfolder
 import utility.networkStatistics.NetworkStatistics
@@ -204,7 +205,7 @@ fun extractionSoundnessC41() {
     private fun writeExtractionsToFile(extractionMap: Map<String, Pair<Program, Long>>, filename: String, strategyName: String) {
         File(OUTPUT_DIR, filename).printWriter().use { out ->
             out.println("testId${SEP}strategy${SEP}choreography")
-            extractionMap.forEach { id, pair -> out.println("${id}${SEP}$strategyName${SEP}${pair.first}") }
+            extractionMap.forEach { (id, pair) -> out.println("${id}${SEP}$strategyName${SEP}${pair.first}") }
         }
     }
 
@@ -236,8 +237,7 @@ fun extractionSoundnessC41() {
 //    @Test
     fun extractionTest() = Strategy.values().forEach { if ( it != Strategy.Default ) extraction(it) }
 
-    //TODO: Implement NetworkFuzzer, and remove the comment around the below methods.
-/*
+
     private fun fuzzUntilItWorks(network:String, dels:Int, swaps:Int):Network {
         do {
           try {
@@ -278,7 +278,7 @@ fun extractionSoundnessC41() {
         fuzz(0, 1)
         fuzz(1, 0)
         fuzz(2, 2)
-    }*/
+    }
 
 //    @Test
     fun unrollAndShift() {

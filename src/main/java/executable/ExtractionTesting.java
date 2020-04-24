@@ -49,7 +49,7 @@ public class ExtractionTesting {
         String command;
         do {
             System.out.println("Enter command: ");
-            command = inputReader.next();
+            command = inputReader.next().toLowerCase();
             Command toExecute = commands.get(command);
             if (toExecute == null){
                 System.out.println("Could not recognize command");
