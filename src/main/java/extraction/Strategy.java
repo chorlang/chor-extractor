@@ -17,14 +17,14 @@ public enum Strategy {
     Default {
         @Override
         public LinkedHashMap<String, ProcessTerm> copyAndSort(Node.ConcreteNode node) {
-            return InteractionFirst.copyAndSort(node);
+            return InteractionsFirst.copyAndSort(node);
         }
     },
     /**
      * Places all processes who's main procedures involve intra-process communication
      * first, followed by anything else, in no particular order.
      */
-    InteractionFirst{
+    InteractionsFirst {
         @Override
         public LinkedHashMap<String, ProcessTerm> copyAndSort(Node.ConcreteNode node) {
             var network = node.network.processes;

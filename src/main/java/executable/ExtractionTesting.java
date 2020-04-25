@@ -26,6 +26,7 @@ public class ExtractionTesting {
             "lty15", new Command(() -> runTests(new LangeTuostoYoshida15()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015]"),
             "lty15-seq", new Command(() -> runTests(new LangeTuostoYoshida15Sequential()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015] *with parallelization disabled*"),
             "benchmark", new Command(ExtractionTesting::runBenchmarks, "Run the extraction benchmarking suite"),
+            "bisimcheck", new Command(ExtractionTesting::runBisimilarity, "Check that the choreographies extracted in the benchmark are correct, i.e., they are bisimilar to the respective originals"),
             "exit", new Command(() -> System.out.println("Goodbye"), "Closes the application")
     );
 
@@ -85,5 +86,10 @@ public class ExtractionTesting {
     private static void runBenchmarks(){
         System.out.println("=== Extracting all test networks from directory tests ===\n");
         Benchmarks.INSTANCE.extractionTest();
+    }
+
+    private static void runBisimilarity(){
+        System.out.println("=== Checking that all extracted choreographies are correct, using bisimilarity ===\n");
+        Benchmarks.INSTANCE.extractionSoundness();
     }
 }

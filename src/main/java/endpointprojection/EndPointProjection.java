@@ -15,7 +15,7 @@ public class EndPointProjection {
      * @param choreographyDescription
      * @return (parallel) networks projected from the initial choreography
      */
-    public static Network Project(String choreographyDescription){
+    public static Network project(String choreographyDescription){
         var program = Parser.stringToProgram(choreographyDescription);
         return project(program);
     }

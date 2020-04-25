@@ -30,6 +30,9 @@ public class Extraction {
     public static Program extractChoreography(String networkDescription, Strategy extractionStrategy, Set<String> services){
         return new Extraction(extractionStrategy).extractChoreography(networkDescription, services);
     }
+    public static Program extractChoreographySequentially(String networkDescription, Strategy extractionStrategy, Set<String> services){
+        return new Extraction(extractionStrategy).extractChoreographySequentially(networkDescription, services);
+    }
 
     public Program extractChoreography(String networkDescription, Set<String> services){
         Network network = Parser.stringToNetwork(networkDescription);

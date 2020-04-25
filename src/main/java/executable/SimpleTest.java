@@ -25,7 +25,7 @@ public class SimpleTest {
         System.out.println("Result of Network copying test: " + result + "\n");
 
         System.out.println("Testing choreography extraction with InteractionFirst strategy...");
-        Strategy st = Strategy.InteractionFirst;
+        Strategy st = Strategy.InteractionsFirst;
         var extractor = new Extraction(st);
         var program = extractor.extractChoreography(testNetwork, Set.of());
         System.out.println("Choreography AST generated. Result:");

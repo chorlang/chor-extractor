@@ -1,4 +1,4 @@
-package executable.tests
+package benchmark
 
 import endpointprojection.EndPointProjection
 import extraction.Extraction
@@ -20,16 +20,15 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.ParseException
 import java.util.*
+import org.junit.Test
 
-object Benchmarks {
-    //data class StatHeader(val length: String, val numOfProcesses: String, val numOfCondition: String, val numOfProcedures: String)
-
+class Benchmarks {
     data class ScrewedExecutionStatistics(val choreographyId: String,
                                           val minExecutionTime: Long, val maxExecutionTime: Long, val avgExecutionTime: Double,
                                           val minNodes: Int, val maxNodes: Int, val avgNodes: Int,
                                           val minBadLoops: Int, val maxBadLoops: Int, val avgBadLoops: Int)
 
-//    companion object {
+    companion object {
         private const val TEST_DIR = "tests"
         private const val CHOREOGRAPHY_PREFIX = "choreography-"
         private const val PROJECTION_PREFIX = "projection-"
@@ -71,7 +70,7 @@ object Benchmarks {
                 "minNumberOfProceduresInProcesses","maxNumberOfProceduresInProcesses","avgNumberOfProceduresInProcesses",
                 "minNumberOfConditionalsInProcesses","maxNumberOfConditionalsInProcesses","avgNumberOfConditionalsInProcesses","numberOfProcessesWithConditionals",
                 "minProcedureLengthInProcesses","maxProcedureLengthInProcesses","avgProcedureLengthInProcesses").joinToString(SEP)
-//    }
+    }
 
     /**
      * for each file with choreographies
@@ -79,7 +78,7 @@ object Benchmarks {
      * 2. get statistics and write to the file %original_file_name% statistics
      */
 
-//    @Test
+    @Test
     fun epp() {
         checkOutputFolder()
         val choreographyFiles = parseChoreographyFiles(TEST_DIR, CHOREOGRAPHY_PREFIX) //HashMap<filename, HashMap<choreography_id, choreography_body>>
@@ -146,7 +145,7 @@ object Benchmarks {
     } */
 
 
-//    @Test
+    @Test
     fun extractionSoundness() {
         val originalChoreographies = parseChoreographyFiles(TEST_DIR, CHOREOGRAPHY_PREFIX)
         var ok = 0
@@ -157,15 +156,11 @@ object Benchmarks {
             originalChoreographies.forEach { (fileId, choreographyData) ->
                 choreographyData.forEach { (id, choreography) ->
 //                    println((extractedChoreographies[fileId]!!)[id]!!)
-                    print("Checking $id in $fileId extracted with strategy $strategy. ")
-                    try {                                                                           //This try is not present in the automatic testing version of Benchmarks
-                        when( Bisimulation.bisimilar(choreography, (extractedChoreographies[fileId]!!)[id]!!)!! ) { //!!!!!!
-                            Bisimulation.Throolean.OK -> { println( "Done" ); ok++ }
-                            Bisimulation.Throolean.MAYBE -> { println( "Timeout" ); maybe++ }
-                            Bisimulation.Throolean.FAIL -> { println( "Fail" ); fail++ }
-                        }
-                    } catch (ex:KotlinNullPointerException) {
-                        println("This choreography has not been extracted yet.")
+                    print("Checking $id in $fileId against strategy $strategy. ")
+                    when( Bisimulation.bisimilar(choreography, (extractedChoreographies[fileId]!!)[id]!!)!! ) { //!!!!!!
+                        Bisimulation.Throolean.OK -> { println( "Done" ); ok++ }
+                        Bisimulation.Throolean.MAYBE -> { println( "Timeout" ); maybe++ }
+                        Bisimulation.Throolean.FAIL -> { println( "Fail" ); fail++ }
                     }
                 }
             }
@@ -234,7 +229,7 @@ fun extractionSoundnessC41() {
         }
     }
 
-//    @Test
+    @Test
     fun extractionTest() = Strategy.values().forEach { if ( it != Strategy.Default ) extraction(it) }
 
 
@@ -273,14 +268,14 @@ fun extractionSoundnessC41() {
         }
     }
 
-//    @Test
+    @Test
     fun fuzzThemAll() {
         fuzz(0, 1)
         fuzz(1, 0)
         fuzz(2, 2)
     }
 
-//    @Test
+    @Test
     fun unrollAndShift() {
         checkOutputFolder()
 
@@ -481,7 +476,7 @@ fun extractionSoundnessC41() {
         return StatHeader(stat[stat.size - 4], stat[stat.size - 3], stat[stat.size - 2], stat[stat.size - 1])
     }*/
 
-//    @Test
+    @Test
     fun runAllBenchmarks() {
         epp()
         extractionTest()
@@ -489,7 +484,7 @@ fun extractionSoundnessC41() {
         makeCombinedStatistics()
     }
 
-//    @Test
+    @Test
     fun myTest() {
         val group = "fuzzed-0-1"
 //        val group = ""
@@ -502,14 +497,14 @@ fun extractionSoundnessC41() {
         combineStatistics(pair.first, pair.second, strategy, group)
     }
 
-//    @Test
+    @Test
     fun makeCombinedStatistics() {
         val tests = arrayOf(
                 Pair("comms-only", "(\\d+)-6-0-0"),
                 Pair("increasing-ifs-no-recursion", "50-6-(\\d+)-0"),
                 Pair("increasing-ifs-procedures", "200-5-(\\d+)-(\\d+)"),
                 Pair("increasing-processes", "500-(\\d+)-0-0"),
-                Pair("increasing-ifs-with-recursion", "100-10-(\\d+)-5"), //This is 200-5 in the automatic test version of Benchmarks
+                Pair("increasing-ifs-with-recursion", "200-5-(\\d+)-5"), //This is 100-10 in the executable version of Benchmarks
                 Pair("increasing-procedures-no-ifs", "1000-5-0-(\\d+)"),
                 Pair("increasing-procedures-fixed-ifs", "200-10-20-(\\d+)"),
 //                Pair("all", ".*")
