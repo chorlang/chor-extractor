@@ -21,10 +21,10 @@ public class Network extends Behaviour {
     public String toString(){
         StringBuilder builder = new StringBuilder();
         processes.forEach((processName, procedure) ->
-                builder.append(processName).append(procedure.toString()).append("|"));
+                builder.append(processName).append(procedure.toString()).append(" | "));
         //I don't know why the last 3 chars are removed, but the Kotlin impl does it
         if (builder.length() >= 3){
-            builder.delete(builder.length() - 1, builder.length());
+            builder.delete(builder.length() - 3, builder.length());
         }
         return builder.toString();
     }

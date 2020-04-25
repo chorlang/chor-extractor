@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 //I'm assuming that assertEquals need the extracted choreography as a string
 
-class ProjectThenExtractTests {
+class ProjectionThenExtractTests {
     @Test
     public void tst1() {
         var test = "def X {" +
@@ -21,10 +21,9 @@ class ProjectThenExtractTests {
 
         var actual = Extraction.extractChoreography(test);
 
-        var expected =
-                "def X1 { if p.e then p->q[ok]; q->r[ok]; q.e->p; X1 else p->q[ko]; q->r[ko]; X2 } " +
-                        "def X2 { q.e->r; if r.e then r->q[ok]; r->p[ok]; q.e->r; stop else r->q[ko]; r->p[ko]; X2 } " +
-                        "main {p.e->q; q.e->p; X1}";
+        var expected = "def X1 { if p.e then p->q[ok]; q->r[ok]; q.e->p; X1 else p->q[ko]; q->r[ko]; X2 } " +
+                "def X2 { q.e->r; if r.e then r->q[ok]; r->p[ok]; q.e->r; stop else r->q[ko]; r->p[ko]; X2 } " +
+                "main {p.e->q; q.e->p; X1}";
 
         assertEquals(expected, actual.toString());
     }

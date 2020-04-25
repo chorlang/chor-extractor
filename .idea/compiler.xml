@@ -3,7 +3,7 @@
   <component name="CompilerConfiguration">
     <excludeFromCompile>
       <file url="file://$PROJECT_DIR$/src/main/java/executable/tests/BenchmarksJava.java" />
-      <file url="file://$PROJECT_DIR$/src/main/java/executable/tests/Benchmarks_translation.java" />
+      <file url="file://$PROJECT_DIR$/src/main/java/executable/tests/Benchmarks_translation.java.disabled" />
     </excludeFromCompile>
     <annotationProcessing>
       <profile name="Maven default annotation processors profile" enabled="true">

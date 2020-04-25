@@ -1,11 +1,17 @@
 package bisim;
 
 import org.junit.jupiter.api.Test;
+import utility.Bisimulation;
 import utility.Bisimulation.Throolean;
 
-import static utility.Bisimulation.bisimilar;
+
+
 
 class BisimTest{
+    private static Throolean bisimilar(String t1, String t2){
+        return Bisimulation.INSTANCE.bisimilar(t1, t2);
+    }
+
     @Test
     void same1(){
         var test = "def X {Y} def Y { p.e->q; stop } main {q.e->p;X}";

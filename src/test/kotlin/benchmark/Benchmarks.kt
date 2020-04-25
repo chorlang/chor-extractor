@@ -5,6 +5,7 @@ import extraction.Extraction
 import extraction.Strategy
 import extraction.network.*
 import extraction.choreography.*
+import org.junit.Test
 import parsing.Parser
 import utility.Bisimulation
 import utility.choreographyStatistics.ChoreographyStatistics
@@ -20,7 +21,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.ParseException
 import java.util.*
-import org.junit.Test
 
 class Benchmarks {
     data class ScrewedExecutionStatistics(val choreographyId: String,

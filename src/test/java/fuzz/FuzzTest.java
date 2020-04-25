@@ -66,18 +66,17 @@ public class FuzzTest {
 
     @Test
     void instrumentControlling() {
-        var test =
-                "user{def X{instrument+move; instrument+photo; instrument+quit; stop} " +
-                        "main {operator!<high>; operator&{" +
-                        "ok: X," +
-                        "no: stop}}} | " +
-                        "operator{main{user?; if ok then user+ok; instrument+ok; stop else user+no; instrument+no; stop}} | " +
-                        "instrument{def X{user&{" +
-                        "move: X," +
-                        "photo: X," +
-                        "quit: stop}} main{ operator&{" +
-                        "ok: X, " +
-                        "no: stop}}}";
+        var test = "user{def X{instrument+move; instrument+photo; instrument+quit; stop} " +
+                "main {operator!<high>; operator&{" +
+                "ok: X," +
+                "no: stop}}} | " +
+                "operator{main{user?; if ok then user+ok; instrument+ok; stop else user+no; instrument+no; stop}} | " +
+                "instrument{def X{user&{" +
+                "move: X," +
+                "photo: X," +
+                "quit: stop}} main{ operator&{" +
+                "ok: X, " +
+                "no: stop}}}";
 
         testFuzz(test, 2, 2);
     }

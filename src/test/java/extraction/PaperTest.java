@@ -10,7 +10,7 @@ import utility.TestUtils;
 class PaperTest {
     @Test
     void ex2() {
-        var test = "c { def X {a!<pwd>; a&{ok: s?; stop, X ko}} main {X}} | " +
+        var test = "c { def X {a!<pwd>; a&{ok: s?; stop, ko: X}} main {X}} | " +
                 "a { def X {c?; s?; if s then c+ok; s+ok; stop else c+ko; s+ko; X} main {X}} | " +
                 "s { def X {a!<s>; a&{ok: c!<t>; stop, ko:X}} main {X}}";
         var actual = Extraction.extractChoreography(test).toString();
@@ -114,10 +114,9 @@ class PaperTest {
     @ParameterizedTest
     @CsvFileSource(resources = "/settings.csv", numLinesToSkip = 1)
     void twoBuyersProtocol(String strategy, Boolean debugMode){
-        var test =
-                "buyer1{def X {seller!<book>; seller?; buyer2!<quote>; X} main {X}} | " +
-                        "buyer2{def X {seller?; buyer1?; if ok then seller+accept; seller!<address>; seller?; X else seller+decline; X} main {X}} | " +
-                        "seller{def X {buyer1?; buyer1!<quote>; buyer2!<quote>; buyer2&{accept: buyer2?; buyer2!<date>; X, X decline}} main {X}}";
+        var test = "buyer1{def X {seller!<book>; seller?; buyer2!<quote>; X} main {X}} | " +
+                "buyer2{def X {seller?; buyer1?; if ok then seller+accept; seller!<address>; seller?; X else seller+decline; X} main {X}} | " +
+                "seller{def X {buyer1?; buyer1!<quote>; buyer2!<quote>; buyer2&{accept: buyer2?; buyer2!<date>; X, decline: X}} main {X}}";
 
         var actual = Extraction.extractChoreography(test, TestUtils.parseStrategy(strategy)).toString();
         var expected =

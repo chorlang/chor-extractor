@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Bisimulation {
+//public
+class BisimulationJava {
     private static final int MAX_SIMULATION_COUNTER = 200;
 
     public enum Throolean {
@@ -79,9 +80,8 @@ public class Bisimulation {
                         case FAIL:
                             return Throolean.FAIL;
                         case MAYBE:
-                            ok = true;
                             result = Throolean.MAYBE;
-                            break;
+                            //intentionally no break here
                         case OK: 
                             ok = true;
                     }
@@ -99,7 +99,7 @@ public class Bisimulation {
 
         todo.add(new Pair<>(c1.main, c2.main));
 
-        var counter = 0;
+        int counter = 0;
 
         while( !todo.isEmpty() && counter < MAX_SIMULATION_COUNTER ) {
             counter++;
@@ -114,7 +114,7 @@ public class Bisimulation {
 //            println("getting continuation ${two.toString().length}");
                 var continuation2 = getContinuation( two, action1, c2.procedures );
                 if ( continuation2 == null ) {
-                    println( "Could not match $action1 with continuation $two" );
+                    println( "Could not match " + action1 + " with continuation " + two );
                     return Throolean.FAIL;
                 } else {
                     if( !done.contains( new Pair<>(continuation1,continuation2) ) && !todo.contains( new Pair<>(continuation1, continuation2) ) ) {
@@ -273,7 +273,7 @@ public class Bisimulation {
             return List.of(
                 new Pair<>(new Label.ConditionLabel.ThenLabel(cond.process, cond.expression), cond.thenChoreography),
                 new Pair<>(new Label.ConditionLabel.ElseLabel(cond.process, cond.expression), cond.elseChoreography));
-        }
+            }
             case TERMINATION:
                 return List.of();
             case PROCEDURE_INVOCATION:
@@ -289,7 +289,7 @@ public class Bisimulation {
                 return procedure.body;
             }
         }
-        throw new IllegalArgumentException( "Called a name that does not exist: $name" );
+        throw new IllegalArgumentException( "Called a name that does not exist: " + name );
     }
 
     static Label labelFromInteraction(ChoreographyBody.Interaction interaction) {
