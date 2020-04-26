@@ -215,6 +215,7 @@ class EndpointProjectionTests {
         var actual = EndPointProjection.project(test).toString();
         var expected = "p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}} || p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}}";
 
+        //This also causes InputMismatchException in the Kotlin implementations
         assertEquals(expected, actual);
     }
 }

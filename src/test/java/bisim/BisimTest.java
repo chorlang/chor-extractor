@@ -1,16 +1,13 @@
 package bisim;
 
 import org.junit.jupiter.api.Test;
-import utility.Bisimulation;
+import static utility.Bisimulation.bisimilar;
 import utility.Bisimulation.Throolean;
 
 
 
 
 class BisimTest{
-    private static Throolean bisimilar(String t1, String t2){
-        return Bisimulation.INSTANCE.bisimilar(t1, t2);
-    }
 
     @Test
     void same1(){

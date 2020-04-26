@@ -2,9 +2,12 @@ package executable;
 
 import extraction.Extraction;
 import extraction.Strategy;
-import extraction.choreography.Choreography;
+import extraction.choreography.*;
+import extraction.choreography.Selection;
 import extraction.network.*;
+import extraction.network.Termination;
 import parsing.Parser;
+import utility.Pair;
 
 import java.util.Set;
 
@@ -38,6 +41,15 @@ public class Main {
 
     public static void main(String []args){
         System.out.println("Hello World");
+        var t = Termination.getTermination();
+        var c1 = new Selection("a", "x", "l");
+        var c2 = new Communication("b", "c", "sd");
+
+        var p1 = new Pair<ChoreographyBody, ChoreographyBody>(c1, c2);
+        var p2= new Pair<ChoreographyBody, ChoreographyBody>(c1, c2);
+
+        System.out.println(p1.equals(p2));
+
         /*
         Network network = Parser.stringToNetwork(testNetwork);
         System.out.println(network.toString());

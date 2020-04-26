@@ -3,6 +3,8 @@ package fuzz;
 import org.junit.jupiter.api.Test;
 import utility.fuzzing.NetworkFuzzer;
 
+
+//Some of these test may throw IllegalStateException
 public class FuzzTest {
     private void testFuzz(String orig, int dels, int swaps){
         var fuzzed1 = NetworkFuzzer.fuzz(orig, 1, 0);

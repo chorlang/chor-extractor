@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-//public
-class BisimulationJava {
+public class Bisimulation {
     private static final int MAX_SIMULATION_COUNTER = 200;
 
     public enum Throolean {
@@ -22,9 +21,6 @@ class BisimulationJava {
     }
 
     public static Throolean bisimilar( String c1, String c2) {
-    
-        //var program1 = ((Program)new ChoreographyASTToProgram().getProgram(Parser.parseChoreography(c1)));
-        //var program2 = ((Program)new ChoreographyASTToProgram().getProgram(Parser.parseChoreography(c2)));
         var program1 = Parser.stringToProgram(c1);
         var program2 = Parser.stringToProgram(c2);
 
@@ -34,14 +30,6 @@ class BisimulationJava {
     private static void println(Object o){
         System.out.println(o);
     }
-
-//fun similar( String c1, String c2 ):Throolean;
-//{
-//    var program1 = new ChoreographyASTToProgram().getProgram(parseChoreography(c1)) as Program;
-//    var program2 = new ChoreographyASTToProgram().getProgram(parseChoreography(c2)) as Program;
-//
-//    return similar( program1.choreographies, program2.choreographies );
-//}
 
     static Throolean bisimilar(List<Choreography> list1, List<Choreography> list2) {
         if ( list1.size() != 1 || list2.size() != 1 ) {
@@ -93,8 +81,7 @@ class BisimulationJava {
         return result;
     }
 
-    static Throolean similar(Choreography c1, Choreography c2) {
-        ArrayList<Pair<ChoreographyBody, ChoreographyBody>> done = new ArrayList<>();
+    static Throolean similar(Choreography c1, Choreography c2) {ArrayList<Pair<ChoreographyBody, ChoreographyBody>> done = new ArrayList<>();
         ArrayList<Pair<ChoreographyBody, ChoreographyBody>> todo = new ArrayList<>();
 
         todo.add(new Pair<>(c1.main, c2.main));
@@ -300,6 +287,6 @@ class BisimulationJava {
                 return new Label.InteractionLabel.SelectionLabel(interaction.getSender(), interaction.getReceiver(), ((Selection)interaction).label);
             default:
                 throw new IllegalArgumentException();
-    }
+        }
     }
 }

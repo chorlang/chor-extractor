@@ -26,15 +26,13 @@ public class EndPointProjection {
      * @return
      */
     public static Network project(Program program){
-        List<Choreography> choreographyList= program.choreographies;
+        var choreographyList = program.choreographies;
         var networkMap = new HashMap<String, ProcessTerm>();
         for (var choreography : choreographyList){
-            if (choreography == null)
-                continue;
             for (var process : choreography.processes){
                 try {
                     if (networkMap.containsKey(process))
-                        throw new InputMismatchException();
+                        throw new InputMismatchException("Parallel choreographies cannot share processes (process " + process + ")");
                     networkMap.put(process, BehaviourProjection.project(choreography, process));
                 } catch (Merging.MergingException e){
                     var newE = new Merging.MergingException("Process " + process + " " + e.getMessage());
