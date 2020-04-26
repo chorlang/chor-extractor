@@ -97,7 +97,9 @@ public class Extraction {
 
         @Override
         public int compare(ChorStatsPair pair1, ChorStatsPair pair2) {
-            return pair1.chor.toString().compareTo(pair2.chor.toString());
+            String chor1 = String.valueOf(pair1.chor);
+            String chor2 = String.valueOf(pair2.chor);
+            return chor1.compareTo(chor2);
         }
     }
 

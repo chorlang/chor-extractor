@@ -67,10 +67,11 @@ class PaperTest {
     @Test
     void ex8() { /* 2-bit protocol*/
         var test = "a { def X {b?;b!<0>;b?;b!<1>;X} main {b!<0>;b!<1>;X}} | " +
-                "b { def Y {a?;a!<ack0>;a?;a!<ack1>;Y} main {Y}}";
+                   "b { def Y {a?;a!<ack0>;a?;a!<ack1>;Y} main {Y}}";
         var actual = Extraction.extractChoreography(test).toString();
         var expected = "def X1 { (a.1->b, b.ack0->a); (a.0->b, b.ack1->a); X1 } main {a.0->b; X1}";
 
+        //This one might be supposed to fail
         assertEquals(expected, actual);
     }
 

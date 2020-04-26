@@ -17,11 +17,11 @@ public class ProcessSize implements TreeVisitor<Integer, Behaviour> {
                 }
                 return sum + 1;
             case RECEIVE:
-                return ((Receive)hostNode).continuation.accept(this);
+                return ((Receive)hostNode).continuation.accept(this) + 1;
             case SELECTION:
-                return ((Selection)hostNode).continuation.accept(this);
+                return ((Selection)hostNode).continuation.accept(this) + 1;
             case SEND:
-                return ((Send)hostNode).continuation.accept(this);
+                return ((Send)hostNode).continuation.accept(this) + 1;
             case PROCEDURE_INVOCATION:
                 return 1;
             case TERMINATION:

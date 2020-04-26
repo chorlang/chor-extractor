@@ -120,12 +120,14 @@ class BenchmarkTest {
             }
             default: {
                 var expected = "def X1 { (a.1->b, b.ack0->a); (a.0->b, b.ack1->a); X1 } main {a.0->b; X1}";
+                //This one might be supposed to fail
                 assertEquals(expected, actual);
                 break;
             }
         }
     }
 
+    //This one appears to be non-extractable
     @ParameterizedTest
     @CsvFileSource(resources = "/settings.csv", numLinesToSkip = 1)
     public void twoBit2x(String strategyName, Boolean debugMode) {
