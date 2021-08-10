@@ -11,6 +11,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="chor-extraction" />
+        <module name="chor-extractor" />
       </profile>
     </annotationProcessing>
   </component>
