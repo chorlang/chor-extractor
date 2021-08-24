@@ -72,6 +72,7 @@ class PaperTest {
         var expected = "def X1 { (a.1->b, b.ack0->a); (a.0->b, b.ack1->a); X1 } main {a.0->b; X1}";
 
         //This one might be supposed to fail
+        //The network appears to be unextractable
         assertEquals(expected, actual);
     }
 

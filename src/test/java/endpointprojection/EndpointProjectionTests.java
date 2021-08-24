@@ -20,6 +20,7 @@ class EndpointProjectionTests {
 
     @Test
     public void tst(){
+        //This test does nothing
         var test =
                 "def T { p -> u[l3]; d -> o[l4]; K } " +
                         "def K { o.m3 -> u; o.m4 -> v; o -> p[l5]; p.m5 -> u; K } " +

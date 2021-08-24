@@ -93,15 +93,17 @@ class BenchmarkTest {
         }
     }
 
+    //
     @ParameterizedTest
     @CsvFileSource(resources = "/settings.csv", numLinesToSkip = 1)
     public void twoBit(String strategyName, Boolean debugMode) {
         var test = "a { def X {b?; b!<0>;b?;b!<1>;X} main {b!<0>;b!<1>;X}} | " +
                 "b { def Y {a?;a!<ack0>;a?;a!<ack1>;Y} main {Y}}";
 
+        //Change strategy in resources/settings.csv
         var strategy = TestUtils.parseStrategy(strategyName);
         var actual = Extraction.extractChoreography( test, strategy ).toString();
-//        System.out.println(actual);
+        //Network appears to be unextractable
 
         switch (strategy) {
             case UnmarkedThenRandom:
@@ -120,7 +122,6 @@ class BenchmarkTest {
             }
             default: {
                 var expected = "def X1 { (a.1->b, b.ack0->a); (a.0->b, b.ack1->a); X1 } main {a.0->b; X1}";
-                //This one might be supposed to fail
                 assertEquals(expected, actual);
                 break;
             }
