@@ -73,13 +73,23 @@ public class GraphBuilder {
                 unfoldedProcesses.add(processName);
         });
 
+        /* === Considerations ===
+        If the main action is communication, but the co-communicator do not have a matching main action, then
+        findCommunication returns null, which makes it check the process for a conditional even though it is a communication.
+        Perhaps refactor after implementing multicom.
 
+        Use pattern matching instead of enums. Upgrade to java 17 to use in switch statements
+         */
+
+        //For each process, ordered depending on extraction strategy.
         for (Map.Entry<String, ProcessTerm> entry : processes.entrySet()){
             String processName = entry.getKey();
             ProcessTerm processTerm = entry.getValue();
             HashSet<String> unfoldedProcessesCopy = new HashSet<>(unfoldedProcesses);
 
 
+            //Check if the next action of the process is to send/receive/select/offer
+            //and that the next action of the other process of the interaction matches the communication
             CommunicationContainer communication = findCommunication(processes, processName, processTerm);
             if (communication != null){
                 Network targetNetwork = communication.targetNetwork;
@@ -118,19 +128,6 @@ public class GraphBuilder {
         return BuildGraphResult.FAIL;
     }
 
-
-    private static class ConditionContainer{
-        public Network thenNetwork, elseNetwork;
-        public Label.ConditionLabel.ThenLabel thenLabel;
-        public Label.ConditionLabel.ElseLabel elseLabel;
-        public ConditionContainer(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel, Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel){
-            this.thenNetwork = thenNetwork;
-            this.thenLabel = thenLabel;
-            this.elseNetwork = elseNetwork;
-            this.elseLabel = elseLabel;
-        }
-    }
-
     /**
      * If the ProcessTerm's main action is conditional, returns labels and networks resulting from the oconditional action, both for the then case, and else case.
      * @param processes The map of ProcessTerms the graph is being build from
@@ -157,6 +154,27 @@ public class GraphBuilder {
         );
     }
 
+    /**
+     * Simple class to store the networks "thenNetwork" and "elseNetwork" resulting from a conditional, as well as the
+     * corresponding labels "thenLabel" and "elseLabel".
+     */
+    private static class ConditionContainer{
+        public Network thenNetwork, elseNetwork;
+        public Label.ConditionLabel.ThenLabel thenLabel;
+        public Label.ConditionLabel.ElseLabel elseLabel;
+        public ConditionContainer(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel, Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel){
+            this.thenNetwork = thenNetwork;
+            this.thenLabel = thenLabel;
+            this.elseNetwork = elseNetwork;
+            this.elseLabel = elseLabel;
+        }
+    }
+
+    /**
+     * Checks if the entire network has terminated.
+     * @param network The network to check.
+     * @return true if all processes has terminated. false otherwise.
+     */
     private boolean allTerminated(HashMap<String, ProcessTerm> network){
         for (ProcessTerm process : network.values()) {
             if (process.main.getAction() != Behaviour.Action.TERMINATION)
@@ -175,48 +193,56 @@ public class GraphBuilder {
      */
     private CommunicationContainer findCommunication(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm){
         Behaviour main = processTerm.main;
-        switch (main.getAction()){
-            case SEND:
-                String recipientProcessName = ((Send)main).receiver;
-                ProcessTerm receiveTerm  = processes.get(recipientProcessName);
+        switch (main.getAction()) {
+            case SEND -> {
+                String recipientProcessName = ((Send) main).receiver;
+                ProcessTerm receiveTerm = processes.get(recipientProcessName);
                 if (receiveTerm.main.getAction() == Behaviour.Action.RECEIVE &&
-                        ((Receive)receiveTerm.main).sender.equals(processName)){
+                        ((Receive) receiveTerm.main).sender.equals(processName)) {
                     return consumeCommunication(processes, processTerm, receiveTerm);
                 }
-                break;
-            case RECEIVE:
-                String sendingProcessName = ((Receive)main).sender;
+            }
+            case RECEIVE -> {
+                String sendingProcessName = ((Receive) main).sender;
                 ProcessTerm senderTerm = processes.get(sendingProcessName);
                 if (senderTerm.main.getAction() == Behaviour.Action.SEND &&
-                        ((Send)senderTerm.main).receiver.equals(processName)){
+                        ((Send) senderTerm.main).receiver.equals(processName)) {
                     return consumeCommunication(processes, senderTerm, processTerm);
                 }
-                break;
-            case SELECTION:
-                String offeringProcessName = ((Selection)main).receiver;
+            }
+            case SELECTION -> {
+                String offeringProcessName = ((Selection) main).receiver;
                 ProcessTerm offerTerm = processes.get(offeringProcessName);
                 if (offerTerm.main.getAction() == Behaviour.Action.OFFERING &&
-                        ((Offering)offerTerm.main).sender.equals(processName)){
+                        ((Offering) offerTerm.main).sender.equals(processName)) {
                     return consumeSelection(processes, offerTerm, processTerm);
                 }
-                break;
-            case OFFERING:
-                String selectingProcessName = ((Offering)main).sender;
+            }
+            case OFFERING -> {
+                String selectingProcessName = ((Offering) main).sender;
                 ProcessTerm selectionTerm = processes.get(selectingProcessName);
                 if (selectionTerm.main.getAction() == Behaviour.Action.SELECTION &&
-                    ((Selection)selectionTerm.main).receiver.equals(processName)){
+                        ((Selection) selectionTerm.main).receiver.equals(processName)) {
                     return consumeSelection(processes, processTerm, selectionTerm);
                 }
-                break;
+            }
         }
         return null;
     }
 
+    /**
+     * Takes a send / receive pair of processes, and returns the network after the communication has occurred, and the graph label of the communication.
+     * @param processes The processTerms of the current network
+     * @param sendTerm The processTerm of the process with the send action.
+     * @param receiveTerm The processTerm of the process with the receive action.
+     * @return Object storing the label of the communication, and the network resulting form the communication.
+     */
     private CommunicationContainer consumeCommunication(HashMap<String, ProcessTerm> processes, ProcessTerm sendTerm, ProcessTerm receiveTerm){
         var processesCopy = copyProcesses(processes);
         Send sender = (Send)sendTerm.main;
         Receive receiver = (Receive)receiveTerm.main;
 
+        //Retrieve the name of the sender from the receiver. Reverse for the other statement.
         processesCopy.replace(receiver.sender, new ProcessTerm(sendTerm.procedures, sender.continuation));
         processesCopy.replace(sender.receiver, new ProcessTerm(receiveTerm.procedures, receiver.continuation));
 
@@ -225,6 +251,13 @@ public class GraphBuilder {
         return new CommunicationContainer(new Network(processesCopy), label);
     }
 
+    /**
+     * Takes a select / offer pair of processes, and returns the network after the selection has occurred, and the graph label of the selection.
+     * @param processes The processTerms of the current network
+     * @param offerTerm The processTerm of the process with the offer action.
+     * @param selectTerm The processTerm of the process with the select action.
+     * @return Object storing the label of the selection, and the network resulting form the selection.
+     */
     private CommunicationContainer consumeSelection(HashMap<String, ProcessTerm> processes, ProcessTerm offerTerm, ProcessTerm selectTerm){
         var processesCopy = copyProcesses(processes);
         Selection selector = (Selection)selectTerm.main;
@@ -242,12 +275,18 @@ public class GraphBuilder {
         return new CommunicationContainer(new Network(processesCopy), label);
     }
 
+    /**
+     * Returns a deep copy of the HashMap
+     */
     private HashMap<String, ProcessTerm> copyProcesses(HashMap<String, ProcessTerm> processes){
         var copy = new HashMap<String, ProcessTerm>(processes.size());
         processes.forEach((processName, processTerm) -> copy.put(processName, processTerm.copy()));
         return copy;
     }
 
+    /**
+     * Simple class to store a network "n" and a label "l"
+     */
     private static class CommunicationContainer{
         Network targetNetwork;
         Label.InteractionLabel label;

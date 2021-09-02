@@ -16,8 +16,12 @@ public abstract class ChoreographyASTNode implements TreeHost<ChoreographyASTNod
         PROCEDURE_INVOCATION,
         PROGRAM,
         SELECTION,
-        TERMINATION
+        TERMINATION,
+        MULTICOM
     }
 
+    /**
+     * @return The enum value of ChoreographyASTNode.Type corresponding to the concrete class of this object
+     */
     public abstract Type getType();
 }
