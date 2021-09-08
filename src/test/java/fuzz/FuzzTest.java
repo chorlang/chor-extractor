@@ -10,7 +10,7 @@ public class FuzzTest {
         var fuzzed1 = NetworkFuzzer.fuzz(orig, 1, 0);
         var fuzzed2 = NetworkFuzzer.fuzz(orig, 0, 1);
         var fuzzed3 = NetworkFuzzer.fuzz(orig, dels, swaps);
-        System.out.println(String.format("Original: %s\nFuzzed(1, 0): %s\nFuzzed(0, 1): %s\nFuzzed(%d, %d): %s", orig, fuzzed1, fuzzed2, dels, swaps, fuzzed3));
+        System.out.printf("Original: %s\nFuzzed(1, 0): %s\nFuzzed(0, 1): %s\nFuzzed(%d, %d): %s%n", orig, fuzzed1, fuzzed2, dels, swaps, fuzzed3);
 
 
     }
@@ -39,7 +39,6 @@ public class FuzzTest {
         testFuzz(test, 2, 2);
     }
 
-    //Stuck?
     @Test
     void buyerSeller() {
         var test =
