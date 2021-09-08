@@ -212,8 +212,10 @@ public class GraphBuilder {
 
                 //The sender is the receiver, because we are adding a send action that must be done before receiving
                 var label = createInteractionLabel(next.receiver, blocking);
-                if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
-                    waiting.add(label);                         //TODO Theoretically, this should always be the case
+                //!!!Possible bug. Uncomment the below "if" if multicom has duplicate interactions!!!
+                //The "waiting.add(label);" is the body of the "if" statement
+                //if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
+                waiting.add(label);
                 blocking = continuation;                        //Look at the next interaction
                 processTerm.main = continuation;                //Update network state to have already sent/selected
 
