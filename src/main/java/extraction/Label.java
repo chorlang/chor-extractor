@@ -38,9 +38,9 @@ public abstract class Label {
         public String toString(){
             var out = new StringBuilder("(");
             for (InteractionLabel com : communications){
-                out.append(com.toString()).append(" | ");
+                out.append(com.toString()).append(", ");
             }
-            out.delete(out.length()-3, out.length()); //Delete trailing " | "
+            out.delete(out.length()-2, out.length()); //Delete trailing " | "
             out.append(")");
             return out.toString();
         }

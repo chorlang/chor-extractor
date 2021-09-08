@@ -93,7 +93,6 @@ class BenchmarkTest {
         }
     }
 
-    //
     @ParameterizedTest
     @CsvFileSource(resources = "/settings.csv", numLinesToSkip = 1)
     public void twoBit(String strategyName, Boolean debugMode) {

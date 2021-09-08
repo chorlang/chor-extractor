@@ -28,10 +28,10 @@ public class Multicom extends ChoreographyBody{
     public String toString(){
         var out = new StringBuilder("(");
         for (Label.InteractionLabel com : communications){
-            out.append(com.toString()).append(" | ");
+            out.append(com.toString()).append(", ");
         }
-        out.delete(out.length()-3, out.length()); //Delete trailing " | "
-        out.append(") ").append(continuation.toString());
+        out.delete(out.length()-2, out.length()); //Delete trailing ", "
+        out.append("); ").append(continuation.toString());
         return out.toString();
     }
 }

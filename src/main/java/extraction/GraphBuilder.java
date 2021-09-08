@@ -135,9 +135,6 @@ public class GraphBuilder {
         for (Map.Entry<String, ProcessTerm> entry : processes.entrySet()) {
             String processName = entry.getKey();
             HashSet<String> unfoldedProcessesCopy = new HashSet<>(unfoldedProcesses);
-            /*TODO: Multicom across process unfolding is not possible.
-            For example, "a{def X {b?; stop} main {b!<msg>; X}} | b { main {a!<msg2>; a?; stop}}" is won't extract*/
-
 
             MulticomContainer multicom = findMulticom(processes, processName);
             if (multicom == null)           //If this process does not start a valid multicom, try the next one
@@ -193,13 +190,20 @@ public class GraphBuilder {
             processTerm = processes.get(next.receiver);
             Behaviour blocking = processTerm.main;              //Behaviour blocking the receival of the communication
             while (!(blocking instanceof Receive || blocking instanceof Offering)){
+                //Assuming the main behaviour is Send or Selection, find its continuation
                 Behaviour continuation;
-                //If blocking instanceof procedure invocation, unfold procedure.
                 if (blocking instanceof Send send){
                     continuation = send.continuation;
                 }
                 else if (blocking instanceof Selection sel){
                     continuation = sel.continuation;
+                }
+                //Unfold procedure invocation inplace.
+                //Assumes marking and, and folding back procedure invocations handled using the multicom label.
+                else if (blocking instanceof ProcedureInvocation){
+                    unfold(processTerm);
+                    blocking = processTerm.main;
+                    continue;
                 }
                 else{                                           //Multicom not possible for current set of actions
                     return null;
@@ -231,53 +235,6 @@ public class GraphBuilder {
         //Return the updated network, list of interactions, and involved processes
         return new MulticomContainer(new Network(processes), new Label.MulticomLabel(actions), actors);
     }
-
-    /*private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processes, String processName){
-        var processTerm = processes.get(processName);
-        var type = processTerm.main.getAction();
-        if (!(type == SEND || type == Behaviour.Action.SELECTION))
-            return null;
-        var processesCopy = copyProcesses(processes);
-        var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
-        var actors = new HashSet<String>();                     //List of participating processes
-        var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
-        waiting.add(createInteractionLabel(processName, processTerm.main));
-        while (waiting.size() > 0){                             //While there are interactions to process
-            var next = waiting.remove();   //Retrieve interaction to process
-            var acting = processesCopy.get(next.sender);
-
-            actions.add(next);
-            actors.add(next.receiver);
-            actors.add(next.sender);
-            Behaviour blocking = processes.get(next.receiver).main;
-
-            while (!(blocking instanceof Receive)){             //While receiving process is not ready to receive
-                Behaviour continuation = null;
-                if (blocking instanceof Send send){
-                    continuation = send.continuation;
-                }
-                else if (blocking instanceof Selection sel){
-                    continuation = sel.continuation;
-                }
-                else{                                           //Multicom not possible for current set of actions
-                    return null;
-                }
-                //Add the send/selection to list of interactions to be processed, then look at its continuation.
-                var label = createInteractionLabel(next.sender, blocking);
-                if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
-                    waiting.add(label);
-                blocking = continuation;
-            }
-            //If the recipient expects to receive from a different process, multicom is not possible.
-            if (!((Receive) blocking).sender.equals(next.sender)) {
-                return null;
-            }
-        }
-        //Now actions should contain all interactions of the multicom
-
-        //Replace process mains with continuations
-        return new MulticomContainer(new Network(processesCopy), new Label.MulticomLabel(actions), actors);
-    }*/
 
     /**
      * Helper function to create an InteractionLabel instance from a sending or selection Behaviour

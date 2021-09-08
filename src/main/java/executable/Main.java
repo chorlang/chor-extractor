@@ -60,7 +60,7 @@ public class Main {
         System.out.println("Hello World");
 
         //*
-        String networksString = multicomUnfolding;
+        String networksString = alt2bit;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
