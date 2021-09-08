@@ -4,11 +4,12 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class Label {
 
     public enum LabelType{
-        THEN, ELSE, COMMUNICATION, SELECTION
+        THEN, ELSE, COMMUNICATION, SELECTION, MULTICOM
     }
 
     public abstract Label copy();
@@ -19,6 +20,32 @@ public abstract class Label {
 
     public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
     public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
+
+    public static class MulticomLabel extends Label{
+        public final List<InteractionLabel> communications;
+        public MulticomLabel(List<InteractionLabel> communications){
+            this.communications = communications;
+            labelType = LabelType.MULTICOM;
+        }
+
+        /**
+         * Creates a new Label object identical to this one, but its content is copied by reference.
+         * @return A shallow copy of this label.
+         */
+        public Label copy(){ return new MulticomLabel(communications); }
+
+        @Override
+        public String toString(){
+            var out = new StringBuilder("(");
+            for (InteractionLabel com : communications){
+                out.append(com.toString()).append(" | ");
+            }
+            out.delete(out.length()-3, out.length()); //Delete trailing " | "
+            out.append(")");
+            return out.toString();
+        }
+
+    }
 
     public static abstract class ConditionLabel extends Label{
         public String process, expression;
@@ -65,6 +92,19 @@ public abstract class Label {
             this.receiver = receiver;
             this.expression = expression;
             labelType = type;
+        }
+        @Override
+        public int hashCode(){                      //Not needed, but here for completion
+            return Objects.hash(sender,receiver,expression);
+        }
+        @Override
+        public boolean equals(Object other){        //Needed for multicom
+            if (other == null)
+                return false;
+            if (getClass() != other.getClass())
+                return false;
+            var otherLabel = (InteractionLabel)other;
+            return sender.equals(otherLabel.sender) && receiver.equals(otherLabel.receiver) && expression.equals(otherLabel.expression);
         }
 
         public static class CommunicationLabel extends InteractionLabel {

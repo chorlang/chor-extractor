@@ -6,6 +6,8 @@ import org.jgrapht.graph.DirectedPseudograph;
 
 import java.util.*;
 
+import static extraction.network.Behaviour.Action.SEND;
+
 /**
  * Class for extracting a graph from a Network using a specific extraction strategy.
  * The graph symbolises the networks states throughout execution, and the communication between the extraction.network's processes.
@@ -79,6 +81,9 @@ public class GraphBuilder {
         Perhaps refactor after implementing multicom.
 
         Use pattern matching instead of enums. Upgrade to java 17 to use in switch statements
+
+        No need to match receive and offering. They will be matched when their matching process is checked, so they
+        can be removed from their sorting.
          */
 
         //For each process, ordered depending on extraction strategy.
@@ -125,11 +130,191 @@ public class GraphBuilder {
         if (allTerminated(processes))
             return BuildGraphResult.OK;
 
+        //Not a 100% sure why multicom is down here, and not in the loop with Communication and Conditional
+        //At least it allows the assumption that no synchronized communication is possible
+        for (Map.Entry<String, ProcessTerm> entry : processes.entrySet()) {
+            String processName = entry.getKey();
+            HashSet<String> unfoldedProcessesCopy = new HashSet<>(unfoldedProcesses);
+            /*TODO: Multicom across process unfolding is not possible.
+            For example, "a{def X {b?; stop} main {b!<msg>; X}} | b { main {a!<msg2>; a?; stop}}" is won't extract*/
+
+
+            MulticomContainer multicom = findMulticom(processes, processName);
+            if (multicom == null)           //If this process does not start a valid multicom, try the next one
+                continue;
+
+            unfoldedProcessesCopy.removeAll(multicom.actors);                   //Fold back processes not part of the multicom
+            fold(unfoldedProcessesCopy, multicom.targetNetwork, currentNode);
+
+            var result = expander.buildMulticom(multicom.targetNetwork, multicom.label, currentNode);
+            if (result == BuildGraphResult.BAD_LOOP)
+                continue;
+            return result;
+        }
+
+        //If not actions are applicable, the network is unextractable
         return BuildGraphResult.FAIL;
     }
 
     /**
-     * If the ProcessTerm's main action is conditional, returns labels and networks resulting from the oconditional action, both for the then case, and else case.
+     * Tries to create a multicom involving the main behaviour of a process.
+     * Will only attempt if the main behaviour is Send or Selection.
+     * @param processMap Map from all process names to process terms in the network
+     * @param processName The name of the process whose main behaviour may be part of a multicom
+     * @return A dataclass storing the label representing the multicom, the network resulting form the multicom,
+     * and the names of all participating processes, or null if no multicom culd be created
+     */
+    private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName) {
+        var processes = copyProcesses(processMap);  //Copy safe to modify
+        var processTerm = processes.get(processName);             //Initial interaction
+        var type = processTerm.main.getAction();
+        if (!(type == SEND || type == Behaviour.Action.SELECTION))              //Only start multicom by send or select
+            return null;
+
+        var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
+        var actors = new HashSet<String>();                     //List of participating processes
+        var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
+        waiting.add(createInteractionLabel(processName, processTerm.main));     //Initial queue interaction
+
+        //Change network state so that the "send" part of the interaction has completed
+        if (processTerm.main instanceof Send s)
+            processTerm.main = s.continuation;
+        else if (processTerm.main instanceof Selection s)
+            processTerm.main = s.continuation;
+
+        while (waiting.size() > 0) {                             //While there are interactions to process
+            var next = waiting.remove();    //Get next interaction to process
+            actions.add(next);              //Add to the list of actions of the multicom
+            actors.add(next.sender);        //Add involved processes (used for when folding back unused processes)
+            actors.add(next.receiver);
+
+            //Add all send/selection actions of the receiving process, which comes before the receiving action
+            //Abort if any other behaviours occur before.
+            processTerm = processes.get(next.receiver);
+            Behaviour blocking = processTerm.main;              //Behaviour blocking the receival of the communication
+            while (!(blocking instanceof Receive || blocking instanceof Offering)){
+                Behaviour continuation;
+                //If blocking instanceof procedure invocation, unfold procedure.
+                if (blocking instanceof Send send){
+                    continuation = send.continuation;
+                }
+                else if (blocking instanceof Selection sel){
+                    continuation = sel.continuation;
+                }
+                else{                                           //Multicom not possible for current set of actions
+                    return null;
+                }
+                //Add the send/selection to list of interactions to be processed, then look at its continuation.
+
+                //The sender is the receiver, because we are adding a send action that must be done before receiving
+                var label = createInteractionLabel(next.receiver, blocking);
+                if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
+                    waiting.add(label);                         //TODO Theoretically, this should always be the case
+                blocking = continuation;                        //Look at the next interaction
+                processTerm.main = continuation;                //Update network state to have already sent/selected
+
+            }
+
+            //Now all send/select actions before the receive/offer has been queued
+            //Variable blocking is now the receive / offer action.
+            //Update the network state to include having received/offered
+            if (next instanceof Label.InteractionLabel.CommunicationLabel com && blocking instanceof Receive receive
+                    && com.sender.equals(receive.sender))
+                processTerm.main = receive.continuation;
+            else if (next instanceof Label.InteractionLabel.SelectionLabel selection && blocking instanceof Offering offering
+                    && selection.sender.equals(offering.sender))
+                processTerm.main = offering.branches.get(selection.expression);
+            else
+                return null;    //Sender and receiver doesn't match
+        }
+        //Now actions contains all interactions of the multicom
+        //Return the updated network, list of interactions, and involved processes
+        return new MulticomContainer(new Network(processes), new Label.MulticomLabel(actions), actors);
+    }
+
+    /*private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processes, String processName){
+        var processTerm = processes.get(processName);
+        var type = processTerm.main.getAction();
+        if (!(type == SEND || type == Behaviour.Action.SELECTION))
+            return null;
+        var processesCopy = copyProcesses(processes);
+        var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
+        var actors = new HashSet<String>();                     //List of participating processes
+        var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
+        waiting.add(createInteractionLabel(processName, processTerm.main));
+        while (waiting.size() > 0){                             //While there are interactions to process
+            var next = waiting.remove();   //Retrieve interaction to process
+            var acting = processesCopy.get(next.sender);
+
+            actions.add(next);
+            actors.add(next.receiver);
+            actors.add(next.sender);
+            Behaviour blocking = processes.get(next.receiver).main;
+
+            while (!(blocking instanceof Receive)){             //While receiving process is not ready to receive
+                Behaviour continuation = null;
+                if (blocking instanceof Send send){
+                    continuation = send.continuation;
+                }
+                else if (blocking instanceof Selection sel){
+                    continuation = sel.continuation;
+                }
+                else{                                           //Multicom not possible for current set of actions
+                    return null;
+                }
+                //Add the send/selection to list of interactions to be processed, then look at its continuation.
+                var label = createInteractionLabel(next.sender, blocking);
+                if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
+                    waiting.add(label);
+                blocking = continuation;
+            }
+            //If the recipient expects to receive from a different process, multicom is not possible.
+            if (!((Receive) blocking).sender.equals(next.sender)) {
+                return null;
+            }
+        }
+        //Now actions should contain all interactions of the multicom
+
+        //Replace process mains with continuations
+        return new MulticomContainer(new Network(processesCopy), new Label.MulticomLabel(actions), actors);
+    }*/
+
+    /**
+     * Helper function to create an InteractionLabel instance from a sending or selection Behaviour
+     * @param sender The name of the process sending or selecting
+     * @param interaction The Behaviour that is Send or Selection
+     * @return An CommunicationLabel or SelectionLabel instance, depending on the instance of the interaction parameter
+     */
+    private Label.InteractionLabel createInteractionLabel(String sender, Behaviour interaction){
+        if (interaction instanceof Send send){
+            return new Label.InteractionLabel.CommunicationLabel(sender, send.receiver, send.expression);
+        }
+        else if (interaction instanceof Selection select){
+            return new Label.InteractionLabel.SelectionLabel(sender, select.receiver, select.label);
+        }
+        else{
+            throw new IllegalArgumentException("Function createInteractionLabel expects only Send and Selection Behaviours." +
+                    " The behaviour " + interaction.toString() + " is of type " + interaction.getAction().toString());
+        }
+    }
+
+    /**
+     * Simple dataclass to store information about a possible multicom interaction.
+     * Stores the resulting network, the multicom label, and a list of names of participating processes.
+     */
+    private static class MulticomContainer{
+        public Network targetNetwork;
+        public Label.MulticomLabel label;
+        public Set<String> actors; //Set of names of processes that interact for this multicom
+        public MulticomContainer(Network targetNetwork, Label.MulticomLabel label, Set<String> actors){
+            this.targetNetwork = targetNetwork;
+            this.label = label;
+            this.actors = actors;
+        }
+    }
+
+    /**
+     * If the ProcessTerm's main action is conditional, returns labels and networks resulting from the conditional action, both for the then case, and else case.
      * @param processes The map of ProcessTerms the graph is being build from
      * @param processName The name of the process currently being prospected for conditional action.
      * @param processTerm The ProcessTerm currently being prospected for conditional action.
@@ -205,7 +390,7 @@ public class GraphBuilder {
             case RECEIVE -> {
                 String sendingProcessName = ((Receive) main).sender;
                 ProcessTerm senderTerm = processes.get(sendingProcessName);
-                if (senderTerm.main.getAction() == Behaviour.Action.SEND &&
+                if (senderTerm.main.getAction() == SEND &&
                         ((Send) senderTerm.main).receiver.equals(processName)) {
                     return consumeCommunication(processes, senderTerm, processTerm);
                 }

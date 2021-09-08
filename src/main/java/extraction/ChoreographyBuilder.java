@@ -6,6 +6,7 @@ import org.jgrapht.graph.DirectedPseudograph;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 public class ChoreographyBuilder {
     private DirectedPseudograph<Node, Label> graph;
@@ -38,34 +39,38 @@ public class ChoreographyBuilder {
     private ChoreographyBody buildChoreographyBody(Node node){
         var edges = graph.outgoingEdgesOf(node);
 
-        switch (edges.size()){
-            case 0:
+        switch (edges.size()) {
+            case 0 -> {
                 if (node.getNodeType() == Node.NodeType.CONCRETE)
-                    return terminationOrException((Node.ConcreteNode)node);
+                    return terminationOrException((Node.ConcreteNode) node);
                 if (node.getNodeType() == Node.NodeType.INVOCATION)
-                    return new ProcedureInvocation(((Node.InvocationNode)node).procedureName);
+                    return new ProcedureInvocation(((Node.InvocationNode) node).procedureName);
                 throw new IllegalStateException("Unknown Node type: " + node.getClass().getName());
-            case 1:
+            }
+            case 1 -> {
                 Label edge = edges.iterator().next();
-                if (edge.labelType == Label.LabelType.COMMUNICATION){
-                    var comm = (Label.InteractionLabel.CommunicationLabel)edge;
+                if (edge.labelType == Label.LabelType.COMMUNICATION) {
+                    var comm = (Label.InteractionLabel.CommunicationLabel) edge;
                     return new Communication(comm.sender, comm.receiver, comm.expression, buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
-                if (edge.labelType == Label.LabelType.SELECTION){
-                    var select = (Label.InteractionLabel.SelectionLabel)edge;
+                if (edge.labelType == Label.LabelType.SELECTION) {
+                    var select = (Label.InteractionLabel.SelectionLabel) edge;
                     return new Selection(select.receiver, select.sender, select.expression, buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
+                if (edge.labelType == Label.LabelType.MULTICOM) {
+                    return new Multicom(((Label.MulticomLabel)edge).communications, buildChoreographyBody(graph.getEdgeTarget(edge)));
+                }
                 throw new IllegalStateException("Unary edge in graph, but not of type Communication or Selection. Is of type: " + edge.getClass().getName());
-            case 2:
+            }
+            case 2 -> {
                 Label[] labels = edges.toArray(Label[]::new);
                 if (labels[0].labelType == Label.LabelType.ELSE)
                     labels = new Label[]{labels[1], labels[0]};
-                var thenLabel = (Label.ConditionLabel.ThenLabel)labels[0];
-                var elseLabel = (Label.ConditionLabel.ElseLabel)labels[1];
-
+                var thenLabel = (Label.ConditionLabel.ThenLabel) labels[0];
+                var elseLabel = (Label.ConditionLabel.ElseLabel) labels[1];
                 return new Condition(thenLabel.process, thenLabel.expression, buildChoreographyBody(graph.getEdgeTarget(thenLabel)), buildChoreographyBody(graph.getEdgeTarget(elseLabel)));
-            default:
-                throw new IllegalStateException("Bad graph. A node has more than 2 outgoing edges.");
+            }
+            default -> throw new IllegalStateException("Bad graph. A node has more than 2 outgoing edges.");
         }
 
     }

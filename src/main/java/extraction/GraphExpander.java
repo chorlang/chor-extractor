@@ -184,6 +184,58 @@ public class GraphExpander {
         return BuildGraphResult.OK;
     }
 
+
+    /* ====================================================================
+        Code for building multicoms
+       ==================================================================== */
+
+    /**
+     * Expands the graph with a multicom action, and then continues to build it recursively.
+     * Marks all processes mentioned in the label, and resets the marking if all processes becomes marked.
+     * If a node storing a network and marking identical to targetNetwork already exists, a new edge is added
+     * to that node, using the label. If that would result in an invalid loop, the edge is not added, and the function
+     * returns BAD_LOOP instead.
+     * If no such node already exists, it creates a new one, and calls buildGraph() on that node. If the call does not
+     * return OK, it removes the node (and its children) from the graph. In any case, it returns the result of the
+     * call to buildGraph-
+     * @param targetNetwork The network resulting from performing the multicom when in the network of currentNode
+     * @param label The multicom label to store on the graph edge that will be added to the graph
+     * @param currentNode The node of the graph, represetning the state of the network before this multicom
+     * @return OK if the graph was extended. BAD_LOOP if it was not possible to expand on this multicom, or FAIL if the network is unextractable
+     */
+    BuildGraphResult buildMulticom(Network targetNetwork, Label.MulticomLabel label, ConcreteNode currentNode){
+        //Mark involved processes, and flip the marking if everything is marked
+        HashMap<String, Boolean> targetMarking = new HashMap<>(currentNode.marking);
+        label.communications.forEach(com -> {targetMarking.put(com.receiver, true); targetMarking.put(com.sender, true);});
+        if (!targetMarking.containsValue(false)){
+            flipAndResetMarking(label, targetMarking, targetNetwork);
+        }
+
+        //If the node already exists in the graph, add a new edge.
+        //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
+        ConcreteNode node = findNodeInGraph(targetNetwork, targetMarking, currentNode);
+        if (node != null){
+            if (addEdgeToGraph(currentNode, node, label))
+                return BuildGraphResult.OK;
+            else
+                return BuildGraphResult.BAD_LOOP;
+
+        }
+
+        //Create a new node, and add it, and an edge to the graph.
+        //If it fails, remove the node before returning.
+        node = createNode(targetNetwork, label, currentNode, targetMarking);
+        addNodeAndEdgeToGraph(currentNode, node, label);
+        BuildGraphResult result = parent.buildGraph(node);
+        if (result != BuildGraphResult.OK)
+            removeNodeFromGraph(node);
+        return result;
+    }
+
+    /* ====================================================================
+        Helper functions
+       ==================================================================== */
+
     /**
      * Removes all nodes from the graph originating from a specific choice path.
      * @param choicePathPrefix All nodes in the graph whose choice path begins with this string are removed.
@@ -199,11 +251,6 @@ public class GraphExpander {
             }
         });
     }
-
-
-    /* ====================================================================
-        Helper functions
-       ==================================================================== */
 
     private void removeNodeFromGraph(ConcreteNode node){
         graph.removeVertex(node);

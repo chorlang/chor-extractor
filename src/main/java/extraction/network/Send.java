@@ -1,7 +1,7 @@
 package extraction.network;
 
 /**
- * Behavior for evaluating an expression and seninding the result ot another process.
+ * Behavior for evaluating an expression and sending the result ot another process.
  *
  * Note that the variable "process" from the Kotlin implementation is "receiver"
  */

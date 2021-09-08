@@ -30,6 +30,6 @@ public class Choreography extends ChoreographyASTNode{
         procedures.sort(null);
         StringBuilder procedureText = new StringBuilder();
         procedures.forEach(procDef -> procedureText.append(procDef.toString()).append(' '));
-        return String.format("%s"+"main {%s}", procedureText.toString(), main);
+        return String.format("%s"+"main {%s}", procedureText, main);
     }
 }

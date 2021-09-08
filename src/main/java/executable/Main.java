@@ -1,6 +1,7 @@
 package executable;
 
 import extraction.Extraction;
+import extraction.Label;
 import extraction.Strategy;
 import extraction.choreography.*;
 import extraction.choreography.Selection;
@@ -9,6 +10,7 @@ import extraction.network.Termination;
 import parsing.Parser;
 import utility.Pair;
 
+import java.util.Objects;
 import java.util.Set;
 
 public class Main {
@@ -38,32 +40,31 @@ public class Main {
     static String loop =
             "a { def X {b!<msg>; X} main {X}}" +
                     "| b { def X {a?; X} main {X}}";
+    static String async =
+            "a { main {b!<msg1>; b?; stop} } | " +
+                    "b { main {a!<msg2>; a?; stop} }";
+            //"a { def X {b!<msg1>; b?; stop} main {X} } | " +
+              //      "b { def X {a!<msg2>; a?; stop} main {X} }";
+    static String async2 =
+            "a { main {b?; b!<msg1>; b?; stop} } |" +
+                    "b { main {a!<pre>; a!<msg2>; c!<msg3>; a?; stop} } |" +
+                    "c { main {b?; stop} }";
+    static String alt2bit =
+            "a { def X {b?; b!<0>; b?; b!<1>; X} main {b!<0>; b!<1>; X} } |" +
+                    "b { def Y {a?; a!<ack0>; a?; a!<ack1>; Y} main {Y} }";
+    static String multicomUnfolding =
+            "a{def X {b?; stop} main {b!<msg>; X}} |"+
+                    "b { main {a!<msg2>; a?; stop}}";
 
     public static void main(String []args){
         System.out.println("Hello World");
-        var t = Termination.getTermination();
-        var c1 = new Selection("a", "x", "l");
-        var c2 = new Communication("b", "c", "sd");
 
-        var p1 = new Pair<ChoreographyBody, ChoreographyBody>(c1, c2);
-        var p2= new Pair<ChoreographyBody, ChoreographyBody>(c1, c2);
-
-        System.out.println(p1.equals(p2));
-
-        /*
-        Network network = Parser.stringToNetwork(testNetwork);
-        System.out.println(network.toString());
-        Behaviour pi = new ProcedureInvocation("X");
-        //checkEquals(pi);
-        var snd = new Send("b", "msg", pi);
-        //checkEquals(snd);
-        var rcv = new Receive("a", pi);
-        //checkEquals(rcv);
-        checkEquals(network);
         //*
-        Strategy st = Strategy.InteractionFirst;
-        var extractor = new Extraction(st);
-        var choreography = extractor.extractChoreography(testNetwork, Set.of());
+        String networksString = multicomUnfolding;
+        Network network = Parser.stringToNetwork(networksString);
+        System.out.println(network.toString());
+        var extractor = new Extraction(Strategy.Default);
+        var choreography = extractor.extractChoreography(networksString, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
         //*/
