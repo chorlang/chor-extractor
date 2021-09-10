@@ -16,7 +16,7 @@ import static extraction.network.Behaviour.Action.SEND;
 public class GraphBuilder {
     private final Strategy strategy;
     private GraphExpander expander;
-    public boolean enableMulticom = false;
+    public boolean enableMulticom = true;
 
     enum BuildGraphResult{
         OK, BAD_LOOP, FAIL
@@ -265,16 +265,7 @@ public class GraphBuilder {
      * Simple dataclass to store information about a possible multicom interaction.
      * Stores the resulting network, the multicom label, and a list of names of participating processes.
      */
-    private static class MulticomContainer{
-        public Network targetNetwork;
-        public Label.MulticomLabel label;
-        public Set<String> actors; //Set of names of processes that interact for this multicom
-        public MulticomContainer(Network targetNetwork, Label.MulticomLabel label, Set<String> actors){
-            this.targetNetwork = targetNetwork;
-            this.label = label;
-            this.actors = actors;
-        }
-    }
+    private static record MulticomContainer(Network targetNetwork, Label.MulticomLabel label, Set<String> actors){ }
 
     /**
      * If the ProcessTerm's main action is conditional, returns labels and networks resulting from the conditional action, both for the then case, and else case.
@@ -306,17 +297,8 @@ public class GraphBuilder {
      * Simple class to store the networks "thenNetwork" and "elseNetwork" resulting from a conditional, as well as the
      * corresponding labels "thenLabel" and "elseLabel".
      */
-    private static class ConditionContainer{
-        public Network thenNetwork, elseNetwork;
-        public Label.ConditionLabel.ThenLabel thenLabel;
-        public Label.ConditionLabel.ElseLabel elseLabel;
-        public ConditionContainer(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel, Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel){
-            this.thenNetwork = thenNetwork;
-            this.thenLabel = thenLabel;
-            this.elseNetwork = elseNetwork;
-            this.elseLabel = elseLabel;
-        }
-    }
+    private static record ConditionContainer(Network thenNetwork, Label.ConditionLabel.ThenLabel thenLabel,
+                                             Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel) { }
 
     /**
      * Checks if the entire network has terminated.
@@ -435,14 +417,7 @@ public class GraphBuilder {
     /**
      * Simple class to store a network "n" and a label "l"
      */
-    private static class CommunicationContainer{
-        Network targetNetwork;
-        Label.InteractionLabel label;
-        public CommunicationContainer(Network n, Label.InteractionLabel l){
-            targetNetwork = n;
-            label = l;
-        }
-    }
+    private static record CommunicationContainer(Network targetNetwork, Label.InteractionLabel label){ }
 
     /**
      * If the ProcessTerm's main Behaviour is ProcedureInvocation, the main Behaviour is replaced by its procedure definition recursively, until it is no longer a ProcedureInvocation.

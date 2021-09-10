@@ -93,19 +93,6 @@ public abstract class Label {
             this.expression = expression;
             labelType = type;
         }
-        @Override
-        public int hashCode(){                      //Not needed, but here for completion
-            return Objects.hash(sender,receiver,expression);
-        }
-        @Override
-        public boolean equals(Object other){        //Needed for multicom
-            if (other == null)
-                return false;
-            if (getClass() != other.getClass())
-                return false;
-            var otherLabel = (InteractionLabel)other;
-            return sender.equals(otherLabel.sender) && receiver.equals(otherLabel.receiver) && expression.equals(otherLabel.expression);
-        }
 
         public static class CommunicationLabel extends InteractionLabel {
             public CommunicationLabel(String sender, String receiver, String expression) {
