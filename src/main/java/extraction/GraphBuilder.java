@@ -14,8 +14,9 @@ import static extraction.network.Behaviour.Action.SEND;
  * The graph is intended to be used for choreography extraction.
  */
 public class GraphBuilder {
-    private Strategy strategy;
+    private final Strategy strategy;
     private GraphExpander expander;
+    public boolean enableMulticom = false;
 
     enum BuildGraphResult{
         OK, BAD_LOOP, FAIL
@@ -129,6 +130,9 @@ public class GraphBuilder {
         }
         if (allTerminated(processes))
             return BuildGraphResult.OK;
+
+        if (!enableMulticom)
+            return BuildGraphResult.FAIL;
 
         //Not a 100% sure why multicom is down here, and not in the loop with Communication and Conditional
         //At least it allows the assumption that no synchronized communication is possible

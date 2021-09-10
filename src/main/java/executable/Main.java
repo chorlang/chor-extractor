@@ -1,18 +1,12 @@
 package executable;
 
-import extraction.Extraction;
-import extraction.Label;
-import extraction.Strategy;
-import extraction.choreography.*;
-import extraction.choreography.Selection;
+import extraction.*;
 import extraction.network.*;
-import extraction.network.Termination;
 import parsing.Parser;
-import utility.Pair;
 
-import java.util.Objects;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public class Main {
     static String testNetwork =
             "c { def X {a!<pwd>; a&{ok: s?; stop, ko: X}} main {X}} | " +
@@ -37,6 +31,9 @@ public class Main {
     static String offering2 =
             "a { def X {b!<msg>; b&{ok: stop, ko: X}} main {X}}" +
                     "| b { def X {a?; if a then a+ok; stop else a+ko; X} main {X}}";
+    static String offeringAsync =
+            "a { def X {b!<msg>; b!<msg2>; b&{ok: stop, ko: X}} main {X}}" +
+                    "| b { def X {a?; if a then a+ok; a?; stop else a+ko; a?; X} main {X}}";
     static String loop =
             "a { def X {b!<msg>; X} main {X}}" +
                     "| b { def X {a?; X} main {X}}";
@@ -60,7 +57,7 @@ public class Main {
         System.out.println("Hello World");
 
         //*
-        String networksString = alt2bit;
+        String networksString = offeringAsync;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
