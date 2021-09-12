@@ -18,7 +18,9 @@ public abstract class Behaviour implements TreeHost<Behaviour> {
         SEND,
         TERMINATION,
         NETWORK,
-        PROCESS_TERM
+        PROCESS_TERM,
+        ACQUAINT,
+        FAMILIARIZE
     }
 
     /**

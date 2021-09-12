@@ -6,6 +6,7 @@ import antlrgen.NetworkParser.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
     static Network toNetwork(NetworkContext parseTree){
@@ -54,6 +55,20 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
             labeledBehaviours.put(label.expression().getText(), visit(label.behaviour()));
         }
         return new Offering(ctx.process().getText(), labeledBehaviours);
+    }
+
+    @Override public Behaviour visitAcquaint(AcquaintContext ctx){
+        List<ProcessContext> processContexts = ctx.process();
+        ProcessContext pc1 = processContexts.get(0);
+        ProcessContext pc2 = processContexts.get(1);
+        return new Acquaint(pc1.getText(), pc2.getText(), visit(ctx.behaviour()));
+    }
+
+    @Override public Behaviour visitFamiliarize(FamiliarizeContext ctx){
+        List<ProcessContext> processContexts = ctx.process();
+        ProcessContext snd = processContexts.get(0);
+        ProcessContext pid = processContexts.get(1);
+        return new Familiarize(snd.getText(), pid.getText(), visit(ctx.behaviour()));
     }
 
     @Override public Behaviour visitCondition(ConditionContext ctx){
