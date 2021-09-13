@@ -23,7 +23,7 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return this.visit(tree);
     }
 
-    @Override public ChoreographyBody  visitCommunication(CommunicationContext ctx) {
+    @Override public ChoreographyBody visitCommunication(CommunicationContext ctx) {
         var sender = ctx.process(0).getText();
         var receiver = ctx.process(1).getText();
         var expression = ctx.expression().getText();
@@ -36,7 +36,7 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return new Communication(sender, receiver, expression, (ChoreographyBody)continuation);
     }
 
-    @Override public ChoreographyBody  visitSelection(SelectionContext ctx) {
+    @Override public ChoreographyBody visitSelection(SelectionContext ctx) {
         var sender = ctx.process(0).getText();
         var receiver = ctx.process(1).getText();
         var expression = ctx.expression().getText();
@@ -49,7 +49,17 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return new Selection(sender, receiver, expression, (ChoreographyBody)continuation);
     }
 
-    @Override public ChoreographyBody  visitCondition(ConditionContext ctx) {
+    @Override public ChoreographyBody visitIntroduction(IntroductionContext ctx){
+        List<ProcessContext> processes = ctx.process();
+        String introducer = processes.get(0).getText();
+        String process1 = processes.get(1).getText();
+        String process2 = processes.get(2).getText();
+        ChoreographyASTNode continuation = visit(ctx.behaviour());
+
+        return new Introduction(introducer, process1, process2, (ChoreographyBody) continuation);
+    }
+
+    @Override public ChoreographyBody visitCondition(ConditionContext ctx) {
         var process = ctx.process().getText();
         var expression = ctx.expression().getText();
 
@@ -61,13 +71,13 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return new Condition(process, expression, (ChoreographyBody)thenChoreography, (ChoreographyBody)elseChoreography);
     }
 
-    @Override public ChoreographyASTNode  visitChoreography(ChoreographyContext ctx) {
+    @Override public ChoreographyASTNode visitChoreography(ChoreographyContext ctx) {
         var procedures = new ArrayList<ProcedureDefinition>();
         ctx.procedureDefinition().stream().forEach(i -> procedures.add((ProcedureDefinition)visit(i)));
         return new Choreography((ChoreographyBody)visit(ctx.main()), procedures, processesInChoreography.get(iteration));
     }
 
-    @Override public ChoreographyASTNode  visitProgram(ProgramContext ctx) {
+    @Override public ChoreographyASTNode visitProgram(ProgramContext ctx) {
         var choreographyList = new ArrayList<Choreography>();
         for (var choreography : ctx.choreography()){
             processesInChoreography.add(new HashSet<>());
@@ -77,20 +87,20 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
         return new Program(choreographyList, new ArrayList<>());
     }
 
-    @Override public ChoreographyASTNode  visitProcedureDefinition(ProcedureDefinitionContext ctx) {
+    @Override public ChoreographyASTNode visitProcedureDefinition(ProcedureDefinitionContext ctx) {
         return new ProcedureDefinition(ctx.procedure().getText(), (ChoreographyBody)visit(ctx.behaviour()), processesInChoreography.get(iteration));
     }
 
-    @Override public ChoreographyASTNode  visitMain(MainContext ctx) {
+    @Override public ChoreographyASTNode visitMain(MainContext ctx) {
         return visit(ctx.behaviour());
     }
 
-    @Override public ChoreographyASTNode  visitProcedureInvocation(ProcedureInvocationContext ctx) {
+    @Override public ChoreographyASTNode visitProcedureInvocation(ProcedureInvocationContext ctx) {
         var procedureName = ctx.procedure().getText();
         return new ProcedureInvocation(procedureName);
     }
 
-    @Override public ChoreographyASTNode  visitTerminal(TerminalNode node) {
+    @Override public ChoreographyASTNode visitTerminal(TerminalNode node) {
         return Termination.getInstance();
     }
     
