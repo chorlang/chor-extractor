@@ -1,10 +1,17 @@
 package executable;
 
-import extraction.*;
+import extraction.Extraction;
+import extraction.Strategy;
+import extraction.choreography.Program;
 import extraction.network.*;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DefaultUndirectedGraph;
 import parsing.Parser;
 
-import java.util.Set;
+import java.util.*;
+
+import static java.util.List.of;
 
 @SuppressWarnings("unused")
 public class Main {
@@ -52,12 +59,22 @@ public class Main {
     static String multicomUnfolding =
             "a{def X {b?; stop} main {b!<msg>; X}} |"+
                     "b { main {a!<msg2>; a?; stop}}";
+    static String acquaint =
+            "a { main { b<->c; stop}} |" +
+                    "b { main { a?c; stop}} |" +
+                    "c { main {a?b; stop}}";
+    static String introductionTest =
+            "main {a.e->b; a.b<->c; stop}";
 
     public static void main(String []args){
         System.out.println("Hello World");
 
+        /*
+        String chorString = introductionTest;
+        Program chor = Parser.stringToProgram(introductionTest);
+        System.out.println(chor.toString());*/
         //*
-        String networksString = offeringAsync;
+        String networksString = acquaint;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
@@ -66,7 +83,66 @@ public class Main {
         System.out.println(chor);
         //*/
 
+        /*int initial = 200;
+        int end = 400;
+        var processes = new ArrayList<String>(initial);
+        for (int i = 0; i < initial; i++){
+            processes.add(Integer.toString(i));
+        }
+        //var adjMatrix = new AdjacencyMatrix(processes);
+        var adjMatrix = new graphContainer(processes);
+        int counter = 0;
+        var rand = new Random();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 20000; i++){
+            if (adjMatrix.get(String.valueOf(rand.nextInt(initial)), String.valueOf(rand.nextInt(initial))))
+                counter++;
+        }
+        for (int i = initial; i < end; i++){
+            String spawned = Integer.toString(i);
+            adjMatrix.spawn(String.valueOf(rand.nextInt(i)), spawned);
+            for (int j = 0; j < 10; j++){
+                adjMatrix.introduce(spawned, String.valueOf(rand.nextInt(i)));
+            }
+            for (int j = 0; j < 1000; j++){
+                if (adjMatrix.get(String.valueOf(rand.nextInt(i)), String.valueOf(rand.nextInt(i))))
+                    counter++;
+            }
+
+        }
+        long stop = System.currentTimeMillis();
+        System.out.println(stop-start);*/
     }
+
+    public static class graphContainer{
+        private Graph<String, DefaultEdge> graph = new DefaultUndirectedGraph<>(DefaultEdge.class);
+        public graphContainer(List<String> processNames){
+            for (String processName : processNames) {
+                graph.addVertex(processName);
+            }
+            for (String processa : processNames){
+                for (String processb : processNames){
+                    graph.addEdge(processa, processb);
+                }
+            }
+        }
+
+        public void spawn(String parent, String child){
+            graph.addVertex(child);
+            introduce(parent, child);
+
+        }
+
+        public void introduce(String p, String q){
+            graph.addEdge(p,q);
+        }
+
+        public boolean get(String p, String q){
+            return graph.containsEdge(p,q);
+        }
+    }
+
+
 
     static void checkEquals(Behaviour b){
         var copy = b.copy();

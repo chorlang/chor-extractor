@@ -9,7 +9,7 @@ import java.util.Objects;
 public abstract class Label {
 
     public enum LabelType{
-        THEN, ELSE, COMMUNICATION, SELECTION, MULTICOM
+        THEN, ELSE, COMMUNICATION, SELECTION, MULTICOM, INTRODUCTION
     }
 
     public abstract Label copy();
@@ -20,6 +20,20 @@ public abstract class Label {
 
     public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
     public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
+
+    public static class IntroductionLabel extends Label{
+        public String introducer, process1, process2;
+        public IntroductionLabel(String introducer, String process1, String process2){
+            this.introducer = introducer;
+            this.process1 = process1;
+            this.process2 = process2;
+            labelType = LabelType.INTRODUCTION;
+        }
+        @Override
+        public Label copy() {
+            return new IntroductionLabel(introducer, process1, process2);
+        }
+    }
 
     public static class MulticomLabel extends Label{
         public final List<InteractionLabel> communications;

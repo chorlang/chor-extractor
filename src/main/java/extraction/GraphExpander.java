@@ -49,6 +49,37 @@ public class GraphExpander {
         return graph;
     }
 
+        /* ====================================================================
+        Code for building Introductions
+       ==================================================================== */
+
+    BuildGraphResult buildIntroduction(Network targetNetwork, Label.IntroductionLabel label, ConcreteNode currentNode){
+        var targetMarking = new HashMap<>(currentNode.marking);
+        targetMarking.put(label.introducer, true);
+        targetMarking.put(label.process1, true);
+        targetMarking.put(label.process2, true);
+        if (!targetMarking.containsValue(false))
+            flipAndResetMarking(label, targetMarking, targetNetwork);
+
+        //If the node already exists in the graph, add a new edge.
+        //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
+        ConcreteNode node = findNodeInGraph(targetNetwork, targetMarking, currentNode);
+        if (node != null){
+            if (addEdgeToGraph(currentNode, node, label))
+                return BuildGraphResult.OK;
+            else
+                return BuildGraphResult.BAD_LOOP;
+        }
+
+        //Create a new node, and add it, and an edge to the graph.
+        //If it fails, remove the node before returning.
+        node = createNode(targetNetwork, label, currentNode, targetMarking);
+        addNodeAndEdgeToGraph(currentNode, node, label);
+        BuildGraphResult result = parent.buildGraph(node);
+        if (result != BuildGraphResult.OK)
+            removeNodeFromGraph(node);
+        return result;
+    }
 
     /* ====================================================================
         Code for building communications

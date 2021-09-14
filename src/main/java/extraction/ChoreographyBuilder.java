@@ -51,14 +51,22 @@ public class ChoreographyBuilder {
                 Label edge = edges.iterator().next();
                 if (edge.labelType == Label.LabelType.COMMUNICATION) {
                     var comm = (Label.InteractionLabel.CommunicationLabel) edge;
-                    return new Communication(comm.sender, comm.receiver, comm.expression, buildChoreographyBody(graph.getEdgeTarget(edge)));
+                    return new Communication(comm.sender, comm.receiver, comm.expression,
+                            buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
                 if (edge.labelType == Label.LabelType.SELECTION) {
                     var select = (Label.InteractionLabel.SelectionLabel) edge;
-                    return new Selection(select.receiver, select.sender, select.expression, buildChoreographyBody(graph.getEdgeTarget(edge)));
+                    return new Selection(select.receiver, select.sender, select.expression,
+                            buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
                 if (edge.labelType == Label.LabelType.MULTICOM) {
-                    return new Multicom(((Label.MulticomLabel)edge).communications, buildChoreographyBody(graph.getEdgeTarget(edge)));
+                    return new Multicom(((Label.MulticomLabel)edge).communications,
+                            buildChoreographyBody(graph.getEdgeTarget(edge)));
+                }
+                if (edge.labelType == Label.LabelType.INTRODUCTION) {
+                    var introduction = (Label.IntroductionLabel) edge;
+                    return new Introduction(introduction.introducer, introduction.process1, introduction.process2,
+                            buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
                 throw new IllegalStateException("Unary edge in graph, but not of type Communication or Selection. Is of type: " + edge.getClass().getName());
             }
@@ -68,7 +76,9 @@ public class ChoreographyBuilder {
                     labels = new Label[]{labels[1], labels[0]};
                 var thenLabel = (Label.ConditionLabel.ThenLabel) labels[0];
                 var elseLabel = (Label.ConditionLabel.ElseLabel) labels[1];
-                return new Condition(thenLabel.process, thenLabel.expression, buildChoreographyBody(graph.getEdgeTarget(thenLabel)), buildChoreographyBody(graph.getEdgeTarget(elseLabel)));
+                return new Condition(thenLabel.process, thenLabel.expression,
+                        buildChoreographyBody(graph.getEdgeTarget(thenLabel)),
+                        buildChoreographyBody(graph.getEdgeTarget(elseLabel)));
             }
             default -> throw new IllegalStateException("Bad graph. A node has more than 2 outgoing edges.");
         }

@@ -6,8 +6,6 @@ import org.jgrapht.graph.DirectedPseudograph;
 
 import java.util.*;
 
-import static extraction.network.Behaviour.Action.SEND;
-
 /**
  * Class for extracting a graph from a Network using a specific extraction strategy.
  * The graph symbolises the networks states throughout execution, and the communication between the extraction.network's processes.
@@ -38,7 +36,10 @@ public class GraphBuilder {
      */
     public ExecutionGraphResult buildExecutionGraph(Network n, Set<String> services){
         var marking = new HashMap<String, Boolean>();
-        n.processes.forEach((processName, processTerm) -> marking.put(processName, processTerm.main.getAction() == Behaviour.Action.TERMINATION || services.contains(processName)));
+        n.processes.forEach((processName, processTerm) -> marking.put(
+                processName,
+                processTerm.main.getAction() == Behaviour.Action.TERMINATION || services.contains(processName))
+        );
         var node = new ConcreteNode(n,"0", 0, new HashSet<>(), marking);
         expander = new GraphExpander(services, this, node);
 
@@ -104,7 +105,22 @@ public class GraphBuilder {
                 unfoldedProcessesCopy.remove(label.receiver);
                 fold(unfoldedProcessesCopy, targetNetwork, currentNode);
 
-                var result = expander.buildCommunication(targetNetwork, label, currentNode);
+                BuildGraphResult result = expander.buildCommunication(targetNetwork, label, currentNode);
+                if (result == BuildGraphResult.BAD_LOOP)
+                    continue;
+                return result;
+            }
+
+            IntroductionContainer introduction = findIntroduction(processes, processName);
+            if (introduction != null){
+                Network targetNetwork = introduction.targetNetwork;
+                var label = introduction.label;
+                unfoldedProcessesCopy.remove(label.introducer);
+                unfoldedProcessesCopy.remove(label.process1);
+                unfoldedProcessesCopy.remove(label.process2);
+                fold(unfoldedProcesses, targetNetwork, currentNode);
+
+                BuildGraphResult result = expander.buildIntroduction(targetNetwork, label, currentNode);
                 if (result == BuildGraphResult.BAD_LOOP)
                     continue;
                 return result;
@@ -122,7 +138,7 @@ public class GraphBuilder {
                 fold(unfoldedProcessesCopy, thenNetwork, currentNode);
                 fold(unfoldedProcessesCopy, elseNetwork, currentNode);
 
-                var result = expander.buildConditional(thenNetwork, thenLabel, elseNetwork, elseLabel, currentNode);
+                BuildGraphResult result = expander.buildConditional(thenNetwork, thenLabel, elseNetwork, elseLabel, currentNode);
                 if (result == BuildGraphResult.BAD_LOOP)
                     continue;
                 return result;
@@ -157,6 +173,30 @@ public class GraphBuilder {
         return BuildGraphResult.FAIL;
     }
 
+    private IntroductionContainer findIntroduction(HashMap<String, ProcessTerm> processes, String processName){
+        processes = copyProcesses(processes);                       //Replace variable reference with a copy of the network
+        var processTerm = processes.get(processName);   //Initial interaction
+        if (!(processTerm.main instanceof Acquaint acquaint))       //Introduction cannot be found if behaviour is not acquaint
+            return null;
+        //var processTerm now has Acquaint as main behaviour
+
+        ProcessTerm p1 = processes.get(acquaint.process1);
+        ProcessTerm p2 = processes.get(acquaint.process2);
+        if (!(p1.main instanceof Familiarize fam1 && fam1.sender.equals(processName) &&
+                p2.main instanceof Familiarize fam2 && fam2.sender.equals(processName)))
+            return null; //Main behaviours of communication do not match
+
+        //Progress the network
+        //This can be done directly, as we are already working on a copy.
+        processTerm.main = acquaint.continuation;
+        p1.main = fam1.continuation;
+        p2.main = fam2.continuation;
+        var label = new Label.IntroductionLabel(processName, acquaint.process1, acquaint.process2);
+        return new IntroductionContainer(new Network(processes), label);
+    }
+
+    private static record IntroductionContainer(Network targetNetwork, Label.IntroductionLabel label) { }
+
     /**
      * Tries to create a multicom involving the main behaviour of a process.
      * Will only attempt if the main behaviour is Send or Selection.
@@ -169,7 +209,7 @@ public class GraphBuilder {
         var processes = copyProcesses(processMap);  //Copy safe to modify
         var processTerm = processes.get(processName);             //Initial interaction
         var type = processTerm.main.getAction();
-        if (!(type == SEND || type == Behaviour.Action.SELECTION))              //Only start multicom by send or select
+        if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION))              //Only start multicom by send or select
             return null;
 
         var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
@@ -216,9 +256,6 @@ public class GraphBuilder {
 
                 //The sender is the receiver, because we are adding a send action that must be done before receiving
                 var label = createInteractionLabel(next.receiver, blocking);
-                //!!!Possible bug. Uncomment the below "if" if multicom has duplicate interactions!!!
-                //The "waiting.add(label);" is the body of the "if" statement
-                //if (!actions.contains(label))                   //Add blocking interaction, if not already in actions
                 waiting.add(label);
                 blocking = continuation;                        //Look at the next interaction
                 processTerm.main = continuation;                //Update network state to have already sent/selected
@@ -335,7 +372,7 @@ public class GraphBuilder {
             case RECEIVE -> {
                 String sendingProcessName = ((Receive) main).sender;
                 ProcessTerm senderTerm = processes.get(sendingProcessName);
-                if (senderTerm.main.getAction() == SEND &&
+                if (senderTerm.main.getAction() == Behaviour.Action.SEND &&
                         ((Send) senderTerm.main).receiver.equals(processName)) {
                     return consumeCommunication(processes, senderTerm, processTerm);
                 }
