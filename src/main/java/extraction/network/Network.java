@@ -1,17 +1,31 @@
 package extraction.network;
 
+import executable.AdjacencyMatrix;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 
 public class Network extends Behaviour {
     public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
+    public AdjacencyMatrix acquaintances;
 
     /**
      * A Network object stores a mapping from process names to process terms (procedures).
      * @param processes HashMap&lt;String, ProcessTerm&gt; where the String is the process name
+     * @param acquaintances Which processes are aware of each other, and able to communicate
+     */
+    public Network(HashMap<String, ProcessTerm> processes, AdjacencyMatrix acquaintances){
+        this.processes = processes;
+        this.acquaintances = acquaintances;
+    }
+    /**
+     * A Network object stores a mapping from process names to process terms (procedures).
+     * Assumes all processes are aware of each other
+     * @param processes HashMap&lt;String, ProcessTerm&gt; where the String is the process name
      */
     public Network(HashMap<String, ProcessTerm> processes){
-        this.processes = processes;
+        this(processes, new AdjacencyMatrix(processes.keySet().stream().toList()));
     }
 
     /**
@@ -36,7 +50,7 @@ public class Network extends Behaviour {
     public Network copy(){
         HashMap<String, ProcessTerm> processesCopy = new HashMap<>(processes.size());
         processes.forEach((key, value) -> processesCopy.put(key, value.copy()));
-        return new Network(processesCopy);
+        return new Network(processesCopy, acquaintances.copy());
     }
 
     /**

@@ -1,5 +1,6 @@
 package extraction;
 
+import executable.AdjacencyMatrix;
 import extraction.network.*;
 import extraction.Node.*;
 import org.jgrapht.graph.DirectedPseudograph;
@@ -71,6 +72,7 @@ public class GraphBuilder {
     BuildGraphResult buildGraph(ConcreteNode currentNode){
         HashSet<String> unfoldedProcesses = new HashSet<>();
         LinkedHashMap<String, ProcessTerm> processes = copyAndSortProcesses(currentNode);
+        AdjacencyMatrix known = currentNode.network.acquaintances;  //Which processes are known to each other
 
         processes.forEach((processName, processTerm) -> {
             if (unfold(processTerm))
@@ -97,7 +99,7 @@ public class GraphBuilder {
 
             //Check if the next action of the process is to send/receive/select/offer
             //and that the next action of the other process of the interaction matches the communication
-            CommunicationContainer communication = findCommunication(processes, processName, processTerm);
+            CommunicationContainer communication = findCommunication(processes, processName, processTerm, known);
             if (communication != null){
                 Network targetNetwork = communication.targetNetwork;
                 var label = communication.label;
@@ -111,7 +113,7 @@ public class GraphBuilder {
                 return result;
             }
 
-            IntroductionContainer introduction = findIntroduction(processes, processName);
+            IntroductionContainer introduction = findIntroduction(processes, processName, known);
             if (introduction != null){
                 Network targetNetwork = introduction.targetNetwork;
                 var label = introduction.label;
@@ -127,7 +129,7 @@ public class GraphBuilder {
             }
 
 
-            ConditionContainer conditional = findConditional(processes, processName, processTerm);
+            ConditionContainer conditional = findConditional(processes, processName, processTerm, known);
             if (conditional != null){
                 Network thenNetwork = conditional.thenNetwork;
                 Network elseNetwork = conditional.elseNetwork;
@@ -156,7 +158,7 @@ public class GraphBuilder {
             String processName = entry.getKey();
             HashSet<String> unfoldedProcessesCopy = new HashSet<>(unfoldedProcesses);
 
-            MulticomContainer multicom = findMulticom(processes, processName);
+            MulticomContainer multicom = findMulticom(processes, processName, known);
             if (multicom == null)           //If this process does not start a valid multicom, try the next one
                 continue;
 
@@ -173,8 +175,9 @@ public class GraphBuilder {
         return BuildGraphResult.FAIL;
     }
 
-    private IntroductionContainer findIntroduction(HashMap<String, ProcessTerm> processes, String processName){
+    private IntroductionContainer findIntroduction(HashMap<String, ProcessTerm> processes, String processName, AdjacencyMatrix known){
         processes = copyProcesses(processes);                       //Replace variable reference with a copy of the network
+        known = known.copy();
         var processTerm = processes.get(processName);   //Initial interaction
         if (!(processTerm.main instanceof Acquaint acquaint))       //Introduction cannot be found if behaviour is not acquaint
             return null;
@@ -185,14 +188,17 @@ public class GraphBuilder {
         if (!(p1.main instanceof Familiarize fam1 && fam1.sender.equals(processName) &&
                 p2.main instanceof Familiarize fam2 && fam2.sender.equals(processName)))
             return null; //Main behaviours of communication do not match
+        if (!known.isIntroduced(processName, acquaint.process1) || !known.isIntroduced(processName, acquaint.process2))
+            return null; //Introducing process needs to know the introductees
 
         //Progress the network
         //This can be done directly, as we are already working on a copy.
         processTerm.main = acquaint.continuation;
         p1.main = fam1.continuation;
         p2.main = fam2.continuation;
+        known.introduce(acquaint.process1, acquaint.process2);
         var label = new Label.IntroductionLabel(processName, acquaint.process1, acquaint.process2);
-        return new IntroductionContainer(new Network(processes), label);
+        return new IntroductionContainer(new Network(processes, known), label);
     }
 
     private static record IntroductionContainer(Network targetNetwork, Label.IntroductionLabel label) { }
@@ -205,8 +211,10 @@ public class GraphBuilder {
      * @return A dataclass storing the label representing the multicom, the network resulting form the multicom,
      * and the names of all participating processes, or null if no multicom culd be created
      */
-    private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName) {
+    //TODO: Implement introductions. Implement restrictions to introductions based on adjacency matrix
+    private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
         var processes = copyProcesses(processMap);  //Copy safe to modify
+        known = known.copy();
         var processTerm = processes.get(processName);             //Initial interaction
         var type = processTerm.main.getAction();
         if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION))              //Only start multicom by send or select
@@ -276,7 +284,7 @@ public class GraphBuilder {
         }
         //Now actions contains all interactions of the multicom
         //Return the updated network, list of interactions, and involved processes
-        return new MulticomContainer(new Network(processes), new Label.MulticomLabel(actions), actors);
+        return new MulticomContainer(new Network(processes, known), new Label.MulticomLabel(actions), actors);
     }
 
     /**
@@ -311,7 +319,7 @@ public class GraphBuilder {
      * @param processTerm The ProcessTerm currently being prospected for conditional action.
      * @return A ConditionContainer with labels and Networks resulting from the then case, and else case.
      */
-    private ConditionContainer findConditional(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm){
+    private ConditionContainer findConditional(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm, AdjacencyMatrix known){
         if (processTerm.main.getAction() != Behaviour.Action.CONDITION)
             return null;
 
@@ -323,9 +331,9 @@ public class GraphBuilder {
         elseProcessMap.replace(processName, new ProcessTerm(processTerm.procedures, conditional.elseBehaviour));
 
         return new ConditionContainer(
-                new Network(thenProcessMap),
+                new Network(thenProcessMap, known),
                 new Label.ConditionLabel.ThenLabel(processName, conditional.expression),
-                new Network(elseProcessMap),
+                new Network(elseProcessMap, known),
                 new Label.ConditionLabel.ElseLabel(processName, conditional.expression)
         );
     }
@@ -358,39 +366,43 @@ public class GraphBuilder {
      * @param processTerm The processTerm for the process currently being prospected for communication
      * @return A CommunicationContainer with the Label and Network resulting from executing the next action in the ProcessTerm, or null if that action is not related to communication.
      */
-    private CommunicationContainer findCommunication(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm){
+    private CommunicationContainer findCommunication(HashMap<String, ProcessTerm> processes, String processName, ProcessTerm processTerm, AdjacencyMatrix known){
         Behaviour main = processTerm.main;
         switch (main.getAction()) {
             case SEND -> {
                 String recipientProcessName = ((Send) main).receiver;
                 ProcessTerm receiveTerm = processes.get(recipientProcessName);
                 if (receiveTerm.main.getAction() == Behaviour.Action.RECEIVE &&
-                        ((Receive) receiveTerm.main).sender.equals(processName)) {
-                    return consumeCommunication(processes, processTerm, receiveTerm);
+                        ((Receive) receiveTerm.main).sender.equals(processName) &&
+                        known.isIntroduced(processName, ((Send) main).receiver)) {
+                    return consumeCommunication(processes, processTerm, receiveTerm, known);
                 }
             }
             case RECEIVE -> {
                 String sendingProcessName = ((Receive) main).sender;
                 ProcessTerm senderTerm = processes.get(sendingProcessName);
                 if (senderTerm.main.getAction() == Behaviour.Action.SEND &&
-                        ((Send) senderTerm.main).receiver.equals(processName)) {
-                    return consumeCommunication(processes, senderTerm, processTerm);
+                        ((Send) senderTerm.main).receiver.equals(processName) &&
+                        known.isIntroduced(processName, ((Receive) main).sender)) {
+                    return consumeCommunication(processes, senderTerm, processTerm, known);
                 }
             }
             case SELECTION -> {
                 String offeringProcessName = ((Selection) main).receiver;
                 ProcessTerm offerTerm = processes.get(offeringProcessName);
                 if (offerTerm.main.getAction() == Behaviour.Action.OFFERING &&
-                        ((Offering) offerTerm.main).sender.equals(processName)) {
-                    return consumeSelection(processes, offerTerm, processTerm);
+                        ((Offering) offerTerm.main).sender.equals(processName) &&
+                        known.isIntroduced(processName, ((Selection) main).receiver)) {
+                    return consumeSelection(processes, offerTerm, processTerm, known);
                 }
             }
             case OFFERING -> {
                 String selectingProcessName = ((Offering) main).sender;
                 ProcessTerm selectionTerm = processes.get(selectingProcessName);
                 if (selectionTerm.main.getAction() == Behaviour.Action.SELECTION &&
-                        ((Selection) selectionTerm.main).receiver.equals(processName)) {
-                    return consumeSelection(processes, processTerm, selectionTerm);
+                        ((Selection) selectionTerm.main).receiver.equals(processName) &&
+                        known.isIntroduced(processName, ((Offering) main).sender)) {
+                    return consumeSelection(processes, processTerm, selectionTerm, known);
                 }
             }
         }
@@ -404,7 +416,7 @@ public class GraphBuilder {
      * @param receiveTerm The processTerm of the process with the receive action.
      * @return Object storing the label of the communication, and the network resulting form the communication.
      */
-    private CommunicationContainer consumeCommunication(HashMap<String, ProcessTerm> processes, ProcessTerm sendTerm, ProcessTerm receiveTerm){
+    private CommunicationContainer consumeCommunication(HashMap<String, ProcessTerm> processes, ProcessTerm sendTerm, ProcessTerm receiveTerm, AdjacencyMatrix known){
         var processesCopy = copyProcesses(processes);
         Send sender = (Send)sendTerm.main;
         Receive receiver = (Receive)receiveTerm.main;
@@ -415,7 +427,7 @@ public class GraphBuilder {
 
         var label = new Label.InteractionLabel.CommunicationLabel(receiver.sender, sender.receiver, sender.expression);
 
-        return new CommunicationContainer(new Network(processesCopy), label);
+        return new CommunicationContainer(new Network(processesCopy, known), label);
     }
 
     /**
@@ -425,7 +437,7 @@ public class GraphBuilder {
      * @param selectTerm The processTerm of the process with the select action.
      * @return Object storing the label of the selection, and the network resulting form the selection.
      */
-    private CommunicationContainer consumeSelection(HashMap<String, ProcessTerm> processes, ProcessTerm offerTerm, ProcessTerm selectTerm){
+    private CommunicationContainer consumeSelection(HashMap<String, ProcessTerm> processes, ProcessTerm offerTerm, ProcessTerm selectTerm, AdjacencyMatrix known){
         var processesCopy = copyProcesses(processes);
         Selection selector = (Selection)selectTerm.main;
         Offering offer = (Offering)offerTerm.main;
@@ -439,7 +451,7 @@ public class GraphBuilder {
 
         var label = new Label.InteractionLabel.SelectionLabel(selector.receiver, offer.sender, selector.label);
 
-        return new CommunicationContainer(new Network(processesCopy), label);
+        return new CommunicationContainer(new Network(processesCopy, known), label);
     }
 
     /**

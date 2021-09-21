@@ -21,6 +21,7 @@ public class Extraction {
         extractionStrategy = strategy;
     }
 
+    //TODO: Use the builder pattern to clean up this atrocity
     public static Program extractChoreography(String networkDescription){
         return extractChoreography(networkDescription, Strategy.Default);
     }
@@ -52,7 +53,9 @@ public class Extraction {
         System.out.println("The input network has successfully been split into parallel independent networks");
 
         List<ChorStatsPair> results = Collections.synchronizedList(new ArrayList<>());
-        parallelNetworks.parallelStream().forEach(net -> results.add(extract(net, services)));
+        parallelNetworks.parallelStream().forEach(net -> {
+            results.add(extract(net, services));
+        });
 
         results.sort(new ResultSorter());
 
