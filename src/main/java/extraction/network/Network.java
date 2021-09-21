@@ -1,9 +1,8 @@
 package extraction.network;
 
-import executable.AdjacencyMatrix;
+import extraction.AdjacencyMatrix;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.TreeMap;
 
 public class Network extends Behaviour {

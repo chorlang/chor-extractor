@@ -1,6 +1,5 @@
 package extraction;
 
-import executable.AdjacencyMatrix;
 import extraction.network.*;
 import extraction.Node.*;
 import org.jgrapht.graph.DirectedPseudograph;
@@ -211,7 +210,7 @@ public class GraphBuilder {
      * @return A dataclass storing the label representing the multicom, the network resulting form the multicom,
      * and the names of all participating processes, or null if no multicom culd be created
      */
-    //TODO: Implement introductions. Implement restrictions to introductions based on adjacency matrix
+    //TODO: Implement introductions.
     private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
         var processes = copyProcesses(processMap);  //Copy safe to modify
         known = known.copy();
