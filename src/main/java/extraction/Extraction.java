@@ -54,6 +54,7 @@ public class Extraction {
 
         List<ChorStatsPair> results = Collections.synchronizedList(new ArrayList<>());
         parallelNetworks.parallelStream().forEach(net -> {
+            //net.acquaintances.matrix.get(1).set(0, Boolean.FALSE);    //Test only known processes may interact
             results.add(extract(net, services));
         });
 

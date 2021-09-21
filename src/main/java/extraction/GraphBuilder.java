@@ -223,7 +223,10 @@ public class GraphBuilder {
         var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
         var actors = new HashSet<String>();                     //List of participating processes
         var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
-        waiting.add(createInteractionLabel(processName, processTerm.main));     //Initial queue interaction
+        var initialInteraction = createInteractionLabel(processName, processTerm.main);
+        if (!known.isIntroduced(initialInteraction.sender, initialInteraction.receiver))
+            return null;
+        waiting.add(initialInteraction);     //Initial queue interaction
 
         //Change network state so that the "send" part of the interaction has completed
         if (processTerm.main instanceof Send s)
@@ -231,8 +234,8 @@ public class GraphBuilder {
         else if (processTerm.main instanceof Selection s)
             processTerm.main = s.continuation;
 
-        while (waiting.size() > 0) {                             //While there are interactions to process
-            var next = waiting.remove();    //Get next interaction to process
+        while (waiting.size() > 0) {                               //While there are interactions to process
+            var next = waiting.remove();        //Get next interaction to process
             actions.add(next);              //Add to the list of actions of the multicom
             actors.add(next.sender);        //Add involved processes (used for when folding back unused processes)
             actors.add(next.receiver);
@@ -264,6 +267,8 @@ public class GraphBuilder {
 
                 //The sender is the receiver, because we are adding a send action that must be done before receiving
                 var label = createInteractionLabel(next.receiver, blocking);
+                if (!known.isIntroduced(next.receiver, next.sender))
+                    return null;                                //The actors do not know of each other
                 waiting.add(label);
                 blocking = continuation;                        //Look at the next interaction
                 processTerm.main = continuation;                //Update network state to have already sent/selected
