@@ -210,14 +210,13 @@ public class GraphBuilder {
      * @return A dataclass storing the label representing the multicom, the network resulting form the multicom,
      * and the names of all participating processes, or null if no multicom culd be created
      */
-    //TODO: Implement introductions.
     private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
         var processes = copyProcesses(processMap);  //Copy safe to modify
         known = known.copy();
-        var processTerm = processes.get(processName);             //Initial interaction
+        var processTerm = processes.get(processName);            //Initial interaction
         var type = processTerm.main.getAction();
-        if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION))              //Only start multicom by send or select
-            return null;
+        if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION || type == Behaviour.Action.ACQUAINT))
+            return null;                                        //Only start multicom by send or select
 
         var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
         var actors = new HashSet<String>();                     //List of participating processes
@@ -232,46 +231,58 @@ public class GraphBuilder {
             processTerm.main = s.continuation;
         else if (processTerm.main instanceof Selection s)
             processTerm.main = s.continuation;
+        else if (processTerm.main instanceof Acquaint a)
+            processTerm.main = a.continuation;
 
         while (waiting.size() > 0) {                               //While there are interactions to process
             var next = waiting.remove();        //Get next interaction to process
-            actions.add(next);              //Add to the list of actions of the multicom
+            if (next instanceof FamiliarizeLabel fam && fam.isMainInteractionLabel){
+                known.introduce(fam.expression, fam.receiver);
+                actions.add(next);
+            }
+            if (!(next instanceof FamiliarizeLabel))
+                actions.add(next);          //Add to the list of actions of the multicom
             actors.add(next.sender);        //Add involved processes (used for when folding back unused processes)
             actors.add(next.receiver);
+
+            if (!known.isIntroduced(next.receiver, next.sender))
+                return null;                                //The actors do not know of each other
 
             //Add all send/selection actions of the receiving process, which comes before the receiving action
             //Abort if any other behaviours occur before.
             processTerm = processes.get(next.receiver);
             Behaviour blocking = processTerm.main;              //Behaviour blocking the receival of the communication
-            while (!(blocking instanceof Receive || blocking instanceof Offering)){
+            while (!(blocking instanceof Receive || blocking instanceof Offering || blocking instanceof Familiarize)){
                 //Assuming the main behaviour is Send or Selection, find its continuation
                 Behaviour continuation;
-                if (blocking instanceof Send send){
-                    continuation = send.continuation;
-                }
-                else if (blocking instanceof Selection sel){
-                    continuation = sel.continuation;
-                }
-                //Unfold procedure invocation inplace.
-                //Assumes marking and, and folding back procedure invocations handled using the multicom label.
-                else if (blocking instanceof ProcedureInvocation){
-                    unfold(processTerm);
-                    blocking = processTerm.main;
-                    continue;
-                }
-                else{                                           //Multicom not possible for current set of actions
-                    return null;
-                }
-                //Add the send/selection to list of interactions to be processed, then look at its continuation.
+                switch (blocking.getAction()){
+                    case SEND -> //The receiver is the process that 'blocking' is from
+                            continuation = ((Send) blocking).continuation;
+                    case SELECTION ->
+                            continuation = ((Selection) blocking).continuation;
+                    case PROCEDURE_INVOCATION -> {
+                        //Unfold procedure invocation inplace.
+                        //Assumes marking and, and folding back procedure invocations handled using the multicom label.
+                        unfold(processTerm);
+                        blocking = processTerm.main;
+                        continue;
+                    }
+                    case ACQUAINT -> {
+                        var acquaint = ((Acquaint)blocking);
+                        continuation = acquaint.continuation;
 
-                //The sender is the receiver, because we are adding a send action that must be done before receiving
+                        //Add the three-way communication as two two-way communications to be processed
+                        //One here, and one after the switch statement
+                        waiting.add(new FamiliarizeLabel(next.receiver, acquaint.process2, acquaint.process1, false));
+                    }
+                    default -> { return null; } //The blocking behaviour is not something that "sends"
+                }
                 var label = createInteractionLabel(next.receiver, blocking);
-                if (!known.isIntroduced(next.receiver, next.sender))
-                    return null;                                //The actors do not know of each other
+
+                //Add the label to list of interactions to be processed, then look at its continuation.
                 waiting.add(label);
                 blocking = continuation;                        //Look at the next interaction
                 processTerm.main = continuation;                //Update network state to have already sent/selected
-
             }
 
             //Now all send/select actions before the receive/offer has been queued
@@ -283,12 +294,36 @@ public class GraphBuilder {
             else if (next instanceof Label.InteractionLabel.SelectionLabel selection && blocking instanceof Offering offering
                     && selection.sender.equals(offering.sender))
                 processTerm.main = offering.branches.get(selection.expression);
+            else if (next instanceof FamiliarizeLabel introduction && blocking instanceof Familiarize familiarize
+                    && introduction.sender.equals(familiarize.sender)){
+                processTerm.main = familiarize.continuation;
+            }
             else
                 return null;    //Sender and receiver doesn't match
         }
         //Now actions contains all interactions of the multicom
         //Return the updated network, list of interactions, and involved processes
         return new MulticomContainer(new Network(processes, known), new Label.MulticomLabel(actions), actors);
+    }
+    private static class FamiliarizeLabel extends Label.InteractionLabel {
+        final boolean isMainInteractionLabel;   //True, if this label adds an IntroductionLabel to the multicom
+        /**
+         * Create a faux InteractionLabel that is functionally like an IntroductionLabel
+         * But with ordered acquaintees, so that one process is a clear receiver.
+         * Introduction in findMulticom is done by two of these labels. One for each receiver.
+         */
+        FamiliarizeLabel(String introducer, String familiarizingProcess, String introducedProcess, boolean isMain){
+            super(introducer, familiarizingProcess, introducedProcess, LabelType.INTRODUCTION);
+            isMainInteractionLabel = isMain;
+        }
+        @Override
+        public Label copy() {
+            return null;
+        }
+        @Override
+        public String toString() {
+            return String.format("%s.%s<->%s", sender, expression, receiver);
+        }
     }
 
     /**
@@ -298,12 +333,12 @@ public class GraphBuilder {
      * @return An CommunicationLabel or SelectionLabel instance, depending on the instance of the interaction parameter
      */
     private Label.InteractionLabel createInteractionLabel(String sender, Behaviour interaction){
-        if (interaction instanceof Send send){
+        if (interaction instanceof Send send)
             return new Label.InteractionLabel.CommunicationLabel(sender, send.receiver, send.expression);
-        }
-        else if (interaction instanceof Selection select){
+        else if (interaction instanceof Selection select)
             return new Label.InteractionLabel.SelectionLabel(sender, select.receiver, select.label);
-        }
+        else if (interaction instanceof Acquaint acquaint)
+            return new FamiliarizeLabel(sender, acquaint.process1, acquaint.process2, true);
         else{
             throw new IllegalArgumentException("Function createInteractionLabel expects only Send and Selection Behaviours." +
                     " The behaviour " + interaction.toString() + " is of type " + interaction.getAction().toString());

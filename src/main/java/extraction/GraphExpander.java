@@ -21,7 +21,6 @@ public class GraphExpander {
     private int nextNodeID;
     int badLoopCounter = 0;
 
-
     /**
      * GraphExpander is solely intended as an auxiliary for GraphBuilder.
      * This class should not be instantiated outside of GraphBuilder.

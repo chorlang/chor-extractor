@@ -2,7 +2,6 @@ package executable;
 
 import extraction.Extraction;
 import extraction.Strategy;
-import extraction.choreography.Program;
 import extraction.network.*;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
@@ -65,6 +64,10 @@ public class Main {
                     "c { main {a?b; stop}}";
     static String introductionTest =
             "main {a.e->b; a.b<->c; stop}";
+    static String introductionMulticom =
+            "a { main { b<->c; b?; stop}} |" +
+                    "b { main { a!<msg>; a?c; stop}} |" +
+                    "c {main { a?b; stop}}";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -74,7 +77,7 @@ public class Main {
         Program chor = Parser.stringToProgram(introductionTest);
         System.out.println(chor.toString());*/
         //*
-        String networksString = acquaint;
+        String networksString = introductionMulticom;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
@@ -83,19 +86,20 @@ public class Main {
         System.out.println(chor);
         //*/
 
-        /*int initial = 200;
+        /*
+        int initial = 200;
         int end = 400;
         var processes = new ArrayList<String>(initial);
         for (int i = 0; i < initial; i++){
             processes.add(Integer.toString(i));
         }
-        //var adjMatrix = new AdjacencyMatrix(processes);
-        var adjMatrix = new graphContainer(processes);
+        var adjMatrix = new AdjacencyMatrix(processes);
+        //var adjMatrix = new graphContainer(processes);
         int counter = 0;
         var rand = new Random();
         long start = System.currentTimeMillis();
         for (int i = 0; i < 20000; i++){
-            if (adjMatrix.get(String.valueOf(rand.nextInt(initial)), String.valueOf(rand.nextInt(initial))))
+            if (adjMatrix.isIntroduced(String.valueOf(rand.nextInt(initial)), String.valueOf(rand.nextInt(initial))))
                 counter++;
         }
         for (int i = initial; i < end; i++){
@@ -105,13 +109,13 @@ public class Main {
                 adjMatrix.introduce(spawned, String.valueOf(rand.nextInt(i)));
             }
             for (int j = 0; j < 1000; j++){
-                if (adjMatrix.get(String.valueOf(rand.nextInt(i)), String.valueOf(rand.nextInt(i))))
+                if (adjMatrix.isIntroduced(String.valueOf(rand.nextInt(i)), String.valueOf(rand.nextInt(i))))
                     counter++;
             }
 
         }
         long stop = System.currentTimeMillis();
-        System.out.println(stop-start);*/
+        System.out.println(stop-start);//*/
     }
 
     public static class graphContainer{
