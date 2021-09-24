@@ -211,20 +211,38 @@ public class GraphBuilder {
      * and the names of all participating processes, or null if no multicom culd be created
      */
     private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
+        class FamiliarizeLabel extends Label.InteractionLabel {
+            /**
+             * Create a faux InteractionLabel that is functionally like an IntroductionLabel
+             * Introduction in findMulticom is done by two of this label, and one IntroductionLabel
+             */
+            FamiliarizeLabel(String introducer, String familiarizingProcess, String introducedProcess){
+                super(introducer, familiarizingProcess, introducedProcess, LabelType.INTRODUCTION);
+            }
+            @Override
+            public Label copy() {
+                return null;
+            }
+            @Override
+            public String toString() {
+                return String.format("%s.%s<->%s Do not use this class for output", sender, expression, receiver);
+            }
+        }
         var processes = copyProcesses(processMap);  //Copy safe to modify
         known = known.copy();
         var processTerm = processes.get(processName);            //Initial interaction
         var type = processTerm.main.getAction();
         if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION || type == Behaviour.Action.ACQUAINT))
-            return null;                                        //Only start multicom by send or select
+            return null;                                        //Only start multicom by send, acquaint or select
 
         var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
         var actors = new HashSet<String>();                     //List of participating processes
         var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
         var initialInteraction = createInteractionLabel(processName, processTerm.main);
-        if (!known.isIntroduced(initialInteraction.sender, initialInteraction.receiver))
-            return null;
         waiting.add(initialInteraction);     //Initial queue interaction
+        if (!known.isIntroduced(initialInteraction.sender, initialInteraction.receiver) ||
+                initialInteraction instanceof Label.IntroductionLabel intro && !known.isIntroduced(intro.introducer, intro.process2))
+            return null;
 
         //Change network state so that the "send" part of the interaction has completed
         if (processTerm.main instanceof Send s)
@@ -236,12 +254,10 @@ public class GraphBuilder {
 
         while (waiting.size() > 0) {                               //While there are interactions to process
             var next = waiting.remove();        //Get next interaction to process
-            if (next instanceof FamiliarizeLabel fam && fam.isMainInteractionLabel){
-                known.introduce(fam.expression, fam.receiver);
-                actions.add(next);
-            }
             if (!(next instanceof FamiliarizeLabel))
                 actions.add(next);          //Add to the list of actions of the multicom
+            if (next instanceof Label.IntroductionLabel intro)
+
             actors.add(next.sender);        //Add involved processes (used for when folding back unused processes)
             actors.add(next.receiver);
 
@@ -270,14 +286,19 @@ public class GraphBuilder {
                     case ACQUAINT -> {
                         var acquaint = ((Acquaint)blocking);
                         continuation = acquaint.continuation;
+                        if (!known.isIntroduced(next.receiver, acquaint.process2))  //sender->p2 is caught after switch
+                            return null; //Interaction with unfamiliar processes
 
                         //Add the three-way communication as two two-way communications to be processed
                         //One here, and one after the switch statement
-                        waiting.add(new FamiliarizeLabel(next.receiver, acquaint.process2, acquaint.process1, false));
+                        waiting.add(new FamiliarizeLabel(next.receiver, acquaint.process2, acquaint.process1));
+                        actors.add(acquaint.process2); //process2 is the "expression" of the InteractionLabel
                     }
                     default -> { return null; } //The blocking behaviour is not something that "sends"
                 }
                 var label = createInteractionLabel(next.receiver, blocking);
+                if (!known.isIntroduced(label.sender, label.receiver))
+                    return null; //Interaction between unknown processes
 
                 //Add the label to list of interactions to be processed, then look at its continuation.
                 waiting.add(label);
@@ -294,36 +315,22 @@ public class GraphBuilder {
             else if (next instanceof Label.InteractionLabel.SelectionLabel selection && blocking instanceof Offering offering
                     && selection.sender.equals(offering.sender))
                 processTerm.main = offering.branches.get(selection.expression);
-            else if (next instanceof FamiliarizeLabel introduction && blocking instanceof Familiarize familiarize
-                    && introduction.sender.equals(familiarize.sender)){
+            else if (next instanceof Label.IntroductionLabel introduction && blocking instanceof Familiarize familiarize
+                    && introduction.introducer.equals(familiarize.sender)) {
                 processTerm.main = familiarize.continuation;
+                known.introduce(introduction.process1, introduction.process2);
+                //The matching FamiliarizeLabel is before this IntroductionLabel in the queue, so that process has
+                // already finished its part of the interaction at this point.
             }
+            else if (next instanceof FamiliarizeLabel introduction && blocking instanceof Familiarize familiarize
+                    && introduction.sender.equals(familiarize.sender))
+                processTerm.main = familiarize.continuation;
             else
                 return null;    //Sender and receiver doesn't match
         }
         //Now actions contains all interactions of the multicom
         //Return the updated network, list of interactions, and involved processes
         return new MulticomContainer(new Network(processes, known), new Label.MulticomLabel(actions), actors);
-    }
-    private static class FamiliarizeLabel extends Label.InteractionLabel {
-        final boolean isMainInteractionLabel;   //True, if this label adds an IntroductionLabel to the multicom
-        /**
-         * Create a faux InteractionLabel that is functionally like an IntroductionLabel
-         * But with ordered acquaintees, so that one process is a clear receiver.
-         * Introduction in findMulticom is done by two of these labels. One for each receiver.
-         */
-        FamiliarizeLabel(String introducer, String familiarizingProcess, String introducedProcess, boolean isMain){
-            super(introducer, familiarizingProcess, introducedProcess, LabelType.INTRODUCTION);
-            isMainInteractionLabel = isMain;
-        }
-        @Override
-        public Label copy() {
-            return null;
-        }
-        @Override
-        public String toString() {
-            return String.format("%s.%s<->%s", sender, expression, receiver);
-        }
     }
 
     /**
@@ -338,7 +345,7 @@ public class GraphBuilder {
         else if (interaction instanceof Selection select)
             return new Label.InteractionLabel.SelectionLabel(sender, select.receiver, select.label);
         else if (interaction instanceof Acquaint acquaint)
-            return new FamiliarizeLabel(sender, acquaint.process1, acquaint.process2, true);
+            return new Label.IntroductionLabel(sender, acquaint.process1, acquaint.process2);
         else{
             throw new IllegalArgumentException("Function createInteractionLabel expects only Send and Selection Behaviours." +
                     " The behaviour " + interaction.toString() + " is of type " + interaction.getAction().toString());

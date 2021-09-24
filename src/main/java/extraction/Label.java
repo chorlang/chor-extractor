@@ -21,20 +21,6 @@ public abstract class Label {
     public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
     public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
 
-    public static class IntroductionLabel extends Label{
-        public String introducer, process1, process2;
-        public IntroductionLabel(String introducer, String process1, String process2){
-            this.introducer = introducer;
-            this.process1 = process1;
-            this.process2 = process2;
-            labelType = LabelType.INTRODUCTION;
-        }
-        @Override
-        public Label copy() {
-            return new IntroductionLabel(introducer, process1, process2);
-        }
-    }
-
     public static class MulticomLabel extends Label{
         public final List<InteractionLabel> communications;
         public MulticomLabel(List<InteractionLabel> communications){
@@ -99,6 +85,7 @@ public abstract class Label {
         }
     }
 
+    // == InteractionLabels ==
     public static abstract class InteractionLabel extends Label{
         public String sender, receiver, expression;
         public InteractionLabel(String sender, String receiver, String expression, LabelType type){
@@ -107,33 +94,50 @@ public abstract class Label {
             this.expression = expression;
             labelType = type;
         }
+    }
 
-        public static class CommunicationLabel extends InteractionLabel {
-            public CommunicationLabel(String sender, String receiver, String expression) {
-                super(sender, receiver, expression, LabelType.COMMUNICATION);
-            }
-
-            public Label copy() {
-                return new CommunicationLabel(sender, receiver, expression);
-            }
-
-            public String toString() {
-                return String.format("%s.%s->%s", sender, expression, receiver);
-            }
+    public static class CommunicationLabel extends InteractionLabel {
+        public CommunicationLabel(String sender, String receiver, String expression) {
+            super(sender, receiver, expression, LabelType.COMMUNICATION);
         }
 
-        public static class SelectionLabel extends InteractionLabel{
-            public SelectionLabel(String sender, String receiver, String label){
-                super(sender, receiver, label, LabelType.SELECTION);
-            }
+        public Label copy() {
+            return new Label.CommunicationLabel(sender, receiver, expression);
+        }
 
-            public Label copy(){
-                return new SelectionLabel(sender, receiver, expression);
-            }
+        public String toString() {
+            return String.format("%s.%s->%s", sender, expression, receiver);
+        }
+    }
 
-            public String toString(){
-                return String.format("%s->%s[%s]", sender, receiver, expression);
-            }
+    public static class SelectionLabel extends InteractionLabel{
+        public SelectionLabel(String sender, String receiver, String label){
+            super(sender, receiver, label, LabelType.SELECTION);
+        }
+
+        public Label copy(){
+            return new Label.SelectionLabel(sender, receiver, expression);
+        }
+
+        public String toString(){
+            return String.format("%s->%s[%s]", sender, receiver, expression);
+        }
+    }
+
+    public static class IntroductionLabel extends InteractionLabel{
+        public String introducer, process1, process2;   //These are duplicates of the fields in its superclass
+        public IntroductionLabel(String introducer, String process1, String process2){
+            super(introducer, process1, process2, LabelType.INTRODUCTION); //Process2 is the expression field of the parent
+            this.introducer = introducer;
+            this.process1 = process1;
+            this.process2 = process2;
+        }
+        @Override
+        public Label copy() {
+            return new IntroductionLabel(introducer, process1, process2);
+        }
+        public String toString() {
+            return String.format("%s.%s<->%s", sender, expression, receiver);
         }
     }
 }
