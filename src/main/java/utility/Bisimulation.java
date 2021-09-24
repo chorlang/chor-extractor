@@ -3,7 +3,6 @@ package utility;
 import extraction.Label;
 import extraction.Label.LabelType;
 import extraction.choreography.*;
-import extraction.network.Behaviour;
 import parsing.Parser;
 
 import java.security.InvalidParameterException;
@@ -137,15 +136,16 @@ public class Bisimulation {
     }
 
     private static ChoreographyBody.Interaction copyInteraction(ChoreographyBody.Interaction oldInteraction, ChoreographyBody newContinuation){
-        switch (oldInteraction.getType()){
-            case SELECTION:
-                var s = (Selection)oldInteraction;
-                return new Selection(s.sender,s.receiver,s.label, newContinuation);
-            case COMMUNICATION:
-                var c = (Communication)oldInteraction;
+        switch (oldInteraction.getType()) {
+            case SELECTION -> {
+                var s = (Selection) oldInteraction;
+                return new Selection(s.sender, s.receiver, s.label, newContinuation);
+            }
+            case COMMUNICATION -> {
+                var c = (Communication) oldInteraction;
                 return new Communication(c.sender, c.receiver, c.expression, newContinuation);
-            default:
-                throw new InvalidParameterException("ERROR: Unknown ChoreographyBody.Interaction subtype: " + oldInteraction.getClass().getName() + ". Not supported by copyInteraction in Bisimulation");
+            }
+            default -> throw new InvalidParameterException("ERROR: Unknown ChoreographyBody.Interaction subtype: " + oldInteraction.getClass().getName() + ". Not supported by copyInteraction in Bisimulation");
         }
     }
 
@@ -280,13 +280,10 @@ public class Bisimulation {
     }
 
     static Label labelFromInteraction(ChoreographyBody.Interaction interaction) {
-        switch( interaction.getType() )  {
-            case COMMUNICATION:
-                return new Label.InteractionLabel.CommunicationLabel(interaction.getSender(), interaction.getReceiver(), ((Communication)interaction).expression);
-            case SELECTION:
-                return new Label.InteractionLabel.SelectionLabel(interaction.getSender(), interaction.getReceiver(), ((Selection)interaction).label);
-            default:
-                throw new IllegalArgumentException();
-        }
+        return switch (interaction.getType()) {
+            case COMMUNICATION -> new Label.InteractionLabel.CommunicationLabel(interaction.getSender(), interaction.getReceiver(), ((Communication) interaction).expression);
+            case SELECTION -> new Label.InteractionLabel.SelectionLabel(interaction.getSender(), interaction.getReceiver(), ((Selection) interaction).label);
+            default -> throw new IllegalArgumentException();
+        };
     }
 }
