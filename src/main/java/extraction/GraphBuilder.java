@@ -178,25 +178,25 @@ public class GraphBuilder {
         processes = copyProcesses(processes);                       //Replace variable reference with a copy of the network
         known = known.copy();
         var processTerm = processes.get(processName);   //Initial interaction
-        if (!(processTerm.main instanceof Acquaint acquaint))       //Introduction cannot be found if behaviour is not acquaint
+        if (!(processTerm.main instanceof Introduce introduce))       //Introduction cannot be found if behaviour is not introduce
             return null;
-        //var processTerm now has Acquaint as main behaviour
+        //var processTerm now has Introduce as main behaviour
 
-        ProcessTerm p1 = processes.get(acquaint.process1);
-        ProcessTerm p2 = processes.get(acquaint.process2);
-        if (!(p1.main instanceof Familiarize fam1 && fam1.sender.equals(processName) &&
-                p2.main instanceof Familiarize fam2 && fam2.sender.equals(processName)))
+        ProcessTerm p1 = processes.get(introduce.process1);
+        ProcessTerm p2 = processes.get(introduce.process2);
+        if (!(p1.main instanceof Introductee fam1 && fam1.sender.equals(processName) &&
+                p2.main instanceof Introductee fam2 && fam2.sender.equals(processName)))
             return null; //Main behaviours of communication do not match
-        if (!known.isIntroduced(processName, acquaint.process1) || !known.isIntroduced(processName, acquaint.process2))
+        if (!known.isIntroduced(processName, introduce.process1) || !known.isIntroduced(processName, introduce.process2))
             return null; //Introducing process needs to know the introductees
 
         //Progress the network
         //This can be done directly, as we are already working on a copy.
-        processTerm.main = acquaint.continuation;
+        processTerm.main = introduce.continuation;
         p1.main = fam1.continuation;
         p2.main = fam2.continuation;
-        known.introduce(acquaint.process1, acquaint.process2);
-        var label = new Label.IntroductionLabel(processName, acquaint.process1, acquaint.process2);
+        known.introduce(introduce.process1, introduce.process2);
+        var label = new Label.IntroductionLabel(processName, introduce.process1, introduce.process2);
         return new IntroductionContainer(new Network(processes, known), label);
     }
 
@@ -204,19 +204,19 @@ public class GraphBuilder {
 
     /**
      * Tries to create a multicom involving the main behaviour of a process.
-     * Will only attempt if the main behaviour is Send or Selection.
+     * Will only attempt if the main behaviour is Send, Introduce, or Selection.
      * @param processMap Map from all process names to process terms in the network
      * @param processName The name of the process whose main behaviour may be part of a multicom
      * @return A dataclass storing the label representing the multicom, the network resulting form the multicom,
      * and the names of all participating processes, or null if no multicom culd be created
      */
     private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
-        class FamiliarizeLabel extends Label.InteractionLabel {
+        class IntroducedLabel extends Label.InteractionLabel {
             /**
-             * Create a faux InteractionLabel that is functionally like an IntroductionLabel
-             * Introduction in findMulticom is done by two of this label, and one IntroductionLabel
+             * Create a faux InteractionLabel that is functionally like an IntroductionLabel.
+             * Introduction in findMulticom is done by one of this label, and one IntroductionLabel
              */
-            FamiliarizeLabel(String introducer, String familiarizingProcess, String introducedProcess){
+            IntroducedLabel(String introducer, String familiarizingProcess, String introducedProcess){
                 super(introducer, familiarizingProcess, introducedProcess, LabelType.INTRODUCTION);
             }
             @Override
@@ -232,7 +232,7 @@ public class GraphBuilder {
         known = known.copy();
         var processTerm = processes.get(processName);            //Initial interaction
         var type = processTerm.main.getAction();
-        if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION || type == Behaviour.Action.ACQUAINT))
+        if (!(type == Behaviour.Action.SEND || type == Behaviour.Action.SELECTION || type == Behaviour.Action.INTRODUCE))
             return null;                                        //Only start multicom by send, acquaint or select
 
         var actions = new ArrayList<Label.InteractionLabel>();  //List of multicom communications
@@ -249,12 +249,12 @@ public class GraphBuilder {
             processTerm.main = s.continuation;
         else if (processTerm.main instanceof Selection s)
             processTerm.main = s.continuation;
-        else if (processTerm.main instanceof Acquaint a)
+        else if (processTerm.main instanceof Introduce a)
             processTerm.main = a.continuation;
 
         while (waiting.size() > 0) {                               //While there are interactions to process
             var next = waiting.remove();        //Get next interaction to process
-            if (!(next instanceof FamiliarizeLabel))
+            if (!(next instanceof IntroducedLabel))
                 actions.add(next);          //Add to the list of actions of the multicom
             if (next instanceof Label.IntroductionLabel intro)
 
@@ -268,7 +268,7 @@ public class GraphBuilder {
             //Abort if any other behaviours occur before.
             processTerm = processes.get(next.receiver);
             Behaviour blocking = processTerm.main;              //Behaviour blocking the receival of the communication
-            while (!(blocking instanceof Receive || blocking instanceof Offering || blocking instanceof Familiarize)){
+            while (!(blocking instanceof Receive || blocking instanceof Offering || blocking instanceof Introductee)){
                 //Assuming the main behaviour is Send or Selection, find its continuation
                 Behaviour continuation;
                 switch (blocking.getAction()){
@@ -283,16 +283,16 @@ public class GraphBuilder {
                         blocking = processTerm.main;
                         continue;
                     }
-                    case ACQUAINT -> {
-                        var acquaint = ((Acquaint)blocking);
-                        continuation = acquaint.continuation;
-                        if (!known.isIntroduced(next.receiver, acquaint.process2))  //sender->p2 is caught after switch
+                    case INTRODUCE -> {
+                        var introduce = ((Introduce)blocking);
+                        continuation = introduce.continuation;
+                        if (!known.isIntroduced(next.receiver, introduce.process2))  //sender->p2 is caught after switch
                             return null; //Interaction with unfamiliar processes
 
                         //Add the three-way communication as two two-way communications to be processed
                         //One here, and one after the switch statement
-                        waiting.add(new FamiliarizeLabel(next.receiver, acquaint.process2, acquaint.process1));
-                        actors.add(acquaint.process2); //process2 is the "expression" of the InteractionLabel
+                        waiting.add(new IntroducedLabel(next.receiver, introduce.process2, introduce.process1));
+                        actors.add(introduce.process2); //process2 is the "expression" of the InteractionLabel
                     }
                     default -> { return null; } //The blocking behaviour is not something that "sends"
                 }
@@ -315,16 +315,16 @@ public class GraphBuilder {
             else if (next instanceof Label.InteractionLabel.SelectionLabel selection && blocking instanceof Offering offering
                     && selection.sender.equals(offering.sender))
                 processTerm.main = offering.branches.get(selection.expression);
-            else if (next instanceof Label.IntroductionLabel introduction && blocking instanceof Familiarize familiarize
-                    && introduction.introducer.equals(familiarize.sender)) {
-                processTerm.main = familiarize.continuation;
+            else if (next instanceof Label.IntroductionLabel introduction && blocking instanceof Introductee introductee
+                    && introduction.introducer.equals(introductee.sender)) {
+                processTerm.main = introductee.continuation;
                 known.introduce(introduction.process1, introduction.process2);
-                //The matching FamiliarizeLabel is before this IntroductionLabel in the queue, so that process has
+                //The matching IntroducedLabel is before this IntroductionLabel in the queue, so that process has
                 // already finished its part of the interaction at this point.
             }
-            else if (next instanceof FamiliarizeLabel introduction && blocking instanceof Familiarize familiarize
-                    && introduction.sender.equals(familiarize.sender))
-                processTerm.main = familiarize.continuation;
+            else if (next instanceof IntroducedLabel introduction && blocking instanceof Introductee introductee
+                    && introduction.sender.equals(introductee.sender))
+                processTerm.main = introductee.continuation;
             else
                 return null;    //Sender and receiver doesn't match
         }
@@ -344,8 +344,8 @@ public class GraphBuilder {
             return new Label.InteractionLabel.CommunicationLabel(sender, send.receiver, send.expression);
         else if (interaction instanceof Selection select)
             return new Label.InteractionLabel.SelectionLabel(sender, select.receiver, select.label);
-        else if (interaction instanceof Acquaint acquaint)
-            return new Label.IntroductionLabel(sender, acquaint.process1, acquaint.process2);
+        else if (interaction instanceof Introduce introduce)
+            return new Label.IntroductionLabel(sender, introduce.process1, introduce.process2);
         else{
             throw new IllegalArgumentException("Function createInteractionLabel expects only Send and Selection Behaviours." +
                     " The behaviour " + interaction.toString() + " is of type " + interaction.getAction().toString());

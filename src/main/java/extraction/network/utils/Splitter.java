@@ -83,16 +83,16 @@ public class Splitter {
         @Override
         public HashSet<String> Visit(Behaviour hostNode) {
             switch (hostNode.getAction()){
-                case ACQUAINT:{
-                    var acquaint = (Acquaint) hostNode;
+                case INTRODUCE:{
+                    var acquaint = (Introduce) hostNode;
                     var interacting = new HashSet<String>();
                     interacting.add(acquaint.process1);
                     interacting.add(acquaint.process2);
                     interacting.addAll(acquaint.continuation.accept(this));
                     return interacting;
                 }
-                case FAMILIARIZE:{
-                    var familiarize = (Familiarize) hostNode;
+                case INTRODUCTEE:{
+                    var familiarize = (Introductee) hostNode;
                     var interacting = new HashSet<String>();
                     interacting.add(familiarize.processID);
                     interacting.add(familiarize.sender);

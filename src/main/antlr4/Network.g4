@@ -16,8 +16,8 @@ behaviour : interaction
     |   offering
     |   condition
     |   procedureInvocation
-    |   acquaint
-    |   familiarize
+    |   introduce
+    |   introductee
     |   TERMINATE
     ;
 
@@ -33,8 +33,8 @@ selection: process '+' expression ';' behaviour;
 offering: process '&{' (labeledBehaviour) (',' labeledBehaviour)* '}';
 labeledBehaviour: expression ':' behaviour;
 
-acquaint: process '<->' process ';' behaviour;
-familiarize: process '?' process ';' behaviour;
+introduce: process '<->' process ';' behaviour;
+introductee: process '?' process ';' behaviour;
 
 
 condition: 'if' expression 'then' behaviour 'else' behaviour;

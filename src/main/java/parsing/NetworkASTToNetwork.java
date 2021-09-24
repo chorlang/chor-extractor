@@ -57,18 +57,18 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
         return new Offering(ctx.process().getText(), labeledBehaviours);
     }
 
-    @Override public Behaviour visitAcquaint(AcquaintContext ctx){
+    @Override public Behaviour visitIntroduce(IntroduceContext ctx){
         List<ProcessContext> processContexts = ctx.process();
         ProcessContext pc1 = processContexts.get(0);
         ProcessContext pc2 = processContexts.get(1);
-        return new Acquaint(pc1.getText(), pc2.getText(), visit(ctx.behaviour()));
+        return new Introduce(pc1.getText(), pc2.getText(), visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitFamiliarize(FamiliarizeContext ctx){
+    @Override public Behaviour visitIntroductee(IntroducteeContext ctx){
         List<ProcessContext> processContexts = ctx.process();
         ProcessContext snd = processContexts.get(0);
         ProcessContext pid = processContexts.get(1);
-        return new Familiarize(snd.getText(), pid.getText(), visit(ctx.behaviour()));
+        return new Introductee(snd.getText(), pid.getText(), visit(ctx.behaviour()));
     }
 
     @Override public Behaviour visitCondition(ConditionContext ctx){

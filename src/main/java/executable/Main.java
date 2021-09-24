@@ -77,7 +77,7 @@ public class Main {
         Program chor = Parser.stringToProgram(introductionTest);
         System.out.println(chor.toString());*/
         //*
-        String networksString = introductionMulticom;
+        String networksString = acquaint;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);

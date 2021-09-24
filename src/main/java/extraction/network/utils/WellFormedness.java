@@ -72,13 +72,13 @@ public class WellFormedness{
                 case TERMINATION:
                     return true;
 
-                case ACQUAINT:
-                    var acquainter = (Acquaint) hostNode;
+                case INTRODUCE:
+                    var acquainter = (Introduce) hostNode;
                     return !acquainter.process1.equals(checkingProcessName) &&
                             !acquainter.process2.equals(checkingProcessName) &&
                             acquainter.continuation.accept(this);
-                case FAMILIARIZE:
-                    var familiarize = (Familiarize) hostNode;
+                case INTRODUCTEE:
+                    var familiarize = (Introductee) hostNode;
                     return !familiarize.sender.equals(checkingProcessName) &&
                             !familiarize.processID.equals(checkingProcessName) &&
                             familiarize.continuation.accept(this);
