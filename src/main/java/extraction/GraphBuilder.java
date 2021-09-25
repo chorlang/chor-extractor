@@ -211,13 +211,13 @@ public class GraphBuilder {
      * and the names of all participating processes, or null if no multicom culd be created
      */
     private MulticomContainer findMulticom(HashMap<String, ProcessTerm> processMap, String processName, AdjacencyMatrix known) {
-        class IntroducedLabel extends Label.InteractionLabel {
+        class FauxIntroductionLabel extends Label.InteractionLabel {
             /**
              * Create a faux InteractionLabel that is functionally like an IntroductionLabel.
              * Introduction in findMulticom is done by one of this label, and one IntroductionLabel
              */
-            IntroducedLabel(String introducer, String familiarizingProcess, String introducedProcess){
-                super(introducer, familiarizingProcess, introducedProcess, LabelType.INTRODUCTION);
+            FauxIntroductionLabel(String introducer, String introductee, String introducedProcess){
+                super(introducer, introductee, introducedProcess, LabelType.INTRODUCTION);
             }
             @Override
             public Label copy() {
@@ -225,7 +225,7 @@ public class GraphBuilder {
             }
             @Override
             public String toString() {
-                return String.format("%s.%s<->%s Do not use this class for output", sender, expression, receiver);
+                return String.format("%s.%s<->%s Debug only", sender, expression, receiver);
             }
         }
         var processes = copyProcesses(processMap);  //Copy safe to modify
@@ -239,6 +239,8 @@ public class GraphBuilder {
         var actors = new HashSet<String>();                     //List of participating processes
         var waiting = new LinkedList<Label.InteractionLabel>(); //List of interactions to be processed
         var initialInteraction = createInteractionLabel(processName, processTerm.main);
+        if (initialInteraction instanceof Label.IntroductionLabel intro)
+            waiting.add(new FauxIntroductionLabel(intro.introducer, intro.process2, intro.process1));
         waiting.add(initialInteraction);     //Initial queue interaction
         if (!known.isIntroduced(initialInteraction.sender, initialInteraction.receiver) ||
                 initialInteraction instanceof Label.IntroductionLabel intro && !known.isIntroduced(intro.introducer, intro.process2))
@@ -254,7 +256,7 @@ public class GraphBuilder {
 
         while (waiting.size() > 0) {                               //While there are interactions to process
             var next = waiting.remove();        //Get next interaction to process
-            if (!(next instanceof IntroducedLabel))
+            if (!(next instanceof FauxIntroductionLabel))
                 actions.add(next);          //Add to the list of actions of the multicom
             if (next instanceof Label.IntroductionLabel intro)
 
@@ -291,7 +293,7 @@ public class GraphBuilder {
 
                         //Add the three-way communication as two two-way communications to be processed
                         //One here, and one after the switch statement
-                        waiting.add(new IntroducedLabel(next.receiver, introduce.process2, introduce.process1));
+                        waiting.add(new FauxIntroductionLabel(next.receiver, introduce.process2, introduce.process1));
                         actors.add(introduce.process2); //process2 is the "expression" of the InteractionLabel
                     }
                     default -> { return null; } //The blocking behaviour is not something that "sends"
@@ -319,10 +321,10 @@ public class GraphBuilder {
                     && introduction.introducer.equals(introductee.sender)) {
                 processTerm.main = introductee.continuation;
                 known.introduce(introduction.process1, introduction.process2);
-                //The matching IntroducedLabel is before this IntroductionLabel in the queue, so that process has
+                //The matching FauxIntroductionLabel is before this IntroductionLabel in the queue, so that process has
                 // already finished its part of the interaction at this point.
             }
-            else if (next instanceof IntroducedLabel introduction && blocking instanceof Introductee introductee
+            else if (next instanceof FauxIntroductionLabel introduction && blocking instanceof Introductee introductee
                     && introduction.sender.equals(introductee.sender))
                 processTerm.main = introductee.continuation;
             else
