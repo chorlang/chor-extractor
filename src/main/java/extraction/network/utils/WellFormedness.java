@@ -10,13 +10,13 @@ import java.util.Set;
 public class WellFormedness{
     /**
      * Computes whether the extraction.network is both well-formed and guarded.
-     * A extraction.network that is not well-formed has deadlocks (I think) and is not extractable.
+     * A extraction.network that is well-formed if no processes communicate with themselves
      * A extraction.network is guarded if no procedures call each other in an infinite loop with no other actions taken.
-     * @param n The extraction.network to check.
+     * @param network The extraction.network to check.
      * @return true, if the extraction.network is both well-formed and guarded. False otherwise
      */
-    public static Boolean compute(Network n){
-        for (var process: n.processes.entrySet()){
+    public static Boolean compute(Network network){
+        for (var process: network.processes.entrySet()){
             String processName = process.getKey();
             ProcessTerm term = process.getValue();
             if (!checkWellFormedness(term.main, processName))
@@ -55,12 +55,13 @@ public class WellFormedness{
     }
 
     /**
-     * This tree visitor is intended to traverse Network AST's to ensure that it is well formed.
-     * The choreography extraction algorithm assumes the extraction.network is well formed.
+     * This tree visitor is intended to traverse Network AST's of a process to ensure that it is well-formed,
+     * meaning the process does not interact with itself.
+     * The choreography extraction algorithm assumes the extraction.network is well-formed.
      */
     private static class WellFormedChecker implements TreeVisitor<Boolean, Behaviour> {
         //The name of the process currently being checked
-        private String checkingProcessName;
+        private final String checkingProcessName;
         public WellFormedChecker(String processName){
             checkingProcessName = processName;
         }
@@ -73,15 +74,15 @@ public class WellFormedness{
                     return true;
 
                 case INTRODUCE:
-                    var acquainter = (Introduce) hostNode;
-                    return !acquainter.process1.equals(checkingProcessName) &&
-                            !acquainter.process2.equals(checkingProcessName) &&
-                            acquainter.continuation.accept(this);
+                    var introducer = (Introduce) hostNode;
+                    return !introducer.process1.equals(checkingProcessName) &&
+                            !introducer.process2.equals(checkingProcessName) &&
+                            introducer.continuation.accept(this);
                 case INTRODUCTEE:
-                    var familiarize = (Introductee) hostNode;
-                    return !familiarize.sender.equals(checkingProcessName) &&
-                            !familiarize.processID.equals(checkingProcessName) &&
-                            familiarize.continuation.accept(this);
+                    var introduced = (Introductee) hostNode;
+                    return !introduced.sender.equals(checkingProcessName) &&
+                            !introduced.processID.equals(checkingProcessName) &&
+                            introduced.continuation.accept(this);
 
                 case CONDITION:
                     var conditional = (extraction.network.Condition)hostNode;
@@ -110,7 +111,7 @@ public class WellFormedness{
                 case NETWORK:
                 case PROCESS_TERM:
                 default:
-                    throw new RuntimeException(new OperationNotSupportedException("While checking for well-formedness in the extraction.network AST, an object of type " + hostNode.getClass().getName() + " was visited which is not supported."));
+                    throw new RuntimeException(new OperationNotSupportedException("While checking for well-formedness in the extraction.network AST, an object of type " + hostNode.getClass().getName() + " was visited which suggest a degenerate tree."));
             }
         }
     }
