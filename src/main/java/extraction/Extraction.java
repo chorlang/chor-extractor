@@ -86,13 +86,13 @@ public class Extraction {
     }
 
     private ChorStatsPair extract(Network network, Set<String> services){
-        var executionGraphResult = new GraphBuilder(extractionStrategy).buildExecutionGraph(network, services);
+        var graphContainer = GraphBuilder.buildSEG(network, services, extractionStrategy);
 
-        var statistics = new Program.GraphStatistics(executionGraphResult.graph.vertexSet().size(), executionGraphResult.badLoopCounter);
-        if (executionGraphResult.buildGraphResult != GraphBuilder.BuildGraphResult.OK){
+        var statistics = new Program.GraphStatistics(graphContainer.graph().vertexSet().size(), graphContainer.badLoopCounter());
+        if (graphContainer.buildGraphResult() != GraphBuilder.BuildGraphResult.OK){
             return new ChorStatsPair(null, statistics);
         }
-        var choreography = new ChoreographyBuilder().buildChoreography(executionGraphResult.rootNode, executionGraphResult.graph);
+        var choreography = new ChoreographyBuilder().buildChoreography(graphContainer.rootNode(), graphContainer.graph());
 
         return new ChorStatsPair(choreography, statistics);
     }

@@ -8,18 +8,18 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.util.HashMap;
 import java.util.List;
 
-public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
+public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
     static Network toNetwork(NetworkContext parseTree){
         return (Network)(new NetworkASTToNetwork().getNetwork(parseTree));
     }
 
-    Behaviour getNetwork(NetworkContext parseTree){
+    NetworkASTNode getNetwork(NetworkContext parseTree){
         return this.visit(parseTree);
     }
 
 
 
-    @Override public Behaviour visitNetwork(NetworkContext ctx){
+    @Override public NetworkASTNode visitNetwork(NetworkContext ctx){
         int numOfProcesses = ctx.processBehaviour().size();
         HashMap<String, ProcessTerm> networkMapping = new HashMap<>(numOfProcesses);
         for (int i = 0; i < numOfProcesses; i++){
@@ -28,64 +28,64 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<Behaviour> {
         return new Network(networkMapping);
     }
 
-    @Override public Behaviour visitProcessBehaviour(ProcessBehaviourContext ctx){
+    @Override public NetworkASTNode visitProcessBehaviour(ProcessBehaviourContext ctx){
         int numOfProcedures = ctx.procedureDefinition().size();
         HashMap<String, Behaviour> procedures = new HashMap<>(numOfProcedures);
         for (int i = 0; i < numOfProcedures; i++){
-            procedures.put(ctx.procedure(i).getText(), visit(ctx.procedureDefinition(i)));
+            procedures.put(ctx.procedure(i).getText(), (Behaviour) visit(ctx.procedureDefinition(i)));
         }
-        return new ProcessTerm(procedures, visit(ctx.behaviour()));
+        return new ProcessTerm(procedures, (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitSending(SendingContext ctx){
-        return new Send(ctx.process().getText(), ctx.expression().getText(), visit(ctx.behaviour()));
+    @Override public NetworkASTNode visitSending(SendingContext ctx){
+        return new Send(ctx.process().getText(), ctx.expression().getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitReceiving(ReceivingContext ctx){
-        return new Receive(ctx.process().getText(), visit(ctx.behaviour()));
+    @Override public NetworkASTNode visitReceiving(ReceivingContext ctx){
+        return new Receive(ctx.process().getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitSelection(SelectionContext ctx){
-        return new Selection(ctx.process().getText(), ctx.expression().getText(), visit(ctx.behaviour()));
+    @Override public NetworkASTNode visitSelection(SelectionContext ctx){
+        return new Selection(ctx.process().getText(), ctx.expression().getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitOffering(OfferingContext ctx){
+    @Override public NetworkASTNode visitOffering(OfferingContext ctx){
         HashMap<String, Behaviour> labeledBehaviours = new HashMap<>();
         for (LabeledBehaviourContext label : ctx.labeledBehaviour()){
-            labeledBehaviours.put(label.expression().getText(), visit(label.behaviour()));
+            labeledBehaviours.put(label.expression().getText(), (Behaviour) visit(label.behaviour()));
         }
         return new Offering(ctx.process().getText(), labeledBehaviours);
     }
 
-    @Override public Behaviour visitIntroduce(IntroduceContext ctx){
+    @Override public NetworkASTNode visitIntroduce(IntroduceContext ctx){
         List<ProcessContext> processContexts = ctx.process();
         ProcessContext pc1 = processContexts.get(0);
         ProcessContext pc2 = processContexts.get(1);
-        return new Introduce(pc1.getText(), pc2.getText(), visit(ctx.behaviour()));
+        return new Introduce(pc1.getText(), pc2.getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitIntroductee(IntroducteeContext ctx){
+    @Override public NetworkASTNode visitIntroductee(IntroducteeContext ctx){
         List<ProcessContext> processContexts = ctx.process();
         ProcessContext snd = processContexts.get(0);
         ProcessContext pid = processContexts.get(1);
-        return new Introductee(snd.getText(), pid.getText(), visit(ctx.behaviour()));
+        return new Introductee(snd.getText(), pid.getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override public Behaviour visitCondition(ConditionContext ctx){
+    @Override public NetworkASTNode visitCondition(ConditionContext ctx){
         return new Condition(ctx.expression().getText(),
-                visit(ctx.behaviour(0)),
-                visit(ctx.behaviour(1)));
+                (Behaviour) visit(ctx.behaviour(0)),
+                (Behaviour) visit(ctx.behaviour(1)));
     }
 
-    @Override public Behaviour visitProcedureDefinition(ProcedureDefinitionContext ctx){
+    @Override public NetworkASTNode visitProcedureDefinition(ProcedureDefinitionContext ctx){
         return visit(ctx.behaviour());
     }
 
-    @Override public Behaviour visitProcedureInvocation(ProcedureInvocationContext ctx){
+    @Override public NetworkASTNode visitProcedureInvocation(ProcedureInvocationContext ctx){
         return new ProcedureInvocation(ctx.procedure().getText());
     }
 
-    @Override public Behaviour visitTerminal(TerminalNode n){
-        return Termination.getTermination();
+    @Override public NetworkASTNode visitTerminal(TerminalNode n){
+        return Termination.instance;
     }
 }

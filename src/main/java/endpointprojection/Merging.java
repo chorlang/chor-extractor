@@ -12,26 +12,18 @@ public class Merging {
     }
 
     static Behaviour merge(Behaviour left, Behaviour right){
-        if (left.getAction() != right.getAction())
+        if (left.action != right.action)
             throw new MergingException("Can't merge " + left + " with " + right);
-        switch (left.getAction()){
-            case SEND:
-                return merge((Send)left, (Send)right);
-            case RECEIVE:
-                return merge((Receive)left, (Receive)right);
-            case TERMINATION:
-                return Termination.getTermination();
-            case SELECTION:
-                return merge((Selection)left, (Selection)right);
-            case OFFERING:
-                return merge((Offering)left, (Offering)right);
-            case CONDITION:
-                return merge((Condition)left, (Condition)right);
-            case PROCEDURE_INVOCATION:
-                return merge((ProcedureInvocation)left, (ProcedureInvocation)right);
-            default:
-                throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
-        }
+        return switch (left.action) {
+            case SEND -> merge((Send) left, (Send) right);
+            case RECEIVE -> merge((Receive) left, (Receive) right);
+            case TERMINATION -> Termination.instance;
+            case SELECTION -> merge((Selection) left, (Selection) right);
+            case OFFERING -> merge((Offering) left, (Offering) right);
+            case CONDITION -> merge((Condition) left, (Condition) right);
+            case PROCEDURE_INVOCATION -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
+            default -> throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
+        };
 
     }
 

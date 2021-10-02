@@ -8,43 +8,28 @@ package extraction.network;
  * I can make a method that returns the first instance
  */
 public class Termination extends Behaviour {
-    static Termination instance = new Termination();
+    public static final Termination instance = new Termination();
     //The String representation in networks:
-    static String terminationTerm = "stop";
+    static final String terminationTerm = "stop";
 
     /**
      * Constructs a new Termination. Since all Termination instances
      * are identical, it is better to reuse one instance by calling
      * Termination.getTermination() instead, as it reduces resource usage.
      */
-    public Termination(){}
-
-    /**
-     * Gets an already existing instance of Termination.
-     * Preferably use this rather than the constructor.
-     * @return An existing Termination instance
-     */
-    public static Termination getTermination(){
-        return instance;
+    private Termination(){
+        super(Action.TERMINATION);
     }
 
     public String toString(){
         return terminationTerm;
     }
 
-    public Termination copy(){
-        return getTermination();
-    }
-
     public boolean equals(Behaviour other){
-        return other.getAction() == Action.TERMINATION;
+        return other.action == Action.TERMINATION;
     }
 
     public int hashCode(){
-        return terminationTerm.hashCode();  //Just so it is something
-    }
-
-    public Action getAction(){
-        return Action.TERMINATION;
+        return 1;
     }
 }

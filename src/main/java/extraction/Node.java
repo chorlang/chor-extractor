@@ -12,31 +12,36 @@ import java.util.HashSet;
  * This interface contains two nested classes implementing it. ConcreteNode and InvocationNode.
  */
 public interface Node {
-    enum NodeType{
+
+    /*record ConcreteNode(Network network, String choicePath, int ID, int flipCounter, HashMap<String, Boolean> marking) implements Node {}
+
+    record InvocationNode(String procedureName, Node node) implements Node {}
+*/
+    /*enum NodeType{
         CONCRETE, INVOCATION
     }
 
-    NodeType getNodeType();
-
+    //NodeType getNodeType();
+*/
     class ConcreteNode implements Node{
         public Network network;
         public String choicePath;
-        public Integer ID;
-        public HashSet<Integer> badNodes;
+        public int ID;
+        public int flipCounter;
         public HashMap<String, Boolean> marking;
 
-        public ConcreteNode(Network network, String choicePath, Integer ID, HashSet<Integer> badNodes, HashMap<String, Boolean> marking){
+        public ConcreteNode(Network network, String choicePath, int ID, int flipCounter, HashMap<String, Boolean> marking){
             this.network = network;
             this.choicePath = choicePath;
             this.ID = ID;
-            this.badNodes = badNodes;
+            this.flipCounter = flipCounter;
             this.marking = marking;
         }
 
-        @Override
+        /*@Override
         public NodeType getNodeType() {
             return NodeType.CONCRETE;
-        }
+        }*/
     }
 
     class InvocationNode implements Node{
@@ -48,9 +53,9 @@ public interface Node {
             this.node = node;
         }
 
-        @Override
+/*        @Override
         public NodeType getNodeType(){
             return NodeType.INVOCATION;
-        }
+        }*/
     }
 }

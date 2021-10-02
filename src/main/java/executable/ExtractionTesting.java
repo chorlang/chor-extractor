@@ -11,16 +11,10 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class ExtractionTesting {
-    private static class Command{
-        Runnable runnable;
-        String description;
-        public Command(Runnable runnable, String description){
-            this.runnable = runnable;
-            this.description = description;
-        }
-    }
+    private static record Command(Runnable runnable, String description) { }
 
-    private static Map<String, Command> commands = Map.of(
+
+    private static final Map<String, Command> commands = Map.of(
             "help", new Command(ExtractionTesting::printHelp, "Prints this help information"),
             "theory", new Command(() -> runTests(new CruzFilipeLarsenMontesi17()), "Run the tests from the original theoretical paper [Cruz-Filipe, Larsen, Montesi @ FoSSaCS 2017]"),
             "lty15", new Command(() -> runTests(new LangeTuostoYoshida15()), "Run the tests from the paper [Lange, Tuosto, Yoshida @ POPL 2015]"),

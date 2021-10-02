@@ -42,7 +42,7 @@ public class NetworkFuzzer {
         NetworkPurger.purgeNetwork(n);
 
         var processName = randomElement(n.processes.keySet());
-        var processTerm = n.processes.get(processName);
+        var processTerm = new ProcessTerm.HackProcessTerm( n.processes.get(processName) );
 
         var keys = new ArrayList<>(processTerm.procedures.keySet());
         var sizeList = new ArrayList<Integer>(processTerm.procedures.size());
@@ -50,13 +50,13 @@ public class NetworkFuzzer {
             sizeList.add(ProcessSize.compute(procedure));
         }
         keys.add("main");
-        sizeList.add( ProcessSize.compute( processTerm.main ) );
+        sizeList.add( ProcessSize.compute( processTerm.main() ) );
 
         var paramsMap = splitParams(new FuzzerParams(deletions, swaps), mkSizes(keys, sizeList));
 
         paramsMap.forEach ((procName, params ) -> {
             if(procName.equals("main")) {
-                processTerm.main = fuzzProcess( processTerm.main, ProcessSize.compute(processTerm.main), params );
+                processTerm.changeMain( fuzzProcess(processTerm.main(), ProcessSize.compute(processTerm.main()), params) );
             } else {
                 processTerm.procedures.put(procName, fuzzProcess( processTerm.procedures.get(procName), ProcessSize.compute(processTerm.procedures.get(procName)), params ));
             }
@@ -91,7 +91,7 @@ public class NetworkFuzzer {
             var p = random.nextInt(params.deletions + params.swaps);
             if(p < params.deletions) {
                 // We do a deletion;
-                switch( b.getAction() ) {
+                switch( b.action ) {
                     case SEND: {
                         var s = (Send)b;
                         return fuzzProcess(s.continuation, size - 1, decDels(params));
@@ -119,15 +119,15 @@ public class NetworkFuzzer {
                         return fuzzProcess( cont, ProcessSize.compute(cont), decDels(params) );
                     }
                     case TERMINATION: throw new IllegalStateException("Reached termination");
-                    case PROCEDURE_INVOCATION: return fuzzProcess(Termination.getTermination(), 0, decDels(params));
+                    case PROCEDURE_INVOCATION: return fuzzProcess(Termination.instance, 0, decDels(params));
                 }
             } else {
                 // We do a swap;
-                switch ( b.getAction() ) {
+                switch ( b.action ) {
                     case SEND: {
                         var newB = (Send) b;
                         var c = newB.continuation;
-                        switch (c.getAction()) {
+                        switch (c.action) {
                             case SEND: {
                                 var cont = (Send) c;
                                 return new Send(cont.receiver, cont.expression, fuzzProcess(new Send(newB.receiver, newB.expression, cont.continuation), size - 1, decSwaps(params)));
@@ -179,7 +179,7 @@ public class NetworkFuzzer {
                     case RECEIVE: {
                         var newB = (Receive)b;
                         var c = newB.continuation;
-                        switch ( c.getAction()) {
+                        switch ( c.action) {
                             case SEND:{
                                 var cont = (Send)c;
                                 return new Send(cont.receiver, cont.expression, fuzzProcess(new Receive(newB.sender, cont.continuation) , size - 1, decSwaps(params)));
@@ -226,7 +226,7 @@ public class NetworkFuzzer {
                     case SELECTION: {
                         var newB = (Selection)b;
                         var c = newB.continuation;
-                        switch ( c.getAction()) {
+                        switch ( c.action) {
                             case SEND:{
                                 var cont  = (Send)c;
                                 return new Send(cont.receiver, cont.expression, fuzzProcess(new Selection(newB.receiver, newB.label, cont.continuation) , size - 1, decSwaps(params)));
@@ -277,7 +277,7 @@ public class NetworkFuzzer {
                         var branches = new HashMap<String, Behaviour>();
                         newB.branches.keySet().forEach ((label ) -> {
                             if (label.equals(chosen))
-                                switch ( cont.getAction() ) {
+                                switch ( cont.action ) {
                                     case SEND: branches.put(label, ((Send)cont).continuation); break;
                                     case RECEIVE: branches.put(label, ((Receive)cont).continuation); break;
                                     case SELECTION: branches.put(label, ((Selection)cont).continuation); break;
@@ -290,14 +290,14 @@ public class NetworkFuzzer {
                                     }
                                     case CONDITION: branches.put(label, ((Condition)cont).thenBehaviour); break;
                                     case TERMINATION: throw new IllegalStateException("Reached termination");
-                                    case PROCEDURE_INVOCATION: branches.put(label, Termination.getTermination()); break;
+                                    case PROCEDURE_INVOCATION: branches.put(label, Termination.instance); break;
                                     default: throw new IllegalStateException("Unreachable case");
                             }
                             else
                                 branches.put(label, newB.branches.get(label));
                         });
                         
-                        switch (cont.getAction() ) {
+                        switch (cont.action ) {
                             case SEND: {
                                 var contT = (Send)cont;
                                 return new Send( contT.receiver, contT.expression, fuzzProcess(new Offering(newB.sender, branches), ProcessSize.compute(new Offering(newB.sender, branches)), decSwaps(params)));
@@ -343,11 +343,11 @@ public class NetworkFuzzer {
                         }
                     }
                     case TERMINATION: throw new IllegalStateException("Reached termination");
-                    case PROCEDURE_INVOCATION: return fuzzProcess(Termination.getTermination(), 0, decSwaps(params));
+                    case PROCEDURE_INVOCATION: return fuzzProcess(Termination.instance, 0, decSwaps(params));
                     case CONDITION:{
                         var newB = (Condition)b;
                         var t = newB.thenBehaviour;
-                        switch ( t.getAction() ) {
+                        switch ( t.action) {
                             case SEND: {
                                 var cont = (Send)t;
                                 return new Send(cont.receiver, cont.expression, fuzzProcess(
@@ -410,7 +410,7 @@ public class NetworkFuzzer {
             throw new IllegalStateException("Unreachable code");
         } else {
             // We fuzz the continuation;
-            switch (b.getAction()) {
+            switch (b.action) {
                 case SEND: {
                     var newB = (Send)b;
                     return new Send(newB.receiver, newB.expression, fuzzProcess(newB.continuation, size - 1, params));

@@ -3,9 +3,9 @@ package utility.networkStatistics;
 import extraction.network.*;
 import extraction.network.utils.TreeVisitor;
 
-public class NetworkProcessActions implements TreeVisitor<Integer, Behaviour> {
-    public Integer Visit(Behaviour hostNode){
-        switch (hostNode.getAction()){
+public class NetworkProcessActions implements TreeVisitor<Integer, NetworkASTNode> {
+    public Integer Visit(NetworkASTNode hostNode){
+        switch (hostNode.action){
             case CONDITION:{
                 var host = (Condition)hostNode;
                 return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);
@@ -24,7 +24,7 @@ public class NetworkProcessActions implements TreeVisitor<Integer, Behaviour> {
                 for (var procedure : host.procedures.values()){
                     sum += procedure.accept(this);
                 }
-                return sum + host.main.accept(this);
+                return sum + host.main().accept(this);
             case RECEIVE:
                 return ((Receive)hostNode).continuation.accept(this)+1;
             case SELECTION:

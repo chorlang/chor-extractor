@@ -1,11 +1,12 @@
 package extraction.network;
 
+import extraction.Label;
+
 /**
  * Behaviour for being informed by another process of the existence of a third process.
  */
-public class Introductee extends Behaviour{
-    public final String sender, processID;
-    public final Behaviour continuation;
+public class Introductee extends Behaviour.Receiver {
+    public final String processID;
 
     /**
      * Constructs a Introductee behaviour, which represents this process being told by
@@ -16,18 +17,8 @@ public class Introductee extends Behaviour{
      * @param continuation The behaviour to continue as.
      */
     public Introductee(String sender, String processID, Behaviour continuation){
-        this.sender = sender;
+        super(Action.INTRODUCTEE, continuation, sender);
         this.processID = processID;
-        this.continuation = continuation;
-    }
-    @Override
-    public Action getAction() {
-        return Action.INTRODUCTEE;
-    }
-
-    @Override
-    public Behaviour copy() {
-        return this;
     }
 
     @Override

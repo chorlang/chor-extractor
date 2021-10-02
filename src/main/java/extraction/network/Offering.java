@@ -1,5 +1,7 @@
 package extraction.network;
 
+import extraction.Label;
+
 import java.util.HashMap;
 
 /**
@@ -8,8 +10,7 @@ import java.util.HashMap;
  *
  * The "process" variable from the Kotlin implementation is equal to "sender"
  */
-public class Offering extends Behaviour {
-    public final String sender;
+public class Offering extends Behaviour.Receiver {
     public final HashMap<String, Behaviour> branches;
 
     /**
@@ -18,7 +19,7 @@ public class Offering extends Behaviour {
      * @param branches Map from labels (Strings) to branches (Behaviors)
      */
     public Offering(String sender, HashMap<String, Behaviour> branches){
-        this.sender = sender;
+        super(Action.OFFERING, null, sender); //Not sure what to do about continuation here
         this.branches = branches;
     }
 
@@ -45,7 +46,7 @@ public class Offering extends Behaviour {
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.OFFERING)
+        if (other.action != Action.OFFERING)
             return false;
         Offering otherOffer = (Offering)other;
         if (!sender.equals(otherOffer.sender))

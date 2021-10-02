@@ -1,13 +1,15 @@
 package extraction.network;
 
+import extraction.Label;
+
+import java.util.Map;
+
 /**
  * Behavior for evaluating an expression and sending the result ot another process.
  *
  * Note that the variable "process" from the Kotlin implementation is "receiver"
  */
-public class Send extends Behaviour {
-    public final String receiver, expression;
-    public final Behaviour continuation;
+public class Send extends Behaviour.Sender {
 
     /**
      * Constructs a send behavior, which represents evaluates an
@@ -17,24 +19,22 @@ public class Send extends Behaviour {
      * @param continuation The behavior to continue as after sending.
      */
     public Send(String receiver, String expression, Behaviour continuation){
-        this.receiver = receiver;
-        this.expression = expression;
-        this.continuation = continuation;
+        super(Action.SEND, continuation, receiver, expression);
+    }
+
+    @Override
+    public Label.InteractionLabel labelFrom(String process, Map<String, String> sub){
+        return new Label.CommunicationLabel(process, sub.get(receiver), sub.get(expression));
     }
 
     public String toString(){
         return String.format("%s!<%s>; %s", receiver, expression, continuation);
     }
 
-    public Send copy(){
-        //return new Send(receiver, expression, continuation.copy());
-        return this;
-    }
-
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.getAction() != Action.SEND)
+        if (other.action != Action.SEND)
             return false;
         Send otherS = (Send)other;
         return receiver.equals(otherS.receiver) &&
@@ -48,9 +48,5 @@ public class Send extends Behaviour {
         hash *= 31;
         hash += expression.hashCode();
         return hash;
-    }
-
-    public Action getAction(){
-        return Action.SEND;
     }
 }

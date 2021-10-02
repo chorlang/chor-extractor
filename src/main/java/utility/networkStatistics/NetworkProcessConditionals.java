@@ -3,9 +3,9 @@ package utility.networkStatistics;
 import extraction.network.*;
 import extraction.network.utils.TreeVisitor;
 
-public class NetworkProcessConditionals implements TreeVisitor<Integer, Behaviour> {
-    public Integer Visit(Behaviour hostNode){
-        switch (hostNode.getAction()){
+public class NetworkProcessConditionals implements TreeVisitor<Integer, NetworkASTNode> {
+    public Integer Visit(NetworkASTNode hostNode){
+        switch (hostNode.action){
             case CONDITION:{
                 var host = (Condition)hostNode;
                 return 1 + host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);
@@ -19,7 +19,7 @@ public class NetworkProcessConditionals implements TreeVisitor<Integer, Behaviou
                 return (int) ratio;
             }
             case PROCESS_TERM:
-                return ((ProcessTerm)hostNode).main.accept(this);
+                return ((ProcessTerm)hostNode).main().accept(this);
             case RECEIVE:
                 return ((Receive)hostNode).continuation.accept(this);
             case SELECTION:

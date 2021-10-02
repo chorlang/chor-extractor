@@ -1,6 +1,7 @@
 package extraction;
 
 import extraction.choreography.*;
+import extraction.Node.*;
 import org.jgrapht.graph.DirectedPseudograph;
 
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ public class ChoreographyBuilder {
                 mainInvokers.add(invNode);
         });
 
-        //Don't really understand the main invoker thing.
         ChoreographyBody main;
         if (mainInvokers.isEmpty())
             main = buildChoreographyBody(rootNode);
@@ -40,34 +40,34 @@ public class ChoreographyBuilder {
 
         switch (edges.size()) {
             case 0 -> {
-                if (node.getNodeType() == Node.NodeType.CONCRETE)
+                if (node instanceof ConcreteNode)
                     return terminationOrException((Node.ConcreteNode) node);
-                if (node.getNodeType() == Node.NodeType.INVOCATION)
+                if (node instanceof InvocationNode)
                     return new ProcedureInvocation(((Node.InvocationNode) node).procedureName);
                 throw new IllegalStateException("Unknown Node type: " + node.getClass().getName());
             }
             case 1 -> {
                 Label edge = edges.iterator().next();
-                if (edge.labelType == Label.LabelType.COMMUNICATION) {
-                    var comm = (Label.InteractionLabel.CommunicationLabel) edge;
+                if (edge instanceof Label.CommunicationLabel comm) {
                     return new Communication(comm.sender, comm.receiver, comm.expression,
                             buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
-                if (edge.labelType == Label.LabelType.SELECTION) {
-                    var select = (Label.InteractionLabel.SelectionLabel) edge;
-                    return new Selection(select.receiver, select.sender, select.expression,
+                if (edge instanceof Label.SelectionLabel select) {
+                    return new Selection(select.sender, select.receiver, select.expression,
                             buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
-                if (edge.labelType == Label.LabelType.MULTICOM) {
-                    return new Multicom(((Label.MulticomLabel)edge).communications,
+                if (edge instanceof Label.MulticomLabel multicom) {
+                    return new Multicom(multicom.communications,
                             buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
-                if (edge.labelType == Label.LabelType.INTRODUCTION) {
-                    var introduction = (Label.IntroductionLabel) edge;
+                if (edge instanceof Label.IntroductionLabel introduction) {
                     return new Introduction(introduction.introducer, introduction.process1, introduction.process2,
                             buildChoreographyBody(graph.getEdgeTarget(edge)));
                 }
-                throw new IllegalStateException("Unary edge in graph, but not of type Communication or Selection. Is of type: " + edge.getClass().getName());
+                throw new IllegalStateException(
+                        "Unary edge in graph, but not of type Communication or Selection. Is of type: " +
+                                edge.getClass().getName()
+                );
             }
             case 2 -> {
                 Label[] labels = edges.toArray(Label[]::new);
@@ -85,7 +85,7 @@ public class ChoreographyBuilder {
     }
     private ChoreographyBody terminationOrException(Node.ConcreteNode node){
         for (var processTerm : node.network.processes.values()){
-            if (!GraphExpander.isTerminated(processTerm.main, processTerm.procedures))
+            if (!processTerm.isTerminated())
                 throw new IllegalStateException("Bad graph: No more edges found, but not all processes where terminated");
         }
         return Termination.getInstance();
@@ -100,8 +100,8 @@ public class ChoreographyBuilder {
             recursiveNodes.put("X" + count++, rootNode);
 
         for (var node : graph.vertexSet()){
-            if (node.getNodeType() == Node.NodeType.CONCRETE && graph.incomingEdgesOf(node).size() > 1)
-                recursiveNodes.put("X" + count++, (Node.ConcreteNode)node);
+            if (node instanceof ConcreteNode concreteNode && graph.incomingEdgesOf(node).size() > 1)
+                recursiveNodes.put("X" + count++, concreteNode);
         }
 
         recursiveNodes.forEach((key, node) -> {

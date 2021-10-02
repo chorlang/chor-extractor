@@ -22,15 +22,15 @@ specifically the loop body seemed to be the power behind the curse. Replacing it
 seems to have fixed it. I pray it has been fixed for good
  */
 public class NetworkUnfolder {
-    private static Random random = new Random();
+    private static final Random random = new Random();
 
     private static ProcessTerm compute(ProcessTerm processTerm, double p, int iterations){
-        var result = processTerm.copy();
+        var result = new ProcessTerm.HackProcessTerm( processTerm.copy() );
         for (int i = 0; i < iterations; i++){
-            result.main = compute(result.main, result.procedures, p);
+            result.changeMain( compute(result.main(), result.procedures, p) );
             result.procedures.replaceAll((n, v) -> compute(result.procedures.get(n), processTerm.procedures, p));
         }
-        return result;
+        return result.term;
     }
 
     public static Network compute(String inputNetwork, double p, int iterations){
@@ -42,9 +42,9 @@ public class NetworkUnfolder {
     }
 
     private static Behaviour compute(Behaviour b, Map<String, Behaviour> procedures, double p){
-        switch (b.getAction()){
+        switch (b.action){
             case TERMINATION:
-                return Termination.getTermination();
+                return Termination.instance;
             case SEND:
                 var s = (Send)b;
                 return new Send(s.receiver, s.expression, compute(s.continuation, procedures, p));
@@ -65,7 +65,7 @@ public class NetworkUnfolder {
             case PROCEDURE_INVOCATION:
                 var proc = (ProcedureInvocation)b;
                 if (random.nextDouble() < p){
-                    return procedures.get(proc.procedure).copy();
+                    return procedures.get(proc.procedure);
                 } else{
                     return new ProcedureInvocation(proc.procedure);
                 }

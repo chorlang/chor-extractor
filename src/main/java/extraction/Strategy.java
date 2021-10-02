@@ -1,14 +1,11 @@
 package extraction;
 
-import extraction.network.Behaviour;
-import extraction.network.ProcessTerm;
+import extraction.network.*;
 
 import java.util.*;
 
-import static extraction.network.Behaviour.Action.*;
-
 /**
- * This enum class contains different implementations of copyAndSort() which takes a extraction.network
+ * This enum class contains different implementations of copyAndSort() which takes a network
  * in the form of a HashMap, and returns a HashMap that is sorted according to a specific
  * strategy. The returned HashMap is a LinkedHashMap, as that retains the order that values
  * are put into it.
@@ -21,7 +18,7 @@ public enum Strategy {
         }
     },
     /**
-     * Places all processes who's main procedures involve intra-process communication
+     * Places all processes whose main procedures involve intra-process communication
      * first, followed by anything else, in no particular order.
      */
     InteractionsFirst {
@@ -31,10 +28,10 @@ public enum Strategy {
             LinkedHashMap<String, ProcessTerm> sortedNetwork = new LinkedHashMap<>(network.size());
 
             network.forEach((String processName, ProcessTerm process) -> {
-                if (process.main.getAction() == SEND
-                || process.main.getAction() == RECEIVE
-                || process.main.getAction() == SELECTION
-                || process.main.getAction() == OFFERING){
+                if (process.main() instanceof Send
+                || process.main() instanceof Receive
+                || process.main() instanceof Selection
+                || process.main() instanceof Offering){
                     sortedNetwork.put(processName, process.copy());
                 }
             });
@@ -56,11 +53,11 @@ public enum Strategy {
             var sortedNetwork = new LinkedHashMap<String, ProcessTerm>(network.size());
 
             network.forEach((processName, processTerm) ->{
-                if (processTerm.main.getAction() == CONDITION)
+                if (processTerm.main() instanceof Condition)
                     sortedNetwork.put(processName, processTerm.copy());
             });
             network.forEach((processName, processTerm) -> {
-                if (processTerm.main.getAction() == SELECTION || processTerm.main.getAction() == OFFERING)
+                if (processTerm.main() instanceof Selection || processTerm.main() instanceof Offering)
                     sortedNetwork.put(processName, processTerm.copy());
             });
             network.forEach((processName, processTerm) -> {
@@ -105,7 +102,7 @@ public enum Strategy {
                 if (marking)
                     markedList.add(processName);
                 else
-                    if (isInteraction(node.network.processes.get(processName).main))
+                    if (isInteraction(node.network.processes.get(processName).main()))
                         unmarkedInteractionsList.add(processName);
                     else
                         unmarkedOthersList.add(processName);
@@ -118,12 +115,10 @@ public enum Strategy {
             return sortedProcesses;
         }
         private boolean isInteraction(Behaviour b){
-            switch (b.getAction()){
-                case SEND: case RECEIVE: case SELECTION: case OFFERING:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (b.action) {
+                case SEND, RECEIVE, SELECTION, OFFERING -> true;
+                default -> false;
+            };
         }
     },
 
@@ -182,7 +177,7 @@ public enum Strategy {
             Collections.shuffle(unmarkedList);
             Collections.shuffle(markedList);
 
-            unmarkedList.forEach(procesName -> sortedProcesses.put(procesName, processes.get(procesName).copy()));
+            unmarkedList.forEach(processName -> sortedProcesses.put(processName, processes.get(processName).copy()));
             markedList.forEach(processName -> sortedProcesses.put(processName, processes.get(processName).copy()));
 
             return sortedProcesses;
@@ -203,7 +198,7 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).main.getAction()){
+                switch (node.network.processes.get(processName).main().action){
                     case SELECTION:
                     case OFFERING:
                         if (marked)
@@ -249,7 +244,7 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).main.getAction()){
+                switch (node.network.processes.get(processName).main().action){
                     case CONDITION:
                         if (marked)
                             markedConditions.add(processName);
@@ -287,8 +282,8 @@ public enum Strategy {
     private static class SortByLength implements Comparator<Map.Entry<String, ProcessTerm>>{
         @Override
         public int compare(Map.Entry<String, ProcessTerm> entry1, Map.Entry<String, ProcessTerm> entry2) {
-            String term1 = entry1.getValue().main.toString();
-            String term2 = entry2.getValue().main.toString();
+            String term1 = entry1.getValue().main().toString();
+            String term2 = entry2.getValue().main().toString();
             return term1.length() - term2.length();
         }
     }

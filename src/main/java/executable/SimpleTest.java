@@ -32,8 +32,8 @@ public class SimpleTest {
         System.out.println(program.toString());
     }
 
-    static boolean checkEquals(Behaviour b){
-        var copy = b.copy();
-        return copy.equals(b);
+    static boolean checkEquals(Network n){
+        var copy = n.copy();
+        return copy.equals(n);
     }
 }

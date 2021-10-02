@@ -23,7 +23,8 @@ public class NetworkShifter {
         var n = Parser.stringToNetwork(inputNetwork);
         NetworkPurger.purgeNetwork(n);
 
-        for (var processTerm : n.processes.values()){
+        for (var term : n.processes.values()){
+            var processTerm = new ProcessTerm.HackProcessTerm(term);
             var newCalls = new HashMap<String, Behaviour>();
             var newDefs = new HashMap<String, Behaviour>();
             processTerm.procedures.forEach((procedureName, procedureBody) -> {
@@ -31,19 +32,19 @@ public class NetworkShifter {
                 newCalls.put(procedureName, shift.prefix);
                 newDefs.put(procedureName, shift.newBody);
             });
-            processTerm.main = replace(newCalls, processTerm.main);
+            processTerm.changeMain( replace(newCalls, processTerm.main()) );
             newDefs.forEach( (name, newDef) -> processTerm.procedures.put(name, replace(newCalls, newDef)));
         }
         return n;
     }
 
     private static Behaviour replace(Map<String, Behaviour> newCalls, Behaviour b){
-        switch (b.getAction()){
+        switch (b.action){
             case TERMINATION:
                 return b;
             case PROCEDURE_INVOCATION:
                 var p = (ProcedureInvocation)b;
-                return newCalls.get(p.procedure).copy();
+                return newCalls.get(p.procedure);
             case SEND:
                 var sen = (Send)b;
                 return new Send(sen.receiver, sen.expression, replace(newCalls, sen.continuation));
@@ -67,7 +68,7 @@ public class NetworkShifter {
     }
 
     private static BPair computeShift(String name, Behaviour b, double p){
-        switch (b.getAction()){
+        switch (b.action){
             case SEND:
                 if (random.nextDouble() < p){
                     var s = (Send)b;

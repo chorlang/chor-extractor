@@ -19,7 +19,7 @@ public class WellFormedness{
         for (var process: network.processes.entrySet()){
             String processName = process.getKey();
             ProcessTerm term = process.getValue();
-            if (!checkWellFormedness(term.main, processName))
+            if (!checkWellFormedness(term.main(), processName))
                 return false;
             for (var procedure : term.procedures.entrySet()){
                 String procedureName = procedure.getKey();
@@ -31,8 +31,8 @@ public class WellFormedness{
         return true;
     }
 
-    private static Boolean checkWellFormedness(Behaviour behaviour, String processName){
-        return behaviour.accept(new WellFormedChecker(processName));
+    private static Boolean checkWellFormedness(NetworkASTNode node, String processName){
+        return node.accept(new WellFormedChecker(processName));
     }
 
     /**
@@ -46,9 +46,8 @@ public class WellFormedness{
      * @return true if the procedure do meaningful work. false if it only calls procedures in a loop.
      */
     private static Boolean isGuarded(Set<String> procedureNames, Behaviour behaviour, Map<String, Behaviour> procedures){
-        if (behaviour.getAction() != Behaviour.Action.PROCEDURE_INVOCATION)
+        if (!(behaviour instanceof ProcedureInvocation invocation))
             return true;
-        var invocation = (extraction.network.ProcedureInvocation)behaviour;
         var newProcedureNames = new HashSet<>(procedureNames);
         newProcedureNames.add(invocation.procedure);
         return !procedureNames.contains(invocation.procedure) && isGuarded(newProcedureNames, procedures.get(invocation.procedure), procedures);
@@ -59,7 +58,7 @@ public class WellFormedness{
      * meaning the process does not interact with itself.
      * The choreography extraction algorithm assumes the extraction.network is well-formed.
      */
-    private static class WellFormedChecker implements TreeVisitor<Boolean, Behaviour> {
+    private static class WellFormedChecker implements TreeVisitor<Boolean, NetworkASTNode> {
         //The name of the process currently being checked
         private final String checkingProcessName;
         public WellFormedChecker(String processName){
@@ -67,8 +66,8 @@ public class WellFormedness{
         }
 
         @Override
-        public Boolean Visit(Behaviour hostNode) {
-            switch (hostNode.getAction()){
+        public Boolean Visit(NetworkASTNode hostNode) {
+            switch (hostNode.action){
                 case PROCEDURE_INVOCATION:
                 case TERMINATION:
                     return true;

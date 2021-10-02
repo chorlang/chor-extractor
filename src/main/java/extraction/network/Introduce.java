@@ -1,5 +1,9 @@
 package extraction.network;
 
+import extraction.Label;
+
+import java.util.Map;
+
 /**
  * Behaviour for making to (distinct other) processes acquainted (aware of each other)
  *
@@ -7,9 +11,8 @@ package extraction.network;
  * process1 and process2, hashCode() and equals(Behaviour other) produces different results
  * if the ordering is swapped.
  */
-public class Introduce extends Behaviour{
-    public final String process1, process2;
-    public final Behaviour continuation;
+public class Introduce extends Behaviour.Sender{
+    public final String process1, process2; //Same as expression and receiver from superclass
 
     /**
      * Creates a new Introduce behaviour, which represents introducing two processes (not itself)
@@ -20,19 +23,14 @@ public class Introduce extends Behaviour{
      * @param continuation The behaviour to continue as after the interaction.
      */
     public Introduce(String process1, String process2, Behaviour continuation){
+        super(Action.INTRODUCE, continuation, process1, process2);
         this.process1 = process1;
         this.process2 = process2;
-        this.continuation = continuation;
     }
 
     @Override
-    public Action getAction() {
-        return Action.INTRODUCE;
-    }
-
-    @Override
-    public Behaviour copy() {
-        return this;
+    public Label.InteractionLabel labelFrom(String process, Map<String, String> sub){
+        return new Label.IntroductionLabel(process, sub.get(process1), sub.get(process2));
     }
 
     @Override

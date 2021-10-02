@@ -1,7 +1,9 @@
 package executable;
 
+import endpointprojection.EndPointProjection;
 import extraction.Extraction;
 import extraction.Strategy;
+import extraction.choreography.Program;
 import extraction.network.*;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
@@ -64,6 +66,8 @@ public class Main {
                     "c { main {a?b; stop}}";
     static String introductionTest =
             "main {a.e->b; a.b<->c; stop}";
+    static String chorLoop =
+            "def X { p.e->q; X} main { X }";
     static String introductionMulticom =
             "a { main { b<->c; b?; stop}} |" +
                     "b { main { a!<msg>; a?c; stop}} |" +
@@ -72,12 +76,16 @@ public class Main {
     public static void main(String []args){
         System.out.println("Hello World");
 
+        var dict = new LinkedHashMap<>();
+
         /*
-        String chorString = introductionTest;
-        Program chor = Parser.stringToProgram(introductionTest);
-        System.out.println(chor.toString());*/
+        String chorString = chorLoop;
+        Program chor = Parser.stringToProgram(chorString);
+        System.out.println(chor.toString());
+        System.out.println(EndPointProjection.project(chorString));
+        //*/
         //*
-        String networksString = acquaint;
+        String networksString = testNetwork2;
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
@@ -144,12 +152,5 @@ public class Main {
         public boolean get(String p, String q){
             return graph.containsEdge(p,q);
         }
-    }
-
-
-
-    static void checkEquals(Behaviour b){
-        var copy = b.copy();
-        System.out.println(copy.equals(b));
     }
 }

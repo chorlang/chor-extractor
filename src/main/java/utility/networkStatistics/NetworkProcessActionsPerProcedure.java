@@ -5,9 +5,9 @@ import extraction.network.utils.TreeVisitor;
 
 import java.util.ArrayList;
 
-public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, Behaviour> {
-    public Integer Visit(Behaviour hostNode){
-        switch (hostNode.getAction()){
+public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, NetworkASTNode> {
+    public Integer Visit(NetworkASTNode hostNode){
+        switch (hostNode.action){
             case CONDITION:{
                 var host = (Condition)hostNode;
                 return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);

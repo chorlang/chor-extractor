@@ -1,9 +1,6 @@
 package extraction.network.utils;
 
-import extraction.network.Behaviour;
-import extraction.network.Network;
-import extraction.network.ProcedureInvocation;
-import extraction.network.ProcessTerm;
+import extraction.network.*;
 
 import java.util.HashMap;
 
@@ -15,7 +12,7 @@ public class NetworkPurger {
      */
     public static void purgeNetwork(Network network){
         /*
-        Creates a new HashMap, then for each entry in the Networks processes, add it to the new map if it do not
+        Creates a new HashMap, then for each entry in the Networks processes, add it to the new map if it does not
         immediately terminate, or is a procedure invocation that immediately terminates.
         In other words, copies all entries over to the new map, but excludes those that would terminate before doing
         anything else first.
@@ -23,11 +20,11 @@ public class NetworkPurger {
         var map = new HashMap<String, ProcessTerm>();
         network.processes.forEach((processName, processTerm) -> {
             boolean exclude;
-            if (processTerm.main.getAction() == Behaviour.Action.TERMINATION)
+            if (processTerm.main() instanceof Termination)
                 exclude = true;
-            else if (processTerm.main.getAction() == Behaviour.Action.PROCEDURE_INVOCATION)
+            else if (processTerm.main() instanceof ProcedureInvocation invocation)
                 //Should this not unfold procedure invocations recursively?
-                exclude = processTerm.procedures.get(((ProcedureInvocation)processTerm.main).procedure).getAction() == Behaviour.Action.TERMINATION;
+                exclude = processTerm.procedures.get(invocation.procedure) instanceof Termination;
             else
                 exclude = false;
             if (!exclude)

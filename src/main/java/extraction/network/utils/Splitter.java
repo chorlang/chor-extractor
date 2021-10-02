@@ -78,11 +78,11 @@ public class Splitter {
      * This tree visitor visits a ProcessTerm in a Network (but not the Network itself) to find the names of
      * all processes that directly interacts with the process in question.
      */
-    private static class ProcessInteractionChecker implements TreeVisitor<HashSet<String>, Behaviour>{
+    private static class ProcessInteractionChecker implements TreeVisitor<HashSet<String>, NetworkASTNode>{
 
         @Override
-        public HashSet<String> Visit(Behaviour hostNode) {
-            switch (hostNode.getAction()){
+        public HashSet<String> Visit(NetworkASTNode hostNode) {
+            switch (hostNode.action){
                 case INTRODUCE:{
                     var acquaint = (Introduce) hostNode;
                     var interacting = new HashSet<String>();
@@ -101,7 +101,7 @@ public class Splitter {
                 }
                 case PROCESS_TERM:{
                     var term = (ProcessTerm)hostNode;
-                    var processes = new HashSet<>(term.main.accept(this));
+                    var processes = new HashSet<>(term.main().accept(this));
                     term.procedures.forEach((__, behaviour) -> processes.addAll(behaviour.accept(this)));
                     return processes;
                 }

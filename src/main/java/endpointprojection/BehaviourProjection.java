@@ -38,13 +38,13 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
                     return Merging.merge(host.thenChoreography.accept(this), host.elseChoreography.accept(this));
             }
             case TERMINATION:
-                return extraction.network.Termination.getTermination();
+                return extraction.network.Termination.instance;
             case PROCEDURE_INVOCATION: {
                 var host = (ProcedureInvocation)hostNode;
                 if (usedProcesses.get(host.procedure).contains(processName))
                     return new extraction.network.ProcedureInvocation(host.procedure);
                 else
-                    return extraction.network.Termination.getTermination();
+                    return extraction.network.Termination.instance;
             }
             case PROCEDURE_DEFINITION:
             case CHOREOGRAPHY:

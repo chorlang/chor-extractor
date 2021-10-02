@@ -3,10 +3,10 @@ package utility.fuzzing;
 import extraction.network.*;
 import extraction.network.utils.TreeVisitor;
 
-public class ProcessSize implements TreeVisitor<Integer, Behaviour> {
+public class ProcessSize implements TreeVisitor<Integer, NetworkASTNode> {
     @Override
-    public Integer Visit(Behaviour hostNode){
-        switch (hostNode.getAction()){
+    public Integer Visit(NetworkASTNode hostNode){
+        switch (hostNode.action){
             case CONDITION:
                 var con = (Condition)hostNode;
                 return con.thenBehaviour.accept(this) + con.elseBehaviour.accept(this) + 1;
