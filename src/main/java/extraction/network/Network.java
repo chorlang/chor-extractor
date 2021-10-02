@@ -3,13 +3,16 @@ package extraction.network;
 import extraction.AdjacencyMatrix;
 import extraction.Label;
 import extraction.Label.*;
+import extraction.network.Behaviour.*;
+import org.hamcrest.Factory;
 import utility.Pair;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class Network extends NetworkASTNode {
     public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
-    public AdjacencyMatrix introduced;
+    private final AdjacencyMatrix introduced;
 
     /**
      * A Network object stores a mapping from process names to process terms (procedures).
@@ -63,6 +66,17 @@ public class Network extends NetworkASTNode {
         foldExcept(unfoldedProcesses, new HashSet<>(Arrays.asList(exceptions)));
     }
 
+    /**
+     * Restores the main Behaviour of selected processes to that of a previous copy.
+     * @param originalProcesses The processes to restore from.
+     * @param toRestore Names of the processes to restore
+     */
+    public void restoreProcesses(HashMap<String, ProcessTerm> originalProcesses, HashSet<String> toRestore){
+        toRestore.forEach(processName ->
+                processes.get(processName).main = originalProcesses.get(processName).main
+                );
+    }
+
 
     /**
      * Attempts to advance the network by reducing on the given process, and the processes
@@ -91,11 +105,19 @@ public class Network extends NetworkASTNode {
         }
         return null;
     }
-    //TODO Ensure the network does not advance when attempting to communicate between proceses that have not been introduced
 
+    /**
+     * Container to store information about the advancement (reduced processes) of a Network.
+     * If elseLabel and elseNetwork is not null, then a conditional was reduced. The then branch are
+     * the other fields.
+     * The field actors is a set of all processes that reduced during the advancement.
+     */
     public static record Advancement(Label label, Network network,
-                                     Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel){
-        public Advancement(Label label, Network network){ this(label, network, null, null); }
+                                     Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel,
+                                     HashSet<String> actors){
+        public Advancement(Label label, Network network, HashSet<String> actors){
+            this(label, network, null, null, actors);
+        }
     }
 
     /**
@@ -115,7 +137,7 @@ public class Network extends NetworkASTNode {
         Network elseNetwork = this.copy();
         elseNetwork.processes.get(process).main = conditional.elseBehaviour;
 
-        return new Advancement(thenLabel, this, elseNetwork, elseLabel);
+        return new Advancement(thenLabel, this, elseNetwork, elseLabel, getInvolvedProcesses(thenLabel));
     }
 
     /**
@@ -136,7 +158,7 @@ public class Network extends NetworkASTNode {
                 introduced.isIntroduced(label.sender, label.receiver)))
             return null;
 
-        Advancement result = null;
+        boolean reduced = false;
 
         //Check interaction is of the right type
         if (    label instanceof CommunicationLabel &&
@@ -144,14 +166,14 @@ public class Network extends NetworkASTNode {
                 receiver instanceof Receive receive){
             sendProcess.main = send.continuation;
             receiveProcess.main = receive.continuation;
-            result = new Advancement(label, this);
+            reduced = true;
         }
         else if ( label instanceof SelectionLabel &&
                 sender instanceof Selection select &&
                 receiver instanceof Offering offer){
             sendProcess.main = select.continuation;
             receiveProcess.main = offer.branches.get(select.label);
-            result = new Advancement(label, this);
+            reduced = true;
         }
         //expression and receiver corresponds to process 1 and 2.
         //I kept them as expression and receiver here to ensure the order is correct.
@@ -165,16 +187,136 @@ public class Network extends NetworkASTNode {
             receiveProcess.main = introductee1.continuation;
             processes.get(label.expression).main = introductee2.continuation;
             introduced.introduce(introducer.process1, introducer.process2);
-            result = new Advancement(label, this);
+            reduced = true;
         }
-        return result;
+        return new Advancement(label, this, getInvolvedProcesses(label));
     }
+
+    public Advancement multicomAdvance(String process){
+        class FauxIntroductionLabel extends InteractionLabel {
+            /**
+             * Create a faux InteractionLabel that is functionally like an IntroductionLabel.
+             * Introduction in findMulticom is done by one of this label, and one IntroductionLabel
+             */
+            FauxIntroductionLabel(String introducer, String introductee, String introducedProcess){
+                super(introducer, introductee, introducedProcess, LabelType.INTRODUCTION);
+            }
+            @Override
+            public Label copy() {
+                return null;
+            }
+            @Override
+            public String toString() {
+                return String.format("%s.%s<->%s Debug only", sender, expression, receiver);
+            }
+        }
+
+        var processes = copyProcesses(); //Shadow processes with a copy to modify
+        var known = introduced.copy();
+        var processTerm = processes.get(process);
+
+        var actions = new ArrayList<InteractionLabel>();
+        var actors = new HashSet<String>();
+        var waiting = new LinkedList<InteractionLabel>();
+
+        if (!(processTerm.main instanceof Sender sender))
+            return null; //Only sending behaviours can start a multicom
+        //Add initial Label to the waiting list
+        var label = processTerm.prospectInteraction(process);
+        if (label instanceof IntroductionLabel intro)
+            //Introductions are handles with two labels which are both considered two-way communications
+            waiting.add(new FauxIntroductionLabel(label.sender, label.receiver, label.expression));
+        waiting.add(label);
+        processTerm.main = sender.continuation; //Reduce the added interaction
+
+        while (waiting.size() > 0){
+            var next = waiting.remove();
+            //Check the processes are introduced before com. Should also cover introductions by using FauxIntro
+            if (!known.isIntroduced(next.sender, next.receiver))
+                return null;
+            if (!(next instanceof FauxIntroductionLabel))
+                actions.add(next);
+            updateActors(actors, next);
+
+            //Go through the process' Behaviour, until a receiving Behaviour is reached.
+            processTerm = processes.get(next.receiver);
+            Behaviour blocking = processTerm.main;
+            while (!(blocking instanceof Receiver receiver)){
+                if (blocking instanceof ProcedureInvocation invocation){
+                    processTerm.unfoldRecursively();
+                    blocking = processTerm.main;
+                    continue;
+                } else if (!(blocking instanceof Sender)) {
+                    return null; //Process not of the required form. Multicom not possible
+                }
+                //Guaranteed to be sender. The above pattern match won't typecast for some reason
+                sender = (Sender)blocking;
+                label = processTerm.prospectInteraction(next.receiver);
+                if (sender instanceof Introduce)
+                    waiting.add(new FauxIntroductionLabel(label.sender, label.receiver, label.expression));
+                waiting.add(label);
+                processTerm.main = blocking = sender.continuation;
+            }
+
+            //All send/select/introduce actions are added to waiting.
+            //Blocking is now receive/offer/introductee
+            //Check that it receives from the right process
+            if (!receiver.sender.equals(next.sender))
+                return null;
+            //Reduce the network, and check the Label and receiver type matches
+            if (receiver instanceof Offering offering && next instanceof SelectionLabel)
+                processTerm.main = offering.branches.get(next.expression);
+            else if (receiver instanceof Receive && next instanceof CommunicationLabel ||
+                     receiver instanceof Introductee && next instanceof IntroductionLabel)
+                processTerm.main = receiver.continuation;
+            else
+                return null; //Label and receiver type does not match.
+        }
+        return new Advancement(new MulticomLabel(actions), new Network(processes, known), actors);
+    }
+
+
 
 
 
     /* ------------------------------
         Utility and Helper functions
        ------------------------------ */
+
+    /**
+     * Returns a set of process names from a Label.
+     * @param label A ConditionLabel or InteractionLabel to get the involved processes from.
+     * @return Set of every process name Label
+     */
+    private HashSet<String> getInvolvedProcesses(Label label){
+        var involved = new HashSet<String>();
+        if (label instanceof Label.InteractionLabel interaction){
+            involved.add(interaction.sender);
+            involved.add(interaction.receiver);
+            if (label instanceof Label.IntroductionLabel)
+                involved.add(interaction.expression);
+        } else if (label instanceof Label.ConditionLabel conditional){
+            involved.add(conditional.process);
+        } else
+            throw new IllegalArgumentException("The Advancement parameter contains an unsupported Label type");
+        return involved;
+    }
+
+    /**
+     * Adds all processes from a Label to a set
+     * @param actors The set to add to
+     * @param label The label to find processes from
+     */
+    private void updateActors(HashSet<String> actors, Label label){
+        if (label instanceof InteractionLabel interaction){
+            actors.add(interaction.sender);
+            actors.add(interaction.receiver);
+            if (label instanceof IntroductionLabel)
+                actors.add(interaction.expression);
+        } else if (label instanceof ConditionLabel conditional){
+            actors.add(conditional.process);
+        }
+    }
 
     /**
      * Checks if all processes of this Network has terminated.
@@ -216,7 +358,7 @@ public class Network extends NetworkASTNode {
     /**
      * Creates a copy of processes, where each ProcessTerm is also a copy.
      */
-    private HashMap<String, ProcessTerm> copyProcesses(){
+    public HashMap<String, ProcessTerm> copyProcesses(){
         HashMap<String, ProcessTerm> processesCopy = new HashMap<>(processes.size());
         processes.forEach((key, value) -> processesCopy.put(key, value.copy()));
         return processesCopy;

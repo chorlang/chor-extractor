@@ -70,17 +70,17 @@ public class GraphBuilder {
      *                    If elseLabel and elseNetwork is not null, then label and network are considered the
      *                    corresponding thenLabel and thenNetwork.
      * @param currentNode The node currently being build from.
-     * @param involvedProcesses All the processes that participated in the action of the advancement.label()
      * @return OK on success, BAD_LOOP if a different action is needed to build on the graph, or FAIL if
      * the network is not extractable.
      */
-    BuildGraphResult buildGraph(Network.Advancement advancement, ConcreteNode currentNode, Set<String> involvedProcesses){
+    BuildGraphResult buildGraph(Network.Advancement advancement, ConcreteNode currentNode){
+
         var targetMarking = new HashMap<>(currentNode.marking);
         var label = advancement.label();
         var targetNetwork = advancement.network();
         var createdNewNode = false;
 
-        involvedProcesses.forEach(name -> targetMarking.put(name, Boolean.TRUE));
+        advancement.actors().forEach(name -> targetMarking.put(name, Boolean.TRUE));
         if (!targetMarking.containsValue(false))
             flipAndResetMarking(label, targetMarking, targetNetwork);
 

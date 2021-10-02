@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 public class Prospector {
     private final Strategy strategy;
     private final GraphBuilder builder;
-    public boolean disableMulticom = true;
+    public boolean disableMulticom = false;
     Prospector(Strategy extractionStrategy, GraphBuilder builder){
         strategy = extractionStrategy;
         this.builder = builder;
@@ -41,8 +41,10 @@ public class Prospector {
         Network network = currentNode.network.copy();
         //Unfold procedure invocations, and get a copy of the original of the unfolded processes
         HashMap<String, ProcessTerm> unfoldedProcesses = network.unfold();
+        HashMap<String, ProcessTerm> originalProcesses = network.copyProcesses();
 
         //Really doesn't need to be a copy
+        //TODO Shouldn't this operate on the unfolded processes?
         var processOrder = copyAndSortProcesses(currentNode);
         //As far as I understand, the ordering of the Set's iterator is the same as that of the LinkedHashMap
         for (var processNames : processOrder.keySet()){
@@ -54,15 +56,17 @@ public class Prospector {
                 continue;
 
             //Fold back procedure invocations of unused processes.
-            var involvedProcesses = getInvolvedProcesses(advancement);
+            var involvedProcesses = advancement.actors();
             foldBackNetworks(advancement, unfoldedProcesses, involvedProcesses);
 
             //Build out the graph using the progress of the network
-            BuildGraphResult result = builder.buildGraph(advancement, currentNode, involvedProcesses);
+            BuildGraphResult result = builder.buildGraph(advancement, currentNode);
 
-            //In case of bad loops, the graph remains unchanged. Try the next process
+            //In case of bad loops, the graph remains unchanged.
+            // Reset changes to the Network, and try the next process
+            //TODO Find a better way to restore Network. Perhaps copy the whole thing
             if (result == BuildGraphResult.BAD_LOOP) {
-                network.unfold();   //Unfold the processes that was folded back. The network is reused.
+                network.restoreProcesses(originalProcesses, involvedProcesses);
                 continue;
             }
 
@@ -78,8 +82,30 @@ public class Prospector {
         if (disableMulticom)
             return BuildGraphResult.FAIL;
 
+        for (var processNames : processOrder.keySet()){
 
-        //TODO Implement multicom
+            //Try to advance the Network by reducing the chosen process.
+            Advancement advancement = network.multicomAdvance(processNames);
+            //If the chosen process could not reduce the network, try the next one
+            if (advancement == null)
+                continue;
+
+            //Fold back procedure invocations of unused processes.
+            var involvedProcesses = advancement.actors();
+            foldBackNetworks(advancement, unfoldedProcesses, involvedProcesses);
+
+            //Build out the graph using the progress of the network
+            BuildGraphResult result = builder.buildGraph(advancement, currentNode);
+
+            //In case of bad loops, the graph remains unchanged.
+            // Reset changes to the Network, and try the next process
+            if (result == BuildGraphResult.BAD_LOOP)
+                continue;
+
+            //Return the result of building the graph.
+            //Will either be OK on success, or FAIL if the network is not extractable
+            return result;
+        }
 
         //No process in the network can reduce. Extraction failed.
         return BuildGraphResult.FAIL;
@@ -97,26 +123,6 @@ public class Prospector {
         advancement.network().foldExcept(unfoldedProcesses, involvedProcesses);
         if (advancement.elseNetwork() != null)
             advancement.elseNetwork().foldExcept(unfoldedProcesses, involvedProcesses);
-    }
-
-    /**
-     * Returns a list of process names from the labels stored in advancement.
-     * @param advancement Container of the labels to get the involved processes from.
-     * @return Set of every process name in advancement.label
-     */
-    private HashSet<String> getInvolvedProcesses(Advancement advancement){
-        var involved = new HashSet<String>();
-        Label label = advancement.label();
-        if (label instanceof Label.InteractionLabel interaction){
-            involved.add(interaction.sender);
-            involved.add(interaction.receiver);
-            if (label instanceof Label.IntroductionLabel)
-                involved.add(interaction.expression);
-        } else if (label instanceof Label.ConditionLabel conditional){
-            involved.add(conditional.process);
-        } else
-            throw new IllegalArgumentException("The Advancement parameter contains an unsupported Label type");
-        return involved;
     }
 
     /**
