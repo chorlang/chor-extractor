@@ -189,6 +189,8 @@ public class Network extends NetworkASTNode {
             introduced.introduce(introducer.process1, introducer.process2);
             reduced = true;
         }
+        if (!reduced)
+            return null;
         return new Advancement(label, this, getInvolvedProcesses(label));
     }
 
@@ -199,7 +201,8 @@ public class Network extends NetworkASTNode {
              * Introduction in findMulticom is done by one of this label, and one IntroductionLabel
              */
             FauxIntroductionLabel(String introducer, String introductee, String introducedProcess){
-                super(introducer, introductee, introducedProcess, LabelType.INTRODUCTION);
+                //The ordering needs to be right for multicom to work.
+                super(introducer, introducedProcess, introductee, LabelType.INTRODUCTION);
             }
             @Override
             public Label copy() {
@@ -267,10 +270,15 @@ public class Network extends NetworkASTNode {
             if (receiver instanceof Offering offering && next instanceof SelectionLabel)
                 processTerm.main = offering.branches.get(next.expression);
             else if (receiver instanceof Receive && next instanceof CommunicationLabel ||
-                     receiver instanceof Introductee && next instanceof IntroductionLabel)
+                     receiver instanceof Introductee &&
+                             (next instanceof IntroductionLabel || next instanceof FauxIntroductionLabel))
                 processTerm.main = receiver.continuation;
             else
                 return null; //Label and receiver type does not match.
+            //Introduce processes. Real IntroductionLabel always comes after the faux one, so at this point,
+            //both receivers have received, and the introduction is fully complete.
+            if (next instanceof IntroductionLabel intro)
+                known.introduce(intro.process1, intro.process2);
         }
         return new Advancement(new MulticomLabel(actions), new Network(processes, known), actors);
     }
