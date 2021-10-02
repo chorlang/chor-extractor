@@ -132,9 +132,9 @@ public class Network extends NetworkASTNode {
                 receiveProcess.main instanceof Behaviour.Receiver receiver &&
                 sender.receiver.equals(label.receiver) &&
                 receiver.sender.equals(label.sender) &&
-                sender.expression.equals(label.expression)))
+                sender.expression.equals(label.expression) &&
+                introduced.isIntroduced(label.sender, label.receiver)))
             return null;
-
 
         Advancement result = null;
 
@@ -159,7 +159,8 @@ public class Network extends NetworkASTNode {
                 sender instanceof Introduce introducer &&
                 receiver instanceof Introductee introductee1 &&
                 processes.get(label.expression).main instanceof Introductee introductee2 &&
-                introductee2.sender.equals(label.sender)){
+                introductee2.sender.equals(label.sender) &&
+                introduced.isIntroduced(label.sender, label.expression)){
             sendProcess.main = introducer.continuation;
             receiveProcess.main = introductee1.continuation;
             processes.get(label.expression).main = introductee2.continuation;
