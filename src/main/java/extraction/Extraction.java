@@ -82,7 +82,10 @@ public class Extraction {
         System.out.println("The extraction.network is well-formed and extraction can proceed");
 
         ChorStatsPair result = extract(network, services);
-        return new Program(List.of(result.chor), List.of(result.stats));
+        //List.of() requires non-null parameters, that's why the singletons.
+        var chorSingleton = new ArrayList<Choreography>(){{add(result.chor);}};
+        var statsSingleton = new ArrayList<Program.GraphStatistics>(){{add(result.stats);}};
+        return new Program(chorSingleton, statsSingleton);
     }
 
     private ChorStatsPair extract(Network network, Set<String> services){
