@@ -4,3 +4,4 @@
 /target/
 /src/main/java/antlrgen/
 /tests/*
+/.idea/inspectionProfiles/Project_Default.xml
