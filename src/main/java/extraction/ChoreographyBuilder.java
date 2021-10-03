@@ -9,28 +9,44 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class ChoreographyBuilder {
-    private DirectedPseudograph<Node, Label> graph;
-
-    Choreography buildChoreography(Node.ConcreteNode rootNode, DirectedPseudograph<Node, Label> graph){
+    private final DirectedPseudograph<Node, Label> graph;
+    private ChoreographyBuilder(DirectedPseudograph<Node, Label> graph){
         this.graph = graph;
-        ArrayList<Node.InvocationNode> invocationNodes = unrollGraph(rootNode);
+    }
 
-        //Why the list? Only the first element is used. In any case it stays because of Lambda shenanigans
-        var mainInvokers = new ArrayList<Node.InvocationNode>();
-        invocationNodes.forEach(invNode -> {
-            if (invNode.node == rootNode)
-                mainInvokers.add(invNode);
-        });
+    static Choreography buildChoreography(ConcreteNode rootNode, DirectedPseudograph<Node, Label> graph){
+        //Loops are assumed to have >1 incoming edges. Add extra incoming edge to root to avoid special case.
+        var dummyNode = new Node(){};
+        var dummyLabel = new Label() {
+            @Override
+            public Label copy() {
+                return null;
+            }
+        };
+        graph.addVertex(dummyNode);
+        graph.addEdge(dummyNode, rootNode, dummyLabel);
+        var builder = new ChoreographyBuilder(graph);
+        ArrayList<InvocationNode> invocationNodes = builder.unrollGraph();
 
-        ChoreographyBody main;
-        if (mainInvokers.isEmpty())
-            main = buildChoreographyBody(rootNode);
-        else
-            main = new ProcedureInvocation(mainInvokers.get(0).procedureName);
+        //If the rootNode is at the beginning of a loop / start of a procedure, we would like the
+        //main Choreography to be a ProcedureInvocation of that procedure.
+        ChoreographyBody main = null;
+        for (var invocationNode : invocationNodes){
+            if (invocationNode.node == rootNode){
+                main = new ProcedureInvocation(invocationNode.procedureName);
+                break;
+            }
+        }
+        //If the root is not the start of a procedure, just build it normally.
+        if (main == null)
+            main = builder.buildChoreographyBody(rootNode);
 
+        //Build all ProcedureDefinitions
         var procedures = new ArrayList<ProcedureDefinition>();
-        for (var invNode : invocationNodes)
-            procedures.add(new ProcedureDefinition(invNode.procedureName, buildChoreographyBody(invNode.node), new HashSet<>()));
+        invocationNodes.forEach(invocationNode -> procedures.add(new ProcedureDefinition(
+                invocationNode.procedureName,
+                builder.buildChoreographyBody(invocationNode.node)
+        )));
 
         return new Choreography(main, procedures);
     }
@@ -39,47 +55,47 @@ public class ChoreographyBuilder {
         var edges = graph.outgoingEdgesOf(node);
 
         switch (edges.size()) {
-            case 0 -> {
-                if (node instanceof ConcreteNode)
-                    return terminationOrException((Node.ConcreteNode) node);
-                if (node instanceof InvocationNode)
-                    return new ProcedureInvocation(((Node.InvocationNode) node).procedureName);
-                throw new IllegalStateException("Unknown Node type: " + node.getClass().getName());
+            case 0: {
+                if (node instanceof ConcreteNode concreteNode)
+                    return terminationOrException(concreteNode);
+                if (node instanceof InvocationNode invocation)
+                    return new ProcedureInvocation(invocation.procedureName);
+                throw new IllegalStateException("Unexpected Node type: " + node.getClass().getName());
             }
-            case 1 -> {
+            case 1: {
                 Label edge = edges.iterator().next();
+                Node edgeTarget = graph.getEdgeTarget(edge);
                 if (edge instanceof Label.CommunicationLabel comm) {
                     return new Communication(comm.sender, comm.receiver, comm.expression,
-                            buildChoreographyBody(graph.getEdgeTarget(edge)));
+                            buildChoreographyBody(edgeTarget));
                 }
                 if (edge instanceof Label.SelectionLabel select) {
                     return new Selection(select.sender, select.receiver, select.expression,
-                            buildChoreographyBody(graph.getEdgeTarget(edge)));
+                            buildChoreographyBody(edgeTarget));
                 }
                 if (edge instanceof Label.MulticomLabel multicom) {
                     return new Multicom(multicom.communications,
-                            buildChoreographyBody(graph.getEdgeTarget(edge)));
+                            buildChoreographyBody(edgeTarget));
                 }
                 if (edge instanceof Label.IntroductionLabel introduction) {
                     return new Introduction(introduction.introducer, introduction.process1, introduction.process2,
-                            buildChoreographyBody(graph.getEdgeTarget(edge)));
+                            buildChoreographyBody(edgeTarget));
                 }
-                throw new IllegalStateException(
-                        "Unary edge in graph, but not of type Communication or Selection. Is of type: " +
-                                edge.getClass().getName()
-                );
+                throw new IllegalStateException("Unexpected edge type: " + edge.getClass().getName());
             }
-            case 2 -> {
-                Label[] labels = edges.toArray(Label[]::new);
-                if (labels[0].labelType == Label.LabelType.ELSE)
-                    labels = new Label[]{labels[1], labels[0]};
-                var thenLabel = (Label.ConditionLabel.ThenLabel) labels[0];
-                var elseLabel = (Label.ConditionLabel.ElseLabel) labels[1];
+            case 2: {
+                Label[] labels = edges.toArray(new Label[2]);
+                if (labels[0] instanceof Label.ConditionLabel.ElseLabel)
+                    labels = new Label[]{labels[1], labels[0]}; //Ensure that thenLabel is first
+                if ( !( labels[0] instanceof Label.ConditionLabel.ThenLabel thenLabel &&
+                        labels[1] instanceof Label.ConditionLabel.ElseLabel elseLabel))
+                    throw new IllegalStateException("Node has two outgoing edges, but their labels are not then, and else labels");
                 return new Condition(thenLabel.process, thenLabel.expression,
                         buildChoreographyBody(graph.getEdgeTarget(thenLabel)),
                         buildChoreographyBody(graph.getEdgeTarget(elseLabel)));
             }
-            default -> throw new IllegalStateException("Bad graph. A node has more than 2 outgoing edges.");
+            default:
+                throw new IllegalStateException("Bad graph. A node has more than 2 outgoing edges.");
         }
 
     }
@@ -91,32 +107,36 @@ public class ChoreographyBuilder {
         return Termination.getInstance();
     }
 
-    private ArrayList<Node.InvocationNode> unrollGraph(Node.ConcreteNode rootNode){
-        var invocations = new ArrayList<Node.InvocationNode>();
-        int count = 1;
-        var recursiveNodes = new HashMap<String, Node.ConcreteNode>();
+    private ArrayList<InvocationNode> unrollGraph(){
+        //InvocationNodes added by the unrolling
+        var invocationNodes = new ArrayList<InvocationNode>();
+        //ID of the next procedure to add
+        int procedureID = 1;
+        //The node at the start/head of procedures. The top of loops
+        var procedureHeads = new HashMap<String, ConcreteNode>();
 
-        if (graph.incomingEdgesOf(rootNode).size() == 1)
-            recursiveNodes.put("X" + count++, rootNode);
-
+        //Find set of nodes that are at the top/beginning of a loop in the graph.
         for (var node : graph.vertexSet()){
             if (node instanceof ConcreteNode concreteNode && graph.incomingEdgesOf(node).size() > 1)
-                recursiveNodes.put("X" + count++, concreteNode);
+                procedureHeads.put("X" + procedureID++, concreteNode);
         }
 
-        recursiveNodes.forEach((key, node) -> {
-            var invocationNode = new Node.InvocationNode(key, node);
+        //Do the unrolling
+        procedureHeads.forEach((key, node) -> {
+            //Create new InvocationNode
+            var invocationNode = new InvocationNode(key, node);
             graph.addVertex(invocationNode);
-            invocations.add(invocationNode);
+            invocationNodes.add(invocationNode);
 
+            //Unravel loops, making them point ot the new InvocationNode instead of the top of the loop
             var incomingEdges = new HashSet<>(graph.incomingEdgesOf(node));
             incomingEdges.forEach(label -> {
-                var sourceNode = graph.getEdgeSource(label);
+                Node sourceNode = graph.getEdgeSource(label);
                 graph.removeEdge(label);
                 graph.addEdge(sourceNode, invocationNode, label);
             });
         });
 
-        return invocations;
+        return invocationNodes;
     }
 }

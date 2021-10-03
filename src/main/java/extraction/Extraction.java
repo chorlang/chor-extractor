@@ -92,7 +92,7 @@ public class Extraction {
         if (graphContainer.buildGraphResult() != GraphBuilder.BuildGraphResult.OK){
             return new ChorStatsPair(null, statistics);
         }
-        var choreography = new ChoreographyBuilder().buildChoreography(graphContainer.rootNode(), graphContainer.graph());
+        var choreography = ChoreographyBuilder.buildChoreography(graphContainer.rootNode(), graphContainer.graph());
 
         return new ChorStatsPair(choreography, statistics);
     }
