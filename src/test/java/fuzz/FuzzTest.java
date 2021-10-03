@@ -5,6 +5,7 @@ import utility.fuzzing.NetworkFuzzer;
 
 
 //Some of these test may throw IllegalStateException
+//They also seem to be cursed. Parsing/failing/freezing inconsistently
 public class FuzzTest {
     private void testFuzz(String orig, int dels, int swaps){
         var fuzzed1 = NetworkFuzzer.fuzz(orig, 1, 0);
