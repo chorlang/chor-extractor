@@ -33,6 +33,11 @@ public class ProcessTerm extends NetworkASTNode {
         this.procedures = procedures;
         this.parameters = parameters;
         this.main = main;
+        procedures.forEach((key, __) -> {
+            if (parameters == null)
+                System.out.println("err");
+
+        });
     }
 
     public Behaviour main() {
@@ -104,7 +109,7 @@ public class ProcessTerm extends NetworkASTNode {
         return builder.toString();
     }
     private String parametersToString(List<String> parameters){
-        if (parameters.size() == 0)
+        if (parameters == null || parameters.size() == 0)
             return "";
         return parameters.toString().replace('[', '(').replace(']', ')');
     }

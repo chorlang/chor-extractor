@@ -5,17 +5,15 @@ import java.util.HashSet;
 public class ProcedureDefinition extends ChoreographyASTNode implements Comparable<ProcedureDefinition>{
     public final String name;
     public final ChoreographyBody body;
-    public final HashSet<String> usedProcesses;
 
     private final Type chorType = Type.PROCEDURE_DEFINITION;
     public Type getType(){
         return chorType;
     }
 
-    public ProcedureDefinition(String name, ChoreographyBody body, HashSet<String> usedProcesses){
+    public ProcedureDefinition(String name, ChoreographyBody body){
         this.name = name;
         this.body = body;
-        this.usedProcesses = usedProcesses;
     }
 
     public String toString(){

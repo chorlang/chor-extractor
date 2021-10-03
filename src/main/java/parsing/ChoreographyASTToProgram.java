@@ -88,7 +88,8 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
     }
 
     @Override public ChoreographyASTNode visitProcedureDefinition(ProcedureDefinitionContext ctx) {
-        return new ProcedureDefinition(ctx.procedure().getText(), (ChoreographyBody)visit(ctx.behaviour()), processesInChoreography.get(iteration));
+        return new ProcedureDefinition(ctx.procedure().getText(), (ChoreographyBody)visit(ctx.behaviour()));
+        //, processesInChoreography.get(iteration));
     }
 
     @Override public ChoreographyASTNode visitMain(MainContext ctx) {
