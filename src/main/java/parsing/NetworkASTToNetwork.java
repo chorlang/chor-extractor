@@ -5,6 +5,7 @@ import extraction.network.*;
 import antlrgen.NetworkParser.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,10 +32,24 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
     @Override public NetworkASTNode visitProcessBehaviour(ProcessBehaviourContext ctx){
         int numOfProcedures = ctx.procedureDefinition().size();
         HashMap<String, Behaviour> procedures = new HashMap<>(numOfProcedures);
-        for (int i = 0; i < numOfProcedures; i++){
-            procedures.put(ctx.procedure(i).getText(), (Behaviour) visit(ctx.procedureDefinition(i)));
+        HashMap<String, List<String>> parameters = new HashMap<>(numOfProcedures);
+        for (ProcedureDefinitionContext pctx : ctx.procedureDefinition()){
+            String procedureName = pctx.procedure().getText();
+            procedures.put(procedureName, (Behaviour) visit(pctx.behaviour()));
+            var parametersctx = pctx.parameters();
+            if (parametersctx != null && parametersctx.parameterList() != null)
+                parameters.put(procedureName, Arrays.stream(parametersctx.parameterList().getText().split(",")).toList());
+            else
+                parameters.put(procedureName, List.of());
         }
-        return new ProcessTerm(procedures, (Behaviour) visit(ctx.behaviour()));
+
+        return new ProcessTerm(procedures, parameters, (Behaviour) visit(ctx.behaviour()));
+    }
+
+    @Override
+    public NetworkASTNode visitParameters(ParametersContext ctx){
+        ctx.parameterList();
+        return null;
     }
 
     @Override public NetworkASTNode visitSending(SendingContext ctx){

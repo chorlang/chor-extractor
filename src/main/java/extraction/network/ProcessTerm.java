@@ -5,9 +5,11 @@ import extraction.network.Behaviour.*;
 import utility.Pair;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
+    private final HashMap<String, List<String>> parameters;
                                                             //Is assumed to be readonly when extracting.
     Behaviour main;                                         //The main behaviour for the procedure
     //Used for getting real process names from variables.
@@ -24,8 +26,12 @@ public class ProcessTerm extends NetworkASTNode {
      * @param main The main Behaviour for this procedure
      */
     public ProcessTerm(HashMap<String, Behaviour> procedures, Behaviour main){
+        this(procedures, new HashMap<>(), main);
+    }
+    public ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, Behaviour main){
         super(Action.PROCESS_TERM);
         this.procedures = procedures;
+        this.parameters = parameters;
         this.main = main;
     }
 
@@ -93,10 +99,16 @@ public class ProcessTerm extends NetworkASTNode {
         StringBuilder builder = new StringBuilder();
         builder.append("{");
         procedures.forEach((key, value) ->
-                builder.append(String.format("def %s{%s} ", key, value)));
+                builder.append(String.format("def %s%s{%s} ", key, parametersToString(parameters.get(key)), value)));
         builder.append(String.format("main {%s}}", main));
         return builder.toString();
     }
+    private String parametersToString(List<String> parameters){
+        if (parameters.size() == 0)
+            return "";
+        return parameters.toString().replace('[', '(').replace(']', ')');
+    }
+
 
     /**
      * Makes a copy o this ProcessTerm.
@@ -105,7 +117,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        return new ProcessTerm(procedures, main);
+        return new ProcessTerm(procedures, parameters, main);
     }
 
     /**

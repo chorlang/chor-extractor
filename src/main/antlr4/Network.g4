@@ -7,10 +7,9 @@ import CommonLexerRules;
 
 network: process processBehaviour ('|' process processBehaviour)*;
 
-processBehaviour : '{' ('def' procedure procedureDefinition)* 'main' '{' behaviour '}' '}'
-    ;
+processBehaviour : '{' procedureDefinition* 'main' '{' behaviour '}' '}';
 
-procedureDefinition : '{' behaviour '}';
+procedureDefinition : 'def' procedure parameters? '{' behaviour '}';
 
 behaviour : interaction
     |   offering
@@ -40,6 +39,10 @@ introductee: process '?' process ';' behaviour;
 condition: 'if' expression 'then' behaviour 'else' behaviour;
 
 procedureInvocation: procedure;
+
+parameters : '(' parameterList? ')';
+parameterList : parameterList ',' parameterList | parameter;
+parameter : process;
 
 expression : Identifier
     |   BooleanLiteral
