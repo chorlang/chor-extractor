@@ -17,6 +17,7 @@ behaviour : interaction
     |   procedureInvocation
     |   introduce
     |   introductee
+    |   spawn
     |   TERMINATE
     ;
 
@@ -43,6 +44,8 @@ procedureInvocation: procedure parameters?;
 parameters : '(' parameterList? ')';
 parameterList : parameterList ',' parameterList | parameter;
 parameter : process;
+
+spawn : 'spawn' process 'with' behaviour ';' behaviour;
 
 expression : Identifier
     |   BooleanLiteral

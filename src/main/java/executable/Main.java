@@ -77,6 +77,8 @@ public class Main {
     static String parametizdTest =
             "a { def X(q) { q?; stop } main { b!<msg>; X(b)} } |" +
                     "b { main { a?; a!<resp>; stop } }";
+    static String spawn =
+            "a { main {spawn b with stop; stop} }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -91,11 +93,11 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = parametizdTest;
+        String networksString = spawn;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
-        var extractor = new Extraction(Strategy.Default);
+       /* var extractor = new Extraction(Strategy.Default);
         var choreography = extractor.extractChoreographySequentially(networksString, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);

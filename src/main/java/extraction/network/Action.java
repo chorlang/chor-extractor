@@ -11,5 +11,6 @@ public enum Action {
     NETWORK,
     PROCESS_TERM,
     INTRODUCE,
-    INTRODUCTEE
+    INTRODUCTEE,
+    SPAWN
 }

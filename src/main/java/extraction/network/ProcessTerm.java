@@ -100,11 +100,13 @@ public class ProcessTerm extends NetworkASTNode {
             String procedure = invocation.procedure;
             var paramVar = parameters.get(procedure);
             var paramVal = invocation.parameters;
+            //Check that each parameter can be bound to a variable
             if (paramVar.size() < paramVal.size())
                 throw new IllegalStateException("Procedure invocation has too many parameters." +
                         "Expected: " + procedure+parametersToString(paramVar) + " Got: " + invocation);
+            //Bind variables to parameter values.
             for (int i = 0; i < paramVal.size(); i++){
-                substitute(paramVar.get(i), paramVal.get(i));
+                substitute(paramVar.get(i), substitutions.get(paramVal.get(i)));
             }
             main = procedures.get(invocation.procedure);
             unfoldRecursively();

@@ -46,12 +46,6 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
         return new ProcessTerm(procedures, parameters, (Behaviour) visit(ctx.behaviour()));
     }
 
-    @Override
-    public NetworkASTNode visitParameters(ParametersContext ctx){
-        ctx.parameterList();
-        return null;
-    }
-
     @Override public NetworkASTNode visitSending(SendingContext ctx){
         return new Send(ctx.process().getText(), ctx.expression().getText(), (Behaviour) visit(ctx.behaviour()));
     }
@@ -105,6 +99,13 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
         else
             parameters = List.of();
         return new ProcedureInvocation(procedureName, parameters);
+    }
+
+    @Override public NetworkASTNode visitSpawn(SpawnContext ctx){
+        String variable = ctx.process().getText();
+        Behaviour processBehaviour = (Behaviour) visit(ctx.behaviour(0));
+        Behaviour continuation = (Behaviour) visit(ctx.behaviour(1));
+        return new Spawn(variable, processBehaviour, continuation);
     }
 
     @Override public NetworkASTNode visitTerminal(TerminalNode n){
