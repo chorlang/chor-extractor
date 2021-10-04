@@ -24,7 +24,12 @@ public class ProcedureInvocation extends Behaviour {
     }
 
     public String toString(){
-        return procedure;
+        return procedure + parametersToString();
+    }
+    private String parametersToString(){
+        if (parameters == null || parameters.size() == 0)
+            return "";
+        return parameters.toString().replace('[', '(').replace(']', ')');
     }
 
     public boolean equals(Behaviour other){

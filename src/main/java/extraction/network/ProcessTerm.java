@@ -33,11 +33,6 @@ public class ProcessTerm extends NetworkASTNode {
         this.procedures = procedures;
         this.parameters = parameters;
         this.main = main;
-        procedures.forEach((key, __) -> {
-            if (parameters == null)
-                System.out.println("err");
-
-        });
     }
 
     public Behaviour main() {
@@ -88,6 +83,7 @@ public class ProcessTerm extends NetworkASTNode {
      * If the main Behaviour is ProcedureInvocation, repeatedly replace it by its procedure definition
      * until the main Behaviour is no longer ProcedureInvocation.
      */
+    //TODO: Make this use parameters. I think everything else is ready for it.
     void unfoldRecursively() {
         if (main instanceof ProcedureInvocation invocation){
             main = procedures.get(invocation.procedure);

@@ -79,7 +79,7 @@ public class Extraction {
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }
-        System.out.println("The extraction.network is well-formed and extraction can proceed");
+        System.out.println("The Network is well-formed and extraction can proceed");
 
         ChorStatsPair result = extract(network, services);
         //List.of() requires non-null parameters, that's why the singletons.

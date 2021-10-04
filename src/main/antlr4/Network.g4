@@ -38,7 +38,7 @@ introductee: process '?' process ';' behaviour;
 
 condition: 'if' expression 'then' behaviour 'else' behaviour;
 
-procedureInvocation: procedure;
+procedureInvocation: procedure parameters?;
 
 parameters : '(' parameterList? ')';
 parameterList : parameterList ',' parameterList | parameter;

@@ -74,6 +74,9 @@ public class Main {
                     "c {main { a?b; stop}}";
     static String parameterTest =
             "a { def X(a,b,c) { stop } def Y(a) { stop } def Z() { stop } def W { stop } main { stop } }";
+    static String parametizdTest =
+            "a { def X(q) { q?; stop } main { b!<msg>; X(b)} } |" +
+                    "b { main { a?; a!<resp>; stop } }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -84,15 +87,16 @@ public class Main {
         String chorString = chorLoop;
         Program chor = Parser.stringToProgram(chorString);
         System.out.println(chor.toString());
+        var projection = EndPointProjection.project(chorString);
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = parameterTest;
+        String networksString = parametizdTest;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
-       /* var extractor = new Extraction(Strategy.Default);
-        var choreography = extractor.extractChoreography(networksString, Set.of());
+        var extractor = new Extraction(Strategy.Default);
+        var choreography = extractor.extractChoreographySequentially(networksString, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
         //*/

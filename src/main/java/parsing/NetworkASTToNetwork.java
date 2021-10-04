@@ -97,7 +97,14 @@ public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
     }
 
     @Override public NetworkASTNode visitProcedureInvocation(ProcedureInvocationContext ctx){
-        return new ProcedureInvocation(ctx.procedure().getText());
+        String procedureName = ctx.procedure().getText();
+        var parametersctx = ctx.parameters();
+        List<String> parameters;
+        if (parametersctx != null && parametersctx.parameterList() != null)
+            parameters = Arrays.stream(parametersctx.parameterList().getText().split(",")).toList();
+        else
+            parameters = List.of();
+        return new ProcedureInvocation(procedureName, parameters);
     }
 
     @Override public NetworkASTNode visitTerminal(TerminalNode n){
