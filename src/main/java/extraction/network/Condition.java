@@ -3,12 +3,19 @@ package extraction.network;
 import extraction.Label;
 import utility.Pair;
 
+import java.util.HashMap;
+
 /**
  * Stores conditional behavior, along with the "then" and "else" branches
  */
 public class Condition extends Behaviour {
     public final String expression;
     public final Behaviour thenBehaviour, elseBehaviour;
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions){
+        return this;
+    }
 
     /**
      * Behavior to store conditional statements

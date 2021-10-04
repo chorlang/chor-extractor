@@ -4,11 +4,9 @@ import extraction.AdjacencyMatrix;
 import extraction.Label;
 import extraction.Label.*;
 import extraction.network.Behaviour.*;
-import org.hamcrest.Factory;
 import utility.Pair;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 public class Network extends NetworkASTNode {
     public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
@@ -150,8 +148,8 @@ public class Network extends NetworkASTNode {
         ProcessTerm receiveProcess = processes.get(label.receiver);
 
         //Check the interaction is at all possible
-        if ( !( sendProcess.main instanceof Behaviour.Sender sender &&
-                receiveProcess.main instanceof Behaviour.Receiver receiver &&
+        if ( !( sendProcess.main() instanceof Behaviour.Sender sender &&
+                receiveProcess.main() instanceof Behaviour.Receiver receiver &&
                 sender.receiver.equals(label.receiver) &&
                 receiver.sender.equals(label.sender) &&
                 sender.expression.equals(label.expression) &&
@@ -180,7 +178,7 @@ public class Network extends NetworkASTNode {
         else if ( label instanceof IntroductionLabel &&
                 sender instanceof Introduce introducer &&
                 receiver instanceof Introductee introductee1 &&
-                processes.get(label.expression).main instanceof Introductee introductee2 &&
+                processes.get(label.expression).main() instanceof Introductee introductee2 &&
                 introductee2.sender.equals(label.sender) &&
                 introduced.isIntroduced(label.sender, label.expression)){
             sendProcess.main = introducer.continuation;
@@ -243,11 +241,11 @@ public class Network extends NetworkASTNode {
 
             //Go through the process' Behaviour, until a receiving Behaviour is reached.
             processTerm = processes.get(next.receiver);
-            Behaviour blocking = processTerm.main;
+            Behaviour blocking = processTerm.main();
             while (!(blocking instanceof Receiver receiver)){
-                if (blocking instanceof ProcedureInvocation invocation){
+                if (blocking instanceof ProcedureInvocation){
                     processTerm.unfoldRecursively();
-                    blocking = processTerm.main;
+                    blocking = processTerm.main();
                     continue;
                 } else if (!(blocking instanceof Sender)) {
                     return null; //Process not of the required form. Multicom not possible
@@ -258,7 +256,8 @@ public class Network extends NetworkASTNode {
                 if (sender instanceof Introduce)
                     waiting.add(new FauxIntroductionLabel(label.sender, label.receiver, label.expression));
                 waiting.add(label);
-                processTerm.main = blocking = sender.continuation;
+                processTerm.main = sender.continuation;
+                blocking = processTerm.main();  //Blocking must have actual variable values.
             }
 
             //All send/select/introduce actions are added to waiting.

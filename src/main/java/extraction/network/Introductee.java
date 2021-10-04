@@ -2,6 +2,8 @@ package extraction.network;
 
 import extraction.Label;
 
+import java.util.HashMap;
+
 /**
  * Behaviour for being informed by another process of the existence of a third process.
  */
@@ -19,6 +21,11 @@ public class Introductee extends Behaviour.Receiver {
     public Introductee(String sender, String processID, Behaviour continuation){
         super(Action.INTRODUCTEE, continuation, sender);
         this.processID = processID;
+    }
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions) {
+        return new Introductee(substitutions.get(sender), processID, continuation);
     }
 
     @Override

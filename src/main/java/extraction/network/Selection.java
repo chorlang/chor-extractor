@@ -2,6 +2,7 @@ package extraction.network;
 
 import extraction.Label;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -21,6 +22,11 @@ public class Selection extends Behaviour.Sender {
     public Selection(String receiver, String label, Behaviour continuation){
         super(Action.SELECTION, continuation, receiver, label);
         this.label = label;
+    }
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions) {
+        return new Selection(substitutions.get(receiver), label, continuation);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package extraction.network;
 
+import java.util.HashMap;
+
 /**
  * Behavior for receiving information from another process.
  *
@@ -14,6 +16,11 @@ public class Receive extends Behaviour.Receiver {
      */
     public Receive(String sender, Behaviour continuation){
         super(Action.RECEIVE, continuation, sender);
+    }
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions) {
+        return new Receive(substitutions.get(sender), continuation);
     }
 
     public String toString(){

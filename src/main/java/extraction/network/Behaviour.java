@@ -12,6 +12,14 @@ public abstract class Behaviour extends NetworkASTNode {
     }
 
     /**
+     * Returns a copy of this Behaviour, but where process variable names are substituted with the values
+     * they map to in substitutions. Note that substitutions must have an entry for all processes and variables
+     * in the Network. Can be achieved by a HashMap where .get(p) = .getOrDefault(p,p)
+     * Continuations and other such fields are unaffected.
+     */
+    abstract Behaviour realValues(HashMap<String, String> substitutions);
+
+    /**
      * Behaviors are expected to overwrite their hashcode
      * to take relevant data into account.
      * @return Hash of relevant stored data structures.
@@ -41,6 +49,7 @@ public abstract class Behaviour extends NetworkASTNode {
             this.expression = expression;
         }
 
+
         /**
          * Creates an InteractionLabel from this interacting behaviour.
          * Variable names are substituted for real names.
@@ -59,6 +68,4 @@ public abstract class Behaviour extends NetworkASTNode {
             this.sender = sender;
         }
     }
-
-
 }

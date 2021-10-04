@@ -1,5 +1,7 @@
 package extraction.network;
 
+import java.util.HashMap;
+
 /**
  * Behavior representing termination of a process
  *
@@ -11,6 +13,11 @@ public class Termination extends Behaviour {
     public static final Termination instance = new Termination();
     //The String representation in networks:
     static final String terminationTerm = "stop";
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions){
+        return this;
+    }
 
     /**
      * Constructs a new Termination. Since all Termination instances

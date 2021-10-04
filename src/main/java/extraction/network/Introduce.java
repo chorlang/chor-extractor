@@ -2,6 +2,7 @@ package extraction.network;
 
 import extraction.Label;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -26,6 +27,11 @@ public class Introduce extends Behaviour.Sender{
         super(Action.INTRODUCE, continuation, process1, process2);
         this.process1 = process1;
         this.process2 = process2;
+    }
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions) {
+        return new Introduce(substitutions.get(process1), substitutions.get(process2), continuation);
     }
 
     @Override

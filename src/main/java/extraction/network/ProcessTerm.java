@@ -9,8 +9,14 @@ import java.util.List;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
-    private final HashMap<String, List<String>> parameters;
+    private final HashMap<String, List<String>> parameters; //Map from procedure names to their parameter variable names
                                                             //Is assumed to be readonly when extracting.
+    /**
+     * The current main Behaviour of this process, with variable names.
+     * Consider using main() to read it, as it substitutes variable names with their corresponding values.
+     * Do NOT assign this field to what is returned from main(). Assigning it to the fields of
+     * what is returned from main() is ok.
+     */
     Behaviour main;                                         //The main behaviour for the procedure
     //Used for getting real process names from variables.
     private final HashMap<String, String> substitutions = new HashMap<>(){
@@ -35,8 +41,13 @@ public class ProcessTerm extends NetworkASTNode {
         this.main = main;
     }
 
+    /**
+     * Returns (possibly a copy of) the main Behaviour of this process, where
+     * variable names will be replaced by real values in the Behaviours fields.
+     * Behaviours stored in the returned Behaviour does not undergo variable substitution.
+     */
     public Behaviour main() {
-        return main;
+        return main.realValues(substitutions);
     }
 
     /**
@@ -85,7 +96,16 @@ public class ProcessTerm extends NetworkASTNode {
      */
     //TODO: Make this use parameters. I think everything else is ready for it.
     void unfoldRecursively() {
-        if (main instanceof ProcedureInvocation invocation){
+        if (main() instanceof ProcedureInvocation invocation){
+            String procedure = invocation.procedure;
+            var paramVar = parameters.get(procedure);
+            var paramVal = invocation.parameters;
+            if (paramVar.size() < paramVal.size())
+                throw new IllegalStateException("Procedure invocation has too many parameters." +
+                        "Expected: " + procedure+parametersToString(paramVar) + " Got: " + invocation);
+            for (int i = 0; i < paramVal.size(); i++){
+                substitute(paramVar.get(i), paramVal.get(i));
+            }
             main = procedures.get(invocation.procedure);
             unfoldRecursively();
         }

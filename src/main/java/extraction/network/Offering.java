@@ -23,6 +23,11 @@ public class Offering extends Behaviour.Receiver {
         this.branches = branches;
     }
 
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions) {
+        return new Offering(substitutions.get(sender), branches);
+    }
+
     public String toString(){
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s&{", sender));
