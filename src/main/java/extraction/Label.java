@@ -1,5 +1,8 @@
 package extraction;
 
+import extraction.network.Behaviour;
+import extraction.network.Spawn;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,14 +15,23 @@ public abstract class Label {
         THEN, ELSE, COMMUNICATION, SELECTION, MULTICOM, INTRODUCTION
     }
 
-    public abstract Label copy();
+    public abstract Label copy(); //TODO Copy might be unused.
 
     public LabelType labelType;
 
     public boolean flipped = false;
 
-    public static final List<LabelType> conditionTypes = Arrays.asList(LabelType.THEN, LabelType.ELSE);
-    public static final List<LabelType> interactionTypes = Arrays.asList(LabelType.COMMUNICATION, LabelType.SELECTION);
+    public static class SpawnLabel extends Label{
+        public final String parent, child;
+        public SpawnLabel(String parent, String child){
+            this.parent = parent;
+            this.child = child;
+        }
+        public Label copy(){return this;}
+        @Override public String toString(){
+            return String.format("%s spawns %s ", parent, child);
+        }
+    }
 
     public static class MulticomLabel extends Label{
         public final List<InteractionLabel> communications;

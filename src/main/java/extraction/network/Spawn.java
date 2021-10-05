@@ -1,5 +1,7 @@
 package extraction.network;
 
+import extraction.Label;
+
 import java.util.HashMap;
 
 public class Spawn extends Behaviour{
@@ -12,9 +14,13 @@ public class Spawn extends Behaviour{
         this.continuation = continuation;
     }
 
+    Label.SpawnLabel labelFrom(String processName, HashMap<String, String> substitutions){
+        return new Label.SpawnLabel(processName, substitutions.get(variable));
+    }
+
     @Override
     Behaviour realValues(HashMap<String, String> substitutions) {
-        return new Spawn(substitutions.get(variable), processBehaviour, continuation);
+        return new Spawn(variable, processBehaviour, continuation);
     }
 
     @Override

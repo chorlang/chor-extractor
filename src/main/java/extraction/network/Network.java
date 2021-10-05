@@ -11,6 +11,7 @@ import java.util.*;
 public class Network extends NetworkASTNode {
     public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
     private final AdjacencyMatrix introduced;
+    private int nextID = 0;                       //Next available process ID
 
     /**
      * A Network object stores a mapping from process names to process terms (procedures).
@@ -97,6 +98,8 @@ public class Network extends NetworkASTNode {
         if (interaction != null){
             return reduceInteraction(interaction);
         }
+        if (term.main instanceof Spawn)
+            return reduceSpawn(process);
         var condition = term.prospectCondition(process);
         if (condition != null){
             return reduceCondition(condition);
@@ -116,6 +119,23 @@ public class Network extends NetworkASTNode {
         public Advancement(Label label, Network network, HashSet<String> actors){
             this(label, network, null, null, actors);
         }
+    }
+
+    private Advancement reduceSpawn(String process){
+        ProcessTerm spawnTerm = processes.get(process);
+        if (!(spawnTerm.main instanceof Spawn spawner))
+            return null;
+
+        String varName = spawner.variable;
+        String processName = String.format(":%s>%s%d", process, spawner.variable, nextID++);
+
+        ProcessTerm childProcess = new ProcessTerm(spawnTerm.procedures, spawner.processBehaviour);
+        spawnTerm.substitute(varName, processName);
+        processes.put(processName, childProcess);
+        SpawnLabel label = new SpawnLabel(process, processName);
+
+        spawnTerm.main = spawner.continuation;
+        return new Advancement(label, this, new HashSet<>(){{add(process); add(processName);}});
     }
 
     /**

@@ -58,13 +58,19 @@ public class ProcessTerm extends NetworkASTNode {
      * @param processName The name of the process that maps to this ProcessTerm.
      * @return A InteractionLabel, that may not be applicable to the network yet, or null if no such label exists.
      */
-    public InteractionLabel prospectInteraction(String processName){
+    InteractionLabel prospectInteraction(String processName){
         return main instanceof Sender send ? send.labelFrom(processName, substitutions) : null;
     }
 
-    public Pair<ConditionLabel.ThenLabel, ConditionLabel.ElseLabel> prospectCondition(String processName){
+    Pair<ConditionLabel.ThenLabel, ConditionLabel.ElseLabel> prospectCondition(String processName){
         return main instanceof Condition cond ? cond.labelsFrom(processName) : null;
     }
+
+    SpawnLabel prospectSpawning(String processName){
+        return main instanceof Spawn spawner ? spawner.labelFrom(processName, substitutions) : null;
+    }
+
+
 
     /**
      * Learn that in this process, variable varName should be substituted by processName.
