@@ -19,7 +19,7 @@ public class ProcessTerm extends NetworkASTNode {
      */
     Behaviour main;                                         //The main behaviour for the procedure
     //Used for getting real process names from variables.
-    private final HashMap<String, String> substitutions = new HashMap<>(){
+    private HashMap<String, String> substitutions = new HashMap<>(){
         @Override
         public String get(Object key){
             return getOrDefault(key, (String)key);
@@ -39,6 +39,11 @@ public class ProcessTerm extends NetworkASTNode {
         this.procedures = procedures;
         this.parameters = parameters;
         this.main = main;
+    }
+    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, HashMap<String, String> substitutions, Behaviour main){
+        this(procedures, parameters, main);
+        this.substitutions = substitutions;
+
     }
 
     /**
@@ -146,7 +151,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        return new ProcessTerm(procedures, parameters, main);
+        return new ProcessTerm(procedures, parameters, substitutions, main);
     }
 
     /**

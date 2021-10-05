@@ -127,11 +127,12 @@ public class Network extends NetworkASTNode {
             return null;
 
         String varName = spawner.variable;
-        String processName = String.format(":%s>%s%d", process, spawner.variable, nextID++);
+        String processName = String.format("%s/%s%d", process, spawner.variable, nextID++);
 
         ProcessTerm childProcess = new ProcessTerm(spawnTerm.procedures, spawner.processBehaviour);
         spawnTerm.substitute(varName, processName);
         processes.put(processName, childProcess);
+        introduced.spawn(process, processName);
         SpawnLabel label = new SpawnLabel(process, processName);
 
         spawnTerm.main = spawner.continuation;

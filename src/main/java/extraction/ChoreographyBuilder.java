@@ -81,6 +81,9 @@ public class ChoreographyBuilder {
                     return new Introduction(introduction.introducer, introduction.process1, introduction.process2,
                             buildChoreographyBody(edgeTarget));
                 }
+                if (edge instanceof Label.SpawnLabel spawnLabel){
+                    return new Spawn(spawnLabel.parent, spawnLabel.child, buildChoreographyBody(edgeTarget));
+                }
                 throw new IllegalStateException("Unexpected edge type: " + edge.getClass().getName());
             }
             case 2: {
@@ -107,6 +110,7 @@ public class ChoreographyBuilder {
         return Termination.getInstance();
     }
 
+    //TODO ProcedureInvocation on the Choreography side of things
     private ArrayList<InvocationNode> unrollGraph(){
         //InvocationNodes added by the unrolling
         var invocationNodes = new ArrayList<InvocationNode>();

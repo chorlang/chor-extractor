@@ -30,7 +30,7 @@ public class Send extends Behaviour.Sender {
 
     @Override
     public Label.InteractionLabel labelFrom(String process, Map<String, String> sub){
-        return new Label.CommunicationLabel(process, sub.get(receiver), sub.get(expression));
+        return new Label.CommunicationLabel(sub.get(process), sub.get(receiver), sub.get(expression));
     }
 
     public String toString(){

@@ -82,6 +82,11 @@ public class WellFormedness{
                     return !introduced.sender.equals(checkingProcessName) &&
                             !introduced.processID.equals(checkingProcessName) &&
                             introduced.continuation.accept(this);
+                case SPAWN:
+                    var spawner = (Spawn) hostNode;
+                    return !spawner.variable.equals(checkingProcessName) &&
+                            spawner.continuation.accept(this);
+                            //Cannot really check if the spawned process behaviour is well-formed
 
                 case CONDITION:
                     var conditional = (extraction.network.Condition)hostNode;

@@ -5,8 +5,8 @@ import extraction.Label;
 import java.util.HashMap;
 
 public class Spawn extends Behaviour{
-    final String variable;
-    final Behaviour processBehaviour, continuation;
+    public final String variable;
+    public final Behaviour processBehaviour, continuation;
     public Spawn(String variable, Behaviour processBehaviour, Behaviour continuation){
         super(Action.SPAWN);
         this.variable = variable;

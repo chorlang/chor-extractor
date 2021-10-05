@@ -31,7 +31,7 @@ public class Selection extends Behaviour.Sender {
 
     @Override
     public Label.InteractionLabel labelFrom(String process, Map<String, String> sub){
-        return new Label.SelectionLabel(process, sub.get(receiver), sub.get(label));
+        return new Label.SelectionLabel(sub.get(process), sub.get(receiver), sub.get(label));
     }
 
     public String toString(){

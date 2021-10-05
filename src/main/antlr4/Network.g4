@@ -45,7 +45,7 @@ parameters : '(' parameterList? ')';
 parameterList : parameterList ',' parameterList | parameter;
 parameter : process;
 
-spawn : 'spawn' process 'with' behaviour ';' behaviour;
+spawn : 'spawn' process 'with' behaviour 'continue' behaviour;
 
 expression : Identifier
     |   BooleanLiteral

@@ -78,7 +78,7 @@ public class Main {
             "a { def X(q) { q?; stop } main { b!<msg>; X(b)} } |" +
                     "b { main { a?; a!<resp>; stop } }";
     static String spawn =
-            "a { main {spawn b with stop; stop} }";
+            "a { main {spawn b with a?; a!<resp>; stop continue b!<msg>; b?; stop} }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -97,7 +97,7 @@ public class Main {
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
-       /* var extractor = new Extraction(Strategy.Default);
+        var extractor = new Extraction(Strategy.Default);
         var choreography = extractor.extractChoreographySequentially(networksString, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
