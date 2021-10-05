@@ -24,4 +24,23 @@ public class VariableSubstitutionTest {
         String actual = Extraction.extractChoreography(test).toString();
         Assertions.assertEquals(expected, actual);
     }
+
+    @Test
+    void nestedParameters(){
+        String test =   "a { def X(p) { p!<msg>; Y(p) } def Y(q) { q?; q!<hi>; Z(q) } def Z(r) { r!<ok>; stop } main { b?; X(b) } } |" +
+                        "b { def X(p) { p?; Y(p) } def Y(q) { q!<greet>; q?; Z(q) } def Z(r) { r?; stop } main { a!<start>; X(a) } }";
+        String expected = "main {b.start->a; a.msg->b; b.greet->a; a.hi->b; a.ok->b; stop}";
+        String actual = Extraction.extractChoreography(test).toString();
+        Assertions.assertEquals(expected,actual);
+    }
+
+    @Test
+    void nestedLoop(){
+        String test =   "a { def X(p) { p!<msg>; Y(p) } def Y(q) { q?; q!<hi>; Z(q) } def Z(r) { r!<ok>; X(r) } main { b?; X(b) } } |" +
+                        "b { def X(p) { p?; Y(p) } def Y(q) { q!<greet>; q?; Z(q) } def Z(r) { r?; X(r) } main { a!<start>; X(a) } }";
+        String expected = "def X1 { a.msg->b; b.greet->a; a.hi->b; a.ok->b; X1 } main {b.start->a; X1}";
+        String actual = Extraction.extractChoreography(test).toString();
+        System.out.println(actual);
+        Assertions.assertEquals(expected,actual);
+    }
 }

@@ -43,7 +43,9 @@ public class ProcedureInvocation extends Behaviour {
             return true;
         if (!(other instanceof ProcedureInvocation otherPI))
             return false;
-        return procedure.equals(otherPI.procedure) && parameters.equals(otherPI.parameters);
+        return procedure.equals(otherPI.procedure);
+        //Be careful if you decide to take parameters into account.
+        //Identical calls may have different parameter names parsed to them
     }
 
     public int hashCode(){

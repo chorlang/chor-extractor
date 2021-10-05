@@ -64,7 +64,6 @@ public class Prospector {
 
             //In case of bad loops, the graph remains unchanged.
             // Reset changes to the Network, and try the next process
-            //TODO Find a better way to restore Network. Perhaps copy the whole thing
             if (result == BuildGraphResult.BAD_LOOP) {
                 network.restoreProcesses(originalProcesses, involvedProcesses);
                 continue;
