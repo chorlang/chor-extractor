@@ -423,7 +423,7 @@ public class Network extends NetworkASTNode {
         //So, variables cannot be assigned in lambda expressions, but array items can!???
         int[] lambdaWorkaround = new int[]{0};
 
-        //Annoying, but its the easiest way to sort HashMaps.
+        //Annoying, but it's the easiest way to sort HashMaps.
         TreeMap<String, ProcessTerm> sortedMap = new TreeMap<>(processes);
         //forEach is performed in order of entry set iteration, which I believe is sorted
         sortedMap.forEach((key, value) ->

@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public class Introduce extends Behaviour.Sender{
     public final String process1, process2; //Same as expression and receiver from superclass
+    private final int hash;
 
     /**
      * Creates a new Introduce behaviour, which represents introducing two processes (not itself)
@@ -27,6 +28,7 @@ public class Introduce extends Behaviour.Sender{
         super(Action.INTRODUCE, continuation, process1, process2);
         this.process1 = process1;
         this.process2 = process2;
+        hash = hashValue();
     }
 
     @Override
@@ -41,6 +43,9 @@ public class Introduce extends Behaviour.Sender{
 
     @Override
     public int hashCode() {
+        return hash;
+    }
+    private int hashValue(){
         int hash = continuation.hashCode() * 31;
         hash += process1.hashCode();
         hash *= 31;

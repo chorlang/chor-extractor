@@ -9,11 +9,7 @@ import java.util.List;
 public class ProcedureInvocation extends Behaviour {
     public final String procedure;
     final List<String> parameters;
-
-    @Override
-    Behaviour realValues(HashMap<String, String> substitutions){
-        return new ProcedureInvocation(procedure, parameters.stream().map(substitutions::get).toList());
-    }
+    private final int hash;
 
     /**
      * Constructor for the ProcedureInvocation Behavior.
@@ -24,7 +20,14 @@ public class ProcedureInvocation extends Behaviour {
         super(Action.PROCEDURE_INVOCATION);
         this.parameters = parameters;
         this.procedure = procedure;
+        hash = hashValue();
     }
+
+    @Override
+    Behaviour realValues(HashMap<String, String> substitutions){
+        return new ProcedureInvocation(procedure, parameters.stream().map(substitutions::get).toList());
+    }
+
     public ProcedureInvocation(String procedure){
         this(procedure, List.of());
     }
@@ -49,6 +52,9 @@ public class ProcedureInvocation extends Behaviour {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         return procedure.hashCode();
     }
 }

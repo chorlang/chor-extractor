@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public class Selection extends Behaviour.Sender {
     public final String label; //Same as expression in superclass
+    private final int hash;
 
     /**
      * Constructor for the Selection behavior, aka sending a label to another process.
@@ -22,6 +23,7 @@ public class Selection extends Behaviour.Sender {
     public Selection(String receiver, String label, Behaviour continuation){
         super(Action.SELECTION, continuation, receiver, label);
         this.label = label;
+        hash = hashValue();
     }
 
     @Override
@@ -50,6 +52,9 @@ public class Selection extends Behaviour.Sender {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         int hash = continuation.hashCode() * 31;
         hash += receiver.hashCode();
         hash *= 31;

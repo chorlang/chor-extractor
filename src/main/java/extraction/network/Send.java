@@ -11,6 +11,7 @@ import java.util.Map;
  * Note that the variable "process" from the Kotlin implementation is "receiver"
  */
 public class Send extends Behaviour.Sender {
+    private final int hash;
 
     /**
      * Constructs a send behavior, which represents evaluates an
@@ -21,6 +22,7 @@ public class Send extends Behaviour.Sender {
      */
     public Send(String receiver, String expression, Behaviour continuation){
         super(Action.SEND, continuation, receiver, expression);
+        hash = hashValue();
     }
 
     @Override
@@ -49,6 +51,9 @@ public class Send extends Behaviour.Sender {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         int hash = continuation.hashCode() * 31;
         hash += receiver.hashCode();
         hash *= 31;

@@ -1,8 +1,9 @@
 package extraction.network;
 
-import extraction.Label;
+import java.util.Collections;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This Behavior expects to receive a label and branch/switch behavior depending upon
@@ -11,16 +12,21 @@ import java.util.HashMap;
  * The "process" variable from the Kotlin implementation is equal to "sender"
  */
 public class Offering extends Behaviour.Receiver {
-    public final HashMap<String, Behaviour> branches;
+    /**
+     * Branches are unmodifiable.
+     */
+    public final Map<String, Behaviour> branches;
+    private final int hash;
 
     /**
      * Creates an Offering object, aka receive a label, and switch on that label.
      * @param sender The process that the label is send from.
      * @param branches Map from labels (Strings) to branches (Behaviors)
      */
-    public Offering(String sender, HashMap<String, Behaviour> branches){
+    public Offering(String sender, Map<String, Behaviour> branches){
         super(Action.OFFERING, null, sender); //Not sure what to do about continuation here
-        this.branches = branches;
+        this.branches = Collections.unmodifiableMap(branches);
+        hash = hashValue();
     }
 
     @Override
@@ -40,13 +46,13 @@ public class Offering extends Behaviour.Receiver {
         return builder.toString();
     }
 
-    public Offering copy(){
+    //public Offering copy(){
         /*var branchesCopy = new HashMap<String, Behaviour>(branches.size());
         branches.forEach((key, value) ->
                 branchesCopy.put(key, value.copy()));
         return new Offering(sender, branchesCopy);*/
-        return this;
-    }
+    //    return this;
+    //}
 
     public boolean equals(Behaviour other){
         if (this == other)
@@ -67,6 +73,9 @@ public class Offering extends Behaviour.Receiver {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         int hash = sender.hashCode() * 31;
         hash += branches.hashCode();
         return hash;

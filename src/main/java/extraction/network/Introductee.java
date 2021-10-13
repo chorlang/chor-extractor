@@ -9,6 +9,7 @@ import java.util.HashMap;
  */
 public class Introductee extends Behaviour.Receiver {
     public final String processID;
+    private final int hash;
 
     /**
      * Constructs a Introductee behaviour, which represents this process being told by
@@ -21,6 +22,7 @@ public class Introductee extends Behaviour.Receiver {
     public Introductee(String sender, String processID, Behaviour continuation){
         super(Action.INTRODUCTEE, continuation, sender);
         this.processID = processID;
+        hash = hashValue();
     }
 
     @Override
@@ -30,6 +32,9 @@ public class Introductee extends Behaviour.Receiver {
 
     @Override
     public int hashCode() {
+        return hash;
+    }
+    private int hashValue(){
         int hash = continuation.hashCode() * 31;
         hash += sender.hashCode();
         hash *= 31;

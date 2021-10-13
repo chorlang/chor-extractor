@@ -29,7 +29,7 @@ public class NetworkFuzzer {
         throw new ArithmeticException("If " + index+" and " + item+" are off by one, please fix the function this error originates from");
     }
 
-    private static List<Integer> processSizes(HashMap<String, Behaviour> branches){
+    private static List<Integer> processSizes(Map<String, Behaviour> branches){
         var sizes = new ArrayList<Integer>(branches.size());
         for (var branch : branches.values()){
             sizes.add(ProcessSize.compute(branch));

@@ -11,6 +11,7 @@ import java.util.HashMap;
 public class Condition extends Behaviour {
     public final String expression;
     public final Behaviour thenBehaviour, elseBehaviour;
+    private final int hash;
 
     @Override
     Behaviour realValues(HashMap<String, String> substitutions){
@@ -28,6 +29,7 @@ public class Condition extends Behaviour {
         this.expression = expression;
         this.thenBehaviour = thenBehaviour;
         this.elseBehaviour = elseBehaviour;
+        hash = hashValue();
     }
 
     public Pair<Label.ConditionLabel.ThenLabel, Label.ConditionLabel.ElseLabel> labelsFrom(String process) {
@@ -52,6 +54,9 @@ public class Condition extends Behaviour {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         int hash = expression.hashCode() * 31;
         hash += thenBehaviour.hashCode();
         return hash * 31 + elseBehaviour.hashCode();

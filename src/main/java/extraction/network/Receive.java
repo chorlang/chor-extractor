@@ -8,7 +8,7 @@ import java.util.HashMap;
  * Note that the "process" variable from the kotlin implementation is "sender"
  */
 public class Receive extends Behaviour.Receiver {
-
+    private final int hash;
     /**
      * Constructs a Behavior for receiving messages
      * @param sender Name of the process to receive from
@@ -16,6 +16,7 @@ public class Receive extends Behaviour.Receiver {
      */
     public Receive(String sender, Behaviour continuation){
         super(Action.RECEIVE, continuation, sender);
+        hash = hashValue();
     }
 
     @Override
@@ -37,6 +38,9 @@ public class Receive extends Behaviour.Receiver {
     }
 
     public int hashCode(){
+        return hash;
+    }
+    private int hashValue(){
         int hash = continuation.hashCode() * 31;
         hash += sender.hashCode();
         return hash;
