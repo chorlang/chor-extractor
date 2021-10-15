@@ -46,14 +46,6 @@ public class Offering extends Behaviour.Receiver {
         return builder.toString();
     }
 
-    //public Offering copy(){
-        /*var branchesCopy = new HashMap<String, Behaviour>(branches.size());
-        branches.forEach((key, value) ->
-                branchesCopy.put(key, value.copy()));
-        return new Offering(sender, branchesCopy);*/
-    //    return this;
-    //}
-
     public boolean equals(Behaviour other){
         if (this == other)
             return true;

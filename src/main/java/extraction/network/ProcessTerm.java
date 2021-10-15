@@ -11,6 +11,7 @@ public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
     private final HashMap<String, List<String>> parameters; //Map from procedure names to their parameter variable names
                                                             //Is assumed to be readonly when extracting.
+    private final int proceduresHash;
     /**
      * The current main Behaviour of this process, with variable names.
      * Consider using main() to read it, as it substitutes variable names with their corresponding values.
@@ -39,6 +40,7 @@ public class ProcessTerm extends NetworkASTNode {
         this.procedures = procedures;
         this.parameters = parameters;
         this.main = main;
+        proceduresHash = proceduresHashValue();
     }
     private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, HashMap<String, String> substitutions, Behaviour main){
         this(procedures, parameters, main);
@@ -178,8 +180,10 @@ public class ProcessTerm extends NetworkASTNode {
      * @return the hashvalue considering all behaviours
      */
     public int hashCode(){
-        int hash = procedures.hashCode();
-        return 31 * hash + main.hashCode();
+        return 31 * proceduresHash + main.hashCode();
+    }
+    private int proceduresHashValue(){
+        return procedures.hashCode();
     }
 
     /**
