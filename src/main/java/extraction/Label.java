@@ -4,10 +4,7 @@ import extraction.network.Behaviour;
 import extraction.network.Spawn;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public abstract class Label {
 
@@ -20,6 +17,7 @@ public abstract class Label {
     public LabelType labelType;
 
     public boolean flipped = false;
+    public Map<String, String> becomes = null;
 
     public static class SpawnLabel extends Label{
         public final String parent, child;

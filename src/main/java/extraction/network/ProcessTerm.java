@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
-    private final HashMap<String, List<String>> parameters; //Map from procedure names to their parameter variable names
+    final HashMap<String, List<String>> parameters;         //Map from procedure names to their parameter variable names
                                                             //Is assumed to be readonly when extracting.
     private final int proceduresHash;
     /**
@@ -161,6 +161,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @param other the object to compare with
      * @return true if both objects are functionally identical
      */
+    //TODO: This can probably be speed up a bit using hashes
     public boolean equals(ProcessTerm other){
         if (this == other)          //If it is the same object
             return true;
@@ -172,6 +173,11 @@ public class ProcessTerm extends NetworkASTNode {
                 return false;
         }
         return true;
+    }
+    public boolean equals(Object other){
+        if (!(other instanceof ProcessTerm otherTerm))
+            return false;
+        return equals(otherTerm);
     }
 
     /**

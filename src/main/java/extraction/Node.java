@@ -37,6 +37,13 @@ public interface Node {
             this.flipCounter = flipCounter;
             this.marking = marking;
         }
+        @Override
+        public String toString(){
+            return network.toString();
+        }
+        public ConcreteNode copy(){
+            return new ConcreteNode(network, choicePath, ID, flipCounter, marking);
+        }
 
         /*@Override
         public NodeType getNodeType() {

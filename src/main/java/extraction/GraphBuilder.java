@@ -85,8 +85,12 @@ public class GraphBuilder {
             flipAndResetMarking(label, targetMarking, targetNetwork);
 
         //If a matching node already exists in the graph, add a new edge to it.
-        ConcreteNode targetNode = findNodeInGraph(targetNetwork, targetMarking, currentNode);
-        if (targetNode != null){
+
+        Procedure proc = findNodeInGraph(targetNetwork, targetMarking, currentNode);
+        ConcreteNode targetNode;
+        if (proc != null){
+            targetNode = proc.top;
+            label.becomes = proc.parameters;
             //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
             if (!addEdgeToGraph(currentNode, targetNode, label))
                 return BuildGraphResult.BAD_LOOP;
@@ -115,8 +119,11 @@ public class GraphBuilder {
         elseLabel.flipped = label.flipped;
 
         //If a matching node already exists in the graph, add a new edge to it.
-        ConcreteNode elseNode = findNodeInGraph(elseNetwork, targetMarking, currentNode);
-        if (elseNode != null){
+        proc = findNodeInGraph(elseNetwork, targetMarking, currentNode);
+        ConcreteNode elseNode;
+        if (proc != null){
+            elseNode = proc.top;
+            elseLabel.becomes = proc.parameters;
             //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
             if (!addEdgeToGraph(currentNode, elseNode, elseLabel)){
                 //Remove the then branch of the graph
@@ -211,24 +218,105 @@ public class GraphBuilder {
     }
 
     /**
-     * Searches the graph for a node with same Network, marking, and which begins with the same choicePath as the node parameter.
-     * @param network The Network the matching node should have.
-     * @param marking The marking the matching node should have
-     * @param node The node with a choicePath beginning with the choicePath of the node we are searching for.
-     * @return A matching ConcreteNode or null if none found.
+     * Searches the graph for a Node with same Network, marking, and which begins with the same
+     * choicePath as the currentNode parameter.
+     * @param network The Network the matching Node should have.
+     * @param marking The marking the matching Node should have
+     * @param currentNode The Node with a choicePath beginning with the choicePath of the Node we are searching for.
+     * @return A matching Node or null if none found.
      */
-    private ConcreteNode findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode node){
+    private Procedure findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode currentNode){
         List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
         if (viableNodes == null){
             return null;
         }
         for (ConcreteNode otherNode : viableNodes){
-            if (node.choicePath.startsWith(otherNode.choicePath) &&
-                    otherNode.network.equals(network) &&
-                    otherNode.marking.equals(marking))
-                return otherNode;
+            if (!currentNode.choicePath.startsWith(otherNode.choicePath)){
+                continue;
+            }
+            var parameters = findSurjectiveMapping(network, otherNode.network);
+            if (parameters == null){
+                continue;
+            }
+            boolean fail = false;
+            for (String processName : marking.keySet()){
+                String otherName = parameters.getOrDefault(processName, processName); //Get the mapped value if it exists
+                if (marking.get(processName) != otherNode.marking.get(otherName)){
+                    fail = true;
+                    break;
+                }
+            }
+            if (fail)
+                continue;
+            return new Procedure(otherNode, parameters);
         }
         return null;
+    }
+    private record Procedure(ConcreteNode top, Map<String, String> parameters){}
+
+    /**
+     * Generates a partial mapping from process names in fromNetwork, to process names in toNetwork,
+     * such that the corresponding ProcessTerms are equal, but their names different.
+     * The mapping is only generated if the following holds true for all processes in the Networks,
+     * regardless of if the processes are in the map:
+     * - There is at least one identical ProcessTerm in the other network.
+     * - If there are two (or more) identical ProcessTerm in toNetwork, then there must also be at least
+     * as many identical processes in fromNetwork.
+     * It is guaranteed that there exists a mapping to every process name in toNetwork, even if there
+     * are multiple identical ProcessTerm in toNetwork, unless there is an identical process with the
+     * same name in fromNetwork. That particular mapping is then omitted.
+     * @return A partial surjective Map if one could be made, or null otherwise.
+     */
+    private Map<String, String> findSurjectiveMapping(Network fromNetwork, Network toNetwork){
+        var fromProc = fromNetwork.processes;
+        var toProc = toNetwork.processes;
+        var unmatchedNames = new HashSet<>(fromProc.keySet());  //Keys not yet in the map
+        var map = new HashMap<String, String>();
+        //Ensure every process name in toNetwork is in the map
+        for (String name : toProc.keySet()){
+            var toTerm = toProc.get(name);
+            var fromTerm = fromProc.get(name);
+            //There is a better than random chance that a process maps to itself
+            if (fromTerm != null && fromTerm.equals(toTerm)){
+                //Mappings to itself is omitted.
+                unmatchedNames.remove(name);
+                continue;
+            }
+            //If not, look for a match
+            boolean matched = false;
+            for (String match : unmatchedNames){
+                fromTerm = fromProc.get(match);
+                if (toTerm.equals(fromTerm)){
+                    map.put(match, name);
+                    unmatchedNames.remove(match);
+                    matched = true;
+                    break;
+                }
+            }
+            //Fail if no match
+            if (!matched)
+                return null;
+        }
+        //Now there is a mapping to every process name in toNetwork.
+        //Add mappings from the so-far unused process names in fromNetwork
+        for (String name : unmatchedNames){
+            var fromTerm = fromProc.get(name);
+            //Try every process in toNetwork
+            boolean matched = false;
+            for (String match : toProc.keySet()){
+                var toTerm = fromProc.get(match);
+                if (toTerm.equals(fromTerm)){
+                    map.put(name, match);
+                    matched = true;
+                    break;
+                }
+            }
+            //Fail if no match
+            if (!matched)
+                return null;
+        }
+        //A surjective mapping was made.
+        return map;
     }
 
     /**
@@ -265,7 +353,15 @@ public class GraphBuilder {
     }
 
     private Integer hashMarkedNetwork(Network n, HashMap<String, Boolean> marking){
-        return n.hashCode() + 31 * marking.hashCode();
+        var unique = new HashSet<ProcessTerm>(n.processes.size());
+        final int[] hash = {0};
+        n.processes.forEach((key, term) -> {
+            if (unique.add(term)){
+                hash[0] += term.hashCode() * 31 + marking.get(key).hashCode();
+            }
+        });
+        return hash[0];
+        //return n.hashCode() + 31 * marking.hashCode();
     }
 
     private void addToNodeHashes(ConcreteNode node){
@@ -274,6 +370,7 @@ public class GraphBuilder {
         nodesWithHash.add(node);
     }
 
+    //TODO: This removes the entire list. Shouldn't it just remove an element from the list?
     private void removeFromNodeHashes(ConcreteNode node){
         nodeHashes.remove(hashMarkedNetwork(node.network, node.marking));
     }

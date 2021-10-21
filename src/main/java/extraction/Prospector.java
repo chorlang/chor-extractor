@@ -9,6 +9,7 @@ import extraction.network.Network.Advancement;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.function.Function;
 
 /**
  * Searches for ways to advance the network of a ConcreteNode, then
@@ -37,91 +38,107 @@ public class Prospector {
      * @return OK if this branch of the SEG is complete, or FAIL if the network is not extractable.
      */
     BuildGraphResult prospect(ConcreteNode currentNode){
-        //Get copy safe to modify
-        Network network = currentNode.network.copy();
-        //Unfold procedure invocations, and get a copy of the original of the unfolded processes
-        HashMap<String, ProcessTerm> unfoldedProcesses = network.unfold();
-        HashMap<String, ProcessTerm> originalProcesses = network.copyProcesses();
 
-        //Really doesn't need to be a copy
-        //TODO Shouldn't this operate on the unfolded processes?
-        var processOrder = copyAndSortProcesses(currentNode);
-        //As far as I understand, the ordering of the Set's iterator is the same as that of the LinkedHashMap
-        for (var processNames : processOrder.keySet()){
+        //Create advancer to manage datastructures, testing, and SEG building
+        var advancer = new NetworkAdvancer(currentNode);
+        //Reference to the internal Network of the advancer (which is a copy of that in currentNode).
+        Network network = advancer.network;
 
-            //Try to advance the Network by reducing the chosen process.
-            Advancement advancement = network.tryAdvance(processNames);
-            //If the chosen process could not reduce the network, try the next one
-            if (advancement == null)
-                continue;
-
-            //Fold back procedure invocations of unused processes.
-            var involvedProcesses = advancement.actors();
-            foldBackNetworks(advancement, unfoldedProcesses, involvedProcesses);
-
-            //Build out the graph using the progress of the network
-            BuildGraphResult result = builder.buildGraph(advancement, currentNode);
-
-            //In case of bad loops, the graph remains unchanged.
-            // Reset changes to the Network, and try the next process
-            if (result == BuildGraphResult.BAD_LOOP) {
-                network.restoreProcesses(originalProcesses, involvedProcesses);
-                continue;
-            }
-
-            //Return the result of building the graph.
-            //Will either be OK on success, or FAIL if the network is not extractable
+        //Try advancing with interactions or conditinoals
+        BuildGraphResult result = advancer.advanceNetwork(network::ComCondAdvance);
+        if (result != null)
             return result;
+
+        //Try advancing with multicom interactions (if enables)
+        //Assumes no single communications are possible
+        if (!disableMulticom) {
+            result = advancer.advanceNetwork(network::multicomAdvance);
+            if (result != null)
+                return result;
         }
 
-        //If all processes has terminated, this branch of the SEG is complete
-        if (currentNode.network.allTerminated())
+        //Try advancing by spawning a new process
+        //Must be last, to prevent generating infinite SEGs under certain strategies.
+        result = advancer.advanceNetwork(network::spawnAdvance);
+        if (result != null)
+            return result;
+
+        if (network.allTerminated())
             return BuildGraphResult.OK;
-        //If multicom not enabled, there is nothing more to try and extraction will fail
-        if (disableMulticom)
-            return BuildGraphResult.FAIL;
 
-        for (var processNames : processOrder.keySet()){
-
-            //Try to advance the Network by reducing the chosen process.
-            Advancement advancement = network.multicomAdvance(processNames);
-            //If the chosen process could not reduce the network, try the next one
-            if (advancement == null)
-                continue;
-
-            //Fold back procedure invocations of unused processes.
-            var involvedProcesses = advancement.actors();
-            foldBackNetworks(advancement, unfoldedProcesses, involvedProcesses);
-
-            //Build out the graph using the progress of the network
-            BuildGraphResult result = builder.buildGraph(advancement, currentNode);
-
-            //In case of bad loops, the graph remains unchanged.
-            // Reset changes to the Network, and try the next process
-            if (result == BuildGraphResult.BAD_LOOP)
-                continue;
-
-            //Return the result of building the graph.
-            //Will either be OK on success, or FAIL if the network is not extractable
-            return result;
-        }
-
-        //No process in the network can reduce. Extraction failed.
         return BuildGraphResult.FAIL;
+
     }
 
-    /**
-     * Folds back the main Behaviour of all Networks in an Advancement, if they did not reduce.
-     * @param advancement Container for the Network(s) to fold back.
-     * @param unfoldedProcesses Copy of the ProcessTerm that was unfolded.
-     * @param involvedProcesses Names of processes not to fold back.
-     */
-    private void foldBackNetworks(Advancement advancement,
-                                  HashMap<String, ProcessTerm> unfoldedProcesses,
-                                  HashSet<String> involvedProcesses){
-        advancement.network().foldExcept(unfoldedProcesses, involvedProcesses);
-        if (advancement.elseNetwork() != null)
-            advancement.elseNetwork().foldExcept(unfoldedProcesses, involvedProcesses);
+    private class NetworkAdvancer{
+        private final ConcreteNode currentNode;
+        private final Network network;
+        private final HashMap<String, ProcessTerm> unfoldedProcesses;
+        private final LinkedHashMap<String, ProcessTerm> orderedProcesses;
+
+        /**
+         * Construct a helper object to assist in prospecting for viable advancements in a Network.
+         * Takes care of internal bookkeeping and temporary data structures
+         * @param currentNode The node to copy data from, including the internal Network instance.
+         */
+        NetworkAdvancer(ConcreteNode currentNode){
+            this.currentNode = currentNode;                     //Keep for when expanding the SEG
+            network = currentNode.network.copy();               //Work on copy
+            unfoldedProcesses = network.unfold();               //Unfold procedures
+            ConcreteNode unfoldedNode = currentNode.copy();     //Create temp copy with unfolded network
+            unfoldedNode.network = network;
+            orderedProcesses = copyAndSortProcesses(unfoldedNode);  //Sort based on strategy
+        }
+
+        /**
+         * Attempts to advance the internally stored Network using the provided function.
+         * @param tryAdvancement A function that attempts to advance the Network. It must take a process name as
+         *                       parameter, which will be the bases of reducing/advancing the network.
+         *                       The function must be from the internally stored Network instance.
+         * @return OK if the network advanced, and the SEG successfully expanded, FAIL if the network is not
+         * extractable, or null if no advancement was made, in which case the network is unmodified.
+         */
+        BuildGraphResult advanceNetwork(Function<String, Advancement> tryAdvancement){
+            for (var processName : orderedProcesses.keySet()){
+                //Try to advance the Network by reducing the chosen process.
+                Advancement advancement = tryAdvancement.apply(processName);
+                //If the chosen process could not reduce the network, try the next one
+                if (advancement == null)
+                    continue;
+
+                //Fold back procedure invocations of unused processes.
+                foldBackProcesses(advancement, unfoldedProcesses);
+
+                //Build out the graph using the progress of the network
+                BuildGraphResult result = builder.buildGraph(advancement, currentNode);
+
+                //In case of bad loops, the graph remains unchanged.
+                // Reset changes to the Network, and try the next process
+                if (result == BuildGraphResult.BAD_LOOP) {
+                    network.restoreProcesses(orderedProcesses, unfoldedProcesses.keySet()); //Unfold again
+                    network.restoreProcesses(orderedProcesses, advancement.actors());       //Restore modified processes
+                    continue;
+                }
+
+                //Return the result of building the graph.
+                //Will either be OK on success, or FAIL if the network is not extractable
+                return result;
+            }
+            //The tryAdvancement function could not advance the Network.
+            return null;
+        }
+        /**
+         * Folds back the main Behaviour of all Networks in an Advancement, if they did not reduce.
+         * @param advancement Container for the Network(s) to fold back.
+         * @param unfoldedProcesses Copy of the ProcessTerm that was unfolded.
+         */
+        private void foldBackProcesses(Advancement advancement,
+                                       HashMap<String, ProcessTerm> unfoldedProcesses){
+            HashSet<String> involvedProcesses = advancement.actors();
+            advancement.network().restoreExcept(unfoldedProcesses, involvedProcesses);
+            if (advancement.elseNetwork() != null)
+                advancement.elseNetwork().restoreExcept(unfoldedProcesses, involvedProcesses);
+        }
     }
 
     /**

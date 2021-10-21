@@ -9,9 +9,9 @@ import utility.Pair;
 import java.util.*;
 
 public class Network extends NetworkASTNode {
-    public HashMap<String, ProcessTerm> processes;     //Map from process names to procedures
-    private final AdjacencyMatrix introduced;
-    private int nextID = 0;                       //Next available process ID
+    public HashMap<String, ProcessTerm> processes;      //Map from process names to procedures
+    private final AdjacencyMatrix introduced;           //Which processes are known to each other
+    private int nextID = 0;                             //Next available process ID
 
     /**
      * A Network object stores a mapping from process names to process terms (procedures).
@@ -48,21 +48,18 @@ public class Network extends NetworkASTNode {
     }
 
     /**
-     * Folds back every process in unfolded processes, if the process name is not in exceptions.
+     * Restores ProcessTerm mains, if the process name is not in exceptions.
      * Specifically, the main behaviour of each ProcessTerm in the network gets replaced with that from
-     * unfoldedProcesses, if an entry exists for that process, unless its name is in exceptions.
-     * @param unfoldedProcesses Processes to restore, and what to restore them to.
-     * @param exceptions Names of processes that should not be restored, even if they are in unfoldedProcesses.
+     * originalProcesses, if an entry exists for that process, unless its name is in exceptions.
+     * @param originalProcesses Processes to restore, and what to restore them to.
+     * @param exceptions Names of processes that should not be restored, even if they are in originalProcesses.
      */
-    public void foldExcept(HashMap<String, ProcessTerm> unfoldedProcesses, HashSet<String> exceptions){
-        unfoldedProcesses.forEach((name, term) -> {
+    public void restoreExcept(HashMap<String, ProcessTerm> originalProcesses, HashSet<String> exceptions){
+        originalProcesses.forEach((name, term) -> {
             if (!exceptions.contains(name)){
                 processes.get(name).main = term.main;
             }
         });
-    }
-    public void foldExcept(HashMap<String, ProcessTerm> unfoldedProcesses, String ... exceptions){
-        foldExcept(unfoldedProcesses, new HashSet<>(Arrays.asList(exceptions)));
     }
 
     /**
@@ -70,41 +67,10 @@ public class Network extends NetworkASTNode {
      * @param originalProcesses The processes to restore from.
      * @param toRestore Names of the processes to restore
      */
-    public void restoreProcesses(HashMap<String, ProcessTerm> originalProcesses, HashSet<String> toRestore){
+    public void restoreProcesses(HashMap<String, ProcessTerm> originalProcesses, Collection<String> toRestore){
         toRestore.forEach(processName ->
                 processes.get(processName).main = originalProcesses.get(processName).main
-                );
-    }
-
-
-    /**
-     * Attempts to advance the network by reducing on the given process, and the processes
-     * it communicates with, if any. Returns the Label of the reduction, and modifies this Network.
-     * If process' main Behaviour is Condition, returns a ThenLabel, the Network of the else branch,
-     * and the ElseLabel. This Network becomes the Network of the then branch.
-     * Returns null on failure, in which case the network is unmodified.
-     * @param process The name of the process to attempt to reduce on.
-     * @return An Advancement record. If the Network reduces on an interaction, then this Network gets changed
-     * to the resulting network, and the records label field is the Label of the interaction. Other fields are null.
-     * This the Network reduces on an Conditional, then this Network gets changed to the Network of the then branch,
-     * while the records label field is the corresponding ThenLabel. The elseNetwork and elseLabel are corresponding
-     * to the else branch of the Conditional.
-     * On failure, returns null, in which case this Network is unchanged.
-     */
-    //* @param reducedProcesses Names of all processes involved in the reduction gets added to this set.
-    public Advancement tryAdvance(String process){
-        var term = processes.get(process);
-        var interaction = term.prospectInteraction(process);
-        if (interaction != null){
-            return reduceInteraction(interaction);
-        }
-        if (term.main instanceof Spawn)
-            return reduceSpawn(process);
-        var condition = term.prospectCondition(process);
-        if (condition != null){
-            return reduceCondition(condition);
-        }
-        return null;
+            );
     }
 
     /**
@@ -121,22 +87,54 @@ public class Network extends NetworkASTNode {
         }
     }
 
-    private Advancement reduceSpawn(String process){
-        ProcessTerm spawnTerm = processes.get(process);
-        if (!(spawnTerm.main instanceof Spawn spawner))
+    /**
+     * Attempts to advance the Network by spawning a new process
+     * @param process The name of the process to reduce if its main Behaviour is spawn
+     * @return An advancement record if the Network advanced, or null on failure.
+     */
+    public Advancement spawnAdvance(String process){
+        ProcessTerm spawnerTerm = processes.get(process);
+        if (!(spawnerTerm.main instanceof Spawn spawner))
             return null;
 
-        String varName = spawner.variable;
-        String processName = String.format("%s/%s%d", process, spawner.variable, nextID++);
+        String variableName = spawner.variable;
+        String realName = String.format("%s/%s%d", process, spawner.variable, nextID++);
 
-        ProcessTerm childProcess = new ProcessTerm(spawnTerm.procedures, spawner.processBehaviour);
-        spawnTerm.substitute(varName, processName);
-        processes.put(processName, childProcess);
-        introduced.spawn(process, processName);
-        SpawnLabel label = new SpawnLabel(process, processName);
+        ProcessTerm spawnedProcess = new ProcessTerm(spawnerTerm.procedures, spawnerTerm.parameters, spawner.processBehaviour);
+        processes.put(realName, spawnedProcess);
+        spawnerTerm.substitute(variableName, realName);
+        introduced.spawn(process, realName);
+        SpawnLabel label = new SpawnLabel(process, realName);
 
-        spawnTerm.main = spawner.continuation;
-        return new Advancement(label, this, new HashSet<>(){{add(process); add(processName);}});
+        spawnerTerm.main = spawner.continuation;
+        return new Advancement(label, this, new HashSet<>(){{add(process); add(realName);}});
+    }
+
+    /**
+     * Attempts to advance the network by reducing on the given process, and the processes
+     * it communicates with, if any. Returns the Label of the reduction, and modifies this Network.
+     * If process' main Behaviour is Condition, returns a ThenLabel, the Network of the else branch,
+     * and the ElseLabel. This Network becomes the Network of the then branch.
+     * Returns null on failure, in which case the network is unmodified.
+     * @param process The name of the process to attempt to reduce on.
+     * @return An Advancement record. If the Network reduces on an interaction, then this Network gets changed
+     * to the resulting network, and the records label field is the Label of the interaction. Other fields are null.
+     * This the Network reduces on an Conditional, then this Network gets changed to the Network of the then branch,
+     * while the records label field is the corresponding ThenLabel. The elseNetwork and elseLabel are corresponding
+     * to the else branch of the Conditional.
+     * On failure, returns null, in which case this Network is unchanged.
+     */
+    public Advancement ComCondAdvance(String process){
+        var term = processes.get(process);
+        var interaction = term.prospectInteraction(process);
+        if (interaction != null){
+            return reduceInteraction(interaction);
+        }
+        var condition = term.prospectCondition(process);
+        if (condition != null){
+            return reduceCondition(condition);
+        }
+        return null;
     }
 
     /**
@@ -300,6 +298,9 @@ public class Network extends NetworkASTNode {
             if (next instanceof IntroductionLabel intro)
                 known.introduce(intro.process1, intro.process2);
         }
+
+        if (actions.size() == 1)
+            return null;    //Single interactions not multicom, and should already have been attempted
         return new Advancement(new MulticomLabel(actions), new Network(processes, known), actors);
     }
 
@@ -380,7 +381,9 @@ public class Network extends NetworkASTNode {
      * @return An identical Network
      */
     public Network copy(){
-        return new Network(copyProcesses(), introduced.copy());
+        var copy = new Network(copyProcesses(), introduced.copy());
+        copy.nextID = nextID;
+        return copy;
     }
 
     /**
@@ -430,6 +433,7 @@ public class Network extends NetworkASTNode {
                 lambdaWorkaround[0] += (key.hashCode() * 31 + (value.hashCode() * 29)));
         return lambdaWorkaround[0];
     }
+
 
 }
 
