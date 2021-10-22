@@ -32,7 +32,7 @@ public class Selection extends Behaviour.Sender {
     }
 
     @Override
-    public Label.InteractionLabel labelFrom(String process, Map<String, String> sub){
+    public Label.InteractionLabel labelFrom(String process, ProcessTerm.ValueMap sub){
         return new Label.SelectionLabel(sub.get(process), sub.get(receiver), sub.get(label));
     }
 

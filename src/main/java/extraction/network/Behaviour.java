@@ -58,7 +58,7 @@ public abstract class Behaviour extends NetworkASTNode {
          *                      A map containing only variable mappings, and where get(key) = getOrDefault(key,key) will do
          * @return A new InteractionLabel for the interaction needed to reduce this Behaviour.
          */
-        abstract Label.InteractionLabel labelFrom(String process, Map<String, String> substitutions);
+        abstract Label.InteractionLabel labelFrom(String process, ProcessTerm.ValueMap substitutions);
     }
 
     public static abstract class Receiver extends Interaction{

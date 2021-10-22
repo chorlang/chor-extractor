@@ -1,9 +1,5 @@
 package extraction;
 
-import extraction.network.Behaviour;
-import extraction.network.Spawn;
-
-import java.lang.reflect.Array;
 import java.util.*;
 
 public abstract class Label {
@@ -135,16 +131,16 @@ public abstract class Label {
     }
 
     public static class IntroductionLabel extends InteractionLabel{
-        public String introducer, process1, process2;   //These are duplicates of the fields in its superclass
-        public IntroductionLabel(String introducer, String process1, String process2){
-            super(introducer, process1, process2, LabelType.INTRODUCTION); //Process2 is the expression field of the parent
+        public String introducer, leftProcess, rightProcess;   //These are duplicates of the fields in its superclass
+        public IntroductionLabel(String introducer, String leftProcess, String rightProcess){
+            super(introducer, rightProcess, leftProcess, LabelType.INTRODUCTION); //Process2 is the expression field of the parent
             this.introducer = introducer;
-            this.process1 = process1;
-            this.process2 = process2;
+            this.leftProcess = leftProcess;
+            this.rightProcess = rightProcess;
         }
         @Override
         public Label copy() {
-            return new IntroductionLabel(introducer, process1, process2);
+            return new IntroductionLabel(introducer, leftProcess, rightProcess);
         }
         public String toString() {
             return String.format("%s.%s<->%s", sender, expression, receiver);

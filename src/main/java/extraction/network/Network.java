@@ -194,16 +194,26 @@ public class Network extends NetworkASTNode {
         }
         //expression and receiver corresponds to process 1 and 2.
         //I kept them as expression and receiver here to ensure the order is correct.
-        else if ( label instanceof IntroductionLabel &&
+        else if ( label instanceof IntroductionLabel intro &&
                 sender instanceof Introduce introducer &&
-                receiver instanceof Introductee introductee1 &&
-                processes.get(label.expression).main() instanceof Introductee introductee2 &&
-                introductee2.sender.equals(label.sender) &&
-                introduced.isIntroduced(label.sender, label.expression)){
+                receiver instanceof Introductee introducteeR &&
+                processes.get(intro.leftProcess).main() instanceof Introductee introducteeL &&
+                introducteeL.sender.equals(intro.introducer) &&
+                introduced.isIntroduced(intro.introducer, intro.leftProcess)){
+            ProcessTerm receiveProcessL = processes.get(intro.leftProcess);
+            //We need the unmodified mains to get the variable names for the introduced process
+            introducteeL = (Introductee) receiveProcessL.main;
+            introducteeR = (Introductee) receiveProcess.main;
+            //Bind varname in left process to the name of the right, and vice versa.
+            receiveProcessL.substitute(introducteeL.processID, intro.rightProcess);
+            receiveProcess.substitute(introducteeR.processID, intro.leftProcess);
+            //Remember that the introduced processes are now allowed to communicate
+            introduced.introduce(intro.leftProcess, intro.rightProcess);
+
+            //Advance the network.
             sendProcess.main = introducer.continuation;
-            receiveProcess.main = introductee1.continuation;
-            processes.get(label.expression).main = introductee2.continuation;
-            introduced.introduce(introducer.process1, introducer.process2);
+            receiveProcess.main = introducteeR.continuation;
+            receiveProcessL.main = introducteeL.continuation;
             reduced = true;
         }
         if (!reduced)
@@ -296,7 +306,7 @@ public class Network extends NetworkASTNode {
             //Introduce processes. Real IntroductionLabel always comes after the faux one, so at this point,
             //both receivers have received, and the introduction is fully complete.
             if (next instanceof IntroductionLabel intro)
-                known.introduce(intro.process1, intro.process2);
+                known.introduce(intro.leftProcess, intro.rightProcess);
         }
 
         if (actions.size() == 1)

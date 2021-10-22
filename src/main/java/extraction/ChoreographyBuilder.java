@@ -78,7 +78,7 @@ public class ChoreographyBuilder {
                             buildChoreographyBody(edgeTarget));
                 }
                 if (edge instanceof Label.IntroductionLabel introduction) {
-                    return new Introduction(introduction.introducer, introduction.process1, introduction.process2,
+                    return new Introduction(introduction.introducer, introduction.leftProcess, introduction.rightProcess,
                             buildChoreographyBody(edgeTarget));
                 }
                 if (edge instanceof Label.SpawnLabel spawnLabel){

@@ -45,7 +45,7 @@ public class MulticomTest {
                 "a { main { b<->c; b?; stop}} |" +
                 "b { main { a!<msg>; a?c; c!<hello>; stop}} |" +
                 "c {main { a?b; b?; stop}}";
-        var expected = "main {(b.msg->a, a.c<->b); b.hello->c; stop}";
+        var expected = "main {(b.msg->a, a.b<->c); b.hello->c; stop}";
         var actual = Extraction.extractChoreography(test).toString();
 
         Assertions.assertEquals(expected, actual);

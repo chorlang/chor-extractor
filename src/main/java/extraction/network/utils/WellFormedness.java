@@ -74,8 +74,8 @@ public class WellFormedness{
 
                 case INTRODUCE:
                     var introducer = (Introduce) hostNode;
-                    return !introducer.process1.equals(checkingProcessName) &&
-                            !introducer.process2.equals(checkingProcessName) &&
+                    return !introducer.leftReceiver.equals(checkingProcessName) &&
+                            !introducer.rightReceiver.equals(checkingProcessName) &&
                             introducer.continuation.accept(this);
                 case INTRODUCTEE:
                     var introduced = (Introductee) hostNode;

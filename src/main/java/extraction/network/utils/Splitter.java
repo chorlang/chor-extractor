@@ -86,8 +86,8 @@ public class Splitter {
                 case INTRODUCE:{
                     var acquaint = (Introduce) hostNode;
                     var interacting = new HashSet<String>();
-                    interacting.add(acquaint.process1);
-                    interacting.add(acquaint.process2);
+                    interacting.add(acquaint.leftReceiver);
+                    interacting.add(acquaint.rightReceiver);
                     interacting.addAll(acquaint.continuation.accept(this));
                     return interacting;
                 }

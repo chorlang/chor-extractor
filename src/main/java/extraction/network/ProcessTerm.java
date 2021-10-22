@@ -20,12 +20,17 @@ public class ProcessTerm extends NetworkASTNode {
      */
     Behaviour main;                                         //The main behaviour for the procedure
     //Used for getting real process names from variables.
-    private HashMap<String, String> substitutions = new HashMap<>(){
+    static class ValueMap extends HashMap<String, String>{
         @Override
         public String get(Object key){
-            return getOrDefault(key, (String)key);
+            return getOrDefault(key, (String)key);  //If no mapping exists, assume constant value
         }
-    };
+        @Override
+        public String put(String key, String value){
+            return super.put(key, get(value));      //If value->pID exists, then create key->pID instead
+        }
+    }
+    private ValueMap substitutions = new ValueMap();
 
     /**
      * Constructor for ProcessTerm
@@ -42,7 +47,7 @@ public class ProcessTerm extends NetworkASTNode {
         this.main = main;
         proceduresHash = proceduresHashValue();
     }
-    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, HashMap<String, String> substitutions, Behaviour main){
+    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, Behaviour main){
         this(procedures, parameters, main);
         this.substitutions = substitutions;
 
@@ -85,6 +90,8 @@ public class ProcessTerm extends NetworkASTNode {
      * @param processName Name of a real process.
      */
     public void substitute(String varName, String processName){
+        //The sub.get() handles if varName is already bound to a value.
+        //substitutions.put(substitutions.get(varName), processName);
         substitutions.put(varName, processName);
     }
 
@@ -107,7 +114,6 @@ public class ProcessTerm extends NetworkASTNode {
      * If the main Behaviour is ProcedureInvocation, repeatedly replace it by its procedure definition
      * until the main Behaviour is no longer ProcedureInvocation.
      */
-    //TODO: Make this use parameters. I think everything else is ready for it.
     void unfoldRecursively() {
         if (main() instanceof ProcedureInvocation invocation){
             String procedure = invocation.procedure;
