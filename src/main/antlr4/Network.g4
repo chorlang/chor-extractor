@@ -6,6 +6,7 @@ import CommonLexerRules;
 }
 
 network: process processBehaviour ('|' process processBehaviour)*;
+//For some reason, omitting the '|' does not result in a parse error
 
 processBehaviour : '{' procedureDefinition* 'main' '{' behaviour '}' '}';
 
