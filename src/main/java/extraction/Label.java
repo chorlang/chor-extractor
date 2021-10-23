@@ -13,7 +13,7 @@ public abstract class Label {
     public LabelType labelType;
 
     public boolean flipped = false;
-    public Map<String, String> becomes = null;
+    public Map<String, String> becomes = Map.of();
 
     public static class SpawnLabel extends Label{
         public final String parent, child;

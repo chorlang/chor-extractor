@@ -45,7 +45,7 @@ public class Prospector {
         Network network = advancer.network;
 
         //Try advancing with interactions or conditinoals
-        BuildGraphResult result = advancer.advanceNetwork(network::ComCondAdvance);
+        BuildGraphResult result = advancer.advanceNetwork(network::CommunicationConditionalAdvance);
         if (result != null)
             return result;
 

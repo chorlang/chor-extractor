@@ -124,7 +124,7 @@ public class Network extends NetworkASTNode {
      * to the else branch of the Conditional.
      * On failure, returns null, in which case this Network is unchanged.
      */
-    public Advancement ComCondAdvance(String process){
+    public Advancement CommunicationConditionalAdvance(String process){
         var term = processes.get(process);
         var interaction = term.prospectInteraction(process);
         if (interaction != null){

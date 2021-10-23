@@ -4,6 +4,8 @@ import extraction.network.Network;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Slightly hacky way of implementing Nodes for the graph. Sorry.
@@ -53,10 +55,12 @@ public interface Node {
 
     class InvocationNode implements Node{
         public String procedureName;
+        public List<String> parameters;
         public Node node;
 
-        public InvocationNode(String procedureName, Node node){
+        public InvocationNode(String procedureName, List<String> parameters, Node node){
             this.procedureName = procedureName;
+            this.parameters = parameters;
             this.node = node;
         }
 
