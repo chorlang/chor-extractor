@@ -68,9 +68,13 @@ public class Network extends NetworkASTNode {
      * @param toRestore Names of the processes to restore
      */
     public void restoreProcesses(HashMap<String, ProcessTerm> originalProcesses, Collection<String> toRestore){
-        toRestore.forEach(processName ->
-                processes.get(processName).main = originalProcesses.get(processName).main
-            );
+        toRestore.forEach(processName -> {
+            ProcessTerm oldTerm = originalProcesses.get(processName);
+            if (oldTerm == null)
+                processes.remove(processName);  //Remove if process just spawned
+            else
+                processes.get(processName).main = oldTerm.main;
+        });
     }
 
     /**
