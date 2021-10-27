@@ -235,13 +235,16 @@ public class GraphBuilder {
                 continue;
             }
             var parameters = findSurjectiveMapping(network, otherNode.network);
-            if (parameters == null){
+            if (parameters == null || parameters.size() != parameters.values().stream().distinct().count()){
+                //The second half of the conditional ensures the mapping can be used with procedure invocation.
+                //It works by ensuring the actual map is bijective.
                 continue;
             }
             boolean fail = false;
             for (String processName : marking.keySet()){
                 String otherName = parameters.getOrDefault(processName, processName); //Get the mapped value if it exists
                 if (marking.get(processName) != otherNode.marking.get(otherName)){
+                //if (!marking.get(processName) && otherNode.marking.get(otherName)){
                     fail = true;
                     break;
                 }
