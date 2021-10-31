@@ -44,7 +44,7 @@ public class Prospector {
         //Reference to the internal Network of the advancer (which is a copy of that in currentNode).
         Network network = advancer.network;
 
-        //Try advancing with interactions or conditinoals
+        //Try advancing with interactions or conditionals
         BuildGraphResult result = advancer.advanceNetwork(network::CommunicationConditionalAdvance);
         if (result != null)
             return result;

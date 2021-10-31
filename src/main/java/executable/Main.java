@@ -120,7 +120,7 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = spawnOsci;
+        String networksString = paramLoop;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());

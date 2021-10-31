@@ -104,13 +104,15 @@ public class Network extends NetworkASTNode {
         String variableName = spawner.variable;
         String realName = String.format("%s/%s%d", process, spawner.variable, nextID++);
 
-        ProcessTerm spawnedProcess = new ProcessTerm(spawnerTerm.procedures, spawnerTerm.parameters, spawner.processBehaviour);
-        processes.put(realName, spawnedProcess);
+        //Assign variable, and create the term for the spawned process
         spawnerTerm.substitute(variableName, realName);
-        introduced.spawn(process, realName);
-        SpawnLabel label = new SpawnLabel(process, realName);
+        ProcessTerm spawnedProcess = spawnerTerm.spawnNew(spawner.processBehaviour);
 
-        spawnerTerm.main = spawner.continuation;
+        processes.put(realName, spawnedProcess);                //Add the new process to the network
+        introduced.spawn(process, realName);                    //Parent and child are introduced at spawn
+
+        SpawnLabel label = new SpawnLabel(process, realName);   //Create the label for this spawn
+        spawnerTerm.main = spawner.continuation;                //Reduce the parent process
         return new Advancement(label, this, new HashSet<>(){{add(process); add(realName);}});
     }
 

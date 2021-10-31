@@ -46,6 +46,6 @@ public class Spawn extends Behaviour{
 
     @Override
     public String toString() {
-        return String.format("spawn %s with %s; %s", variable, processBehaviour, continuation);
+        return String.format("spawn %s with %s continue %s", variable, processBehaviour, continuation);
     }
 }

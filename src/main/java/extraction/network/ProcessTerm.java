@@ -1,11 +1,13 @@
 package extraction.network;
 
+import com.ibm.icu.impl.UResource;
 import extraction.Label.*;
 import extraction.network.Behaviour.*;
 import utility.Pair;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
@@ -21,6 +23,10 @@ public class ProcessTerm extends NetworkASTNode {
     Behaviour main;                                         //The main behaviour for the procedure
     //Used for getting real process names from variables.
     static class ValueMap extends HashMap<String, String>{
+        public ValueMap(){}
+        public ValueMap(Map<String, String> c){
+            super(c);
+        }
         @Override
         public String get(Object key){
             return getOrDefault(key, (String)key);  //If no mapping exists, assume constant value
@@ -49,8 +55,19 @@ public class ProcessTerm extends NetworkASTNode {
     }
     private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, Behaviour main){
         this(procedures, parameters, main);
-        this.substitutions = substitutions;
+        this.substitutions = new ValueMap(substitutions);
+    }
 
+    /**
+     * Create a new ProcessTerm that has been spawned from this one.
+     * Initializes a new ProcessTerm with the same procedures as this one, but with the provided main Behaviour.
+     * The new term gets a copy of all variable mappings from this one. You should assign the new process' name
+     * to a variable in the parent process before calling this function.
+     * @param mainBehaviour The main behaviour of the new process
+     * @return The created ProcessTerm
+     */
+    ProcessTerm spawnNew(Behaviour mainBehaviour){
+        return new ProcessTerm(procedures, parameters, new ValueMap(substitutions), mainBehaviour);
     }
 
     /**
@@ -167,7 +184,6 @@ public class ProcessTerm extends NetworkASTNode {
      * @param other the object to compare with
      * @return true if both objects are functionally identical
      */
-    //TODO: This can probably be speed up a bit using hashes
     public boolean equals(ProcessTerm other){
         if (this == other)                          //Trivially true if it is the same object
             return true;
