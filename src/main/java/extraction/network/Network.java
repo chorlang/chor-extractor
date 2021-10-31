@@ -236,10 +236,6 @@ public class Network extends NetworkASTNode {
                 super(introducer, introducedProcess, introductee, LabelType.INTRODUCTION);
             }
             @Override
-            public Label copy() {
-                return null;
-            }
-            @Override
             public String toString() {
                 return String.format("%s.%s<->%s Debug only", sender, expression, receiver);
             }

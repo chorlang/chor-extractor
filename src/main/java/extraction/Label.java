@@ -8,8 +8,6 @@ public abstract class Label {
         THEN, ELSE, COMMUNICATION, SELECTION, MULTICOM, INTRODUCTION
     }
 
-    public abstract Label copy(); //TODO Copy might be unused.
-
     public LabelType labelType;
 
     public boolean flipped = false;
@@ -21,7 +19,6 @@ public abstract class Label {
             this.parent = parent;
             this.child = child;
         }
-        public Label copy(){return this;}
         @Override public String toString(){
             return String.format("%s spawns %s ", parent, child);
         }
@@ -33,12 +30,6 @@ public abstract class Label {
             this.communications = communications;
             labelType = LabelType.MULTICOM;
         }
-
-        /**
-         * Creates a new Label object identical to this one, but its content is copied by reference.
-         * @return A shallow copy of this label.
-         */
-        public Label copy(){ return new MulticomLabel(communications); }
 
         @Override
         public String toString(){
@@ -67,10 +58,6 @@ public abstract class Label {
                 super(process, expression, LabelType.THEN);
             }
 
-            public Label copy(){
-                return new ThenLabel(process, expression);
-            }
-
             public String toString() {
                 return String.format("if %s.%s then ", process, expression);
             }
@@ -79,10 +66,6 @@ public abstract class Label {
         public static class ElseLabel extends ConditionLabel{
             public ElseLabel(String process, String expression){
                 super(process, expression, LabelType.ELSE);
-            }
-
-            public Label copy(){
-                return new ThenLabel(process, expression);
             }
 
             public String toString() {
@@ -107,10 +90,6 @@ public abstract class Label {
             super(sender, receiver, expression, LabelType.COMMUNICATION);
         }
 
-        public Label copy() {
-            return new Label.CommunicationLabel(sender, receiver, expression);
-        }
-
         public String toString() {
             return String.format("%s.%s->%s", sender, expression, receiver);
         }
@@ -119,10 +98,6 @@ public abstract class Label {
     public static class SelectionLabel extends InteractionLabel{
         public SelectionLabel(String sender, String receiver, String label){
             super(sender, receiver, label, LabelType.SELECTION);
-        }
-
-        public Label copy(){
-            return new Label.SelectionLabel(sender, receiver, expression);
         }
 
         public String toString(){
@@ -137,10 +112,6 @@ public abstract class Label {
             this.introducer = introducer;
             this.leftProcess = leftProcess;
             this.rightProcess = rightProcess;
-        }
-        @Override
-        public Label copy() {
-            return new IntroductionLabel(introducer, leftProcess, rightProcess);
         }
         public String toString() {
             return String.format("%s.%s<->%s", sender, expression, receiver);

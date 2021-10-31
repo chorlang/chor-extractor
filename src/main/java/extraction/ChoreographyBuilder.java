@@ -16,12 +16,7 @@ public class ChoreographyBuilder {
     static Choreography buildChoreography(ConcreteNode rootNode, DirectedPseudograph<Node, Label> graph){
         //Loops are assumed to have >1 incoming edges. Add extra incoming edge to root to avoid special case.
         var dummyNode = new Node(){};
-        var dummyLabel = new Label() {
-            @Override
-            public Label copy() {
-                return null;
-            }
-        };
+        var dummyLabel = new Label() {};
         graph.addVertex(dummyNode);
         graph.addEdge(dummyNode, rootNode, dummyLabel);
         var builder = new ChoreographyBuilder(graph);
