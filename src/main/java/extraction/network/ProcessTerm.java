@@ -169,10 +169,13 @@ public class ProcessTerm extends NetworkASTNode {
      */
     //TODO: This can probably be speed up a bit using hashes
     public boolean equals(ProcessTerm other){
-        if (this == other)          //If it is the same object
+        if (this == other)                          //Trivially true if it is the same object
             return true;
-        if (!main.equals(other.main))     //The main Behaviours must be identical
+        if (    hashCode() != other.hashCode() ||   //The terms cannot be identical with different hash-codes
+                !main.equals(other.main) ||         //The main Behaviours must be identical
+                procedures.size() != other.procedures.size())   //Must have the same number of procedures
             return false;
+        //Compare all processes, and fail if there is a difference.
         for (String procedureName : procedures.keySet()){
             var otherBehaviour = other.procedures.get(procedureName);
             if (otherBehaviour == null || !otherBehaviour.equals(procedures.get(procedureName)))

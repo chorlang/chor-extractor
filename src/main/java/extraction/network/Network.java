@@ -430,19 +430,11 @@ public class Network extends NetworkASTNode {
      * @return Hash of this extraction.network mapping
      */
     public int hashCode(){
-        /*Why does the ordering matter?*/
-
-        //So, variables cannot be assigned in lambda expressions, but array items can!???
-        int[] lambdaWorkaround = new int[]{0};
-
-        //Annoying, but it's the easiest way to sort HashMaps.
-        TreeMap<String, ProcessTerm> sortedMap = new TreeMap<>(processes);
-        //forEach is performed in order of entry set iteration, which I believe is sorted
-        sortedMap.forEach((key, value) ->
-                lambdaWorkaround[0] += (key.hashCode() * 31 + (value.hashCode() * 29)));
-        return lambdaWorkaround[0];
+        return processes.entrySet().stream().mapToInt(
+                //Map each process to its hash value in the stream
+                entry -> entry.getKey().hashCode() * 31 + entry.getValue().hashCode() * 29
+        //Add up all the hash values of the stream and return the total.
+        ).reduce(0, Integer::sum);
     }
-
-
 }
 
