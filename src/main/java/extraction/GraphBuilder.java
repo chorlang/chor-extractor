@@ -300,8 +300,8 @@ public class GraphBuilder {
             if (!matched)
                 return null;
         }
-        //Terminated processes can be ignored.
-        unmatchedNames.removeIf(name -> fromProc.get(name).isTerminated());
+        //I used to remove terminated processes here, but it lead to infinite graphs in some networks.
+
         //Now there is a mapping to every process name in toNetwork.
         //Add mappings from the so-far unused process names in fromNetwork
         for (String name : unmatchedNames){
