@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-//TODO: Processes may be crated ind a variety of orders. Even if processes are given the same name regardless of
-// their order of creation, they may be mapped to different indexes depending on which order they are added.
-// Ensure this does not affect loop closing.
 /**
  * Adjacency matrix for undirected graphs.
  * It is specialized to keep track of which processes are familiar with each other. If they are not familiar, then
@@ -71,7 +68,6 @@ public class AdjacencyMatrix {
         newcolumn.set(n, Boolean.TRUE);             //Process knows itself
                                                     //Arguably, if it is checked if a process knows itself, an error should be thrown.
         matrix.add(newcolumn);
-        //matrix.forEach(column -> column.add(Boolean.FALSE));
         introduce(parent, child);                   //Parents and child know each other
 
     }

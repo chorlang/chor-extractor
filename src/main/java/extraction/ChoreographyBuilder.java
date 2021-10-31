@@ -105,7 +105,6 @@ public class ChoreographyBuilder {
         return Termination.getInstance();
     }
 
-    //TODO ProcedureInvocation on the Choreography side of things
     private ArrayList<ProcedureHead> unrollGraph(){
         //ID of the next procedure to add
         int procedureID = 1;
