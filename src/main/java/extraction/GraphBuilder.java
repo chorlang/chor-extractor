@@ -374,8 +374,14 @@ public class GraphBuilder {
         nodesWithHash.add(node);
     }
 
-    //TODO: This removes the entire list. Shouldn't it just remove an element from the list?
     private void removeFromNodeHashes(ConcreteNode node){
+        ArrayList<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(node.network, node.marking));
+        for (var viableNode : viableNodes){
+            if (viableNode.network.equals(node.network)){
+                viableNodes.remove(viableNode);
+                break;
+            }
+        }
         nodeHashes.remove(hashMarkedNetwork(node.network, node.marking));
     }
 

@@ -423,7 +423,6 @@ public class Network extends NetworkASTNode {
                 return false;
         }
         return true;
-        //return processes.equals(otherNetwork.processes);
     }
 
     /**
