@@ -52,7 +52,7 @@ public class VariableSubstitutionTest {
                 "b { main { a?c; c!<hi>; stop } }";
         String expected = "main {a spawns a/z0; a.a/z0<->b; b.hi->a/z0; stop}";
         //Spawn not supported by splitter at writing of test
-        String actual = new Extraction(Strategy.Default).extractChoreographySequentially(test, Set.of()).toString();
+        String actual = new Extraction(Strategy.Default).extractChoreography(test, Set.of()).toString();
         Assertions.assertEquals(expected, actual);
     }
 }

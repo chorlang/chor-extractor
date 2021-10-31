@@ -19,15 +19,7 @@ public class NetworkPurger {
          */
         var map = new HashMap<String, ProcessTerm>();
         network.processes.forEach((processName, processTerm) -> {
-            boolean exclude;
-            if (processTerm.main() instanceof Termination)
-                exclude = true;
-            else if (processTerm.main() instanceof ProcedureInvocation invocation)
-                //Should this not unfold procedure invocations recursively?
-                exclude = processTerm.procedures.get(invocation.procedure) instanceof Termination;
-            else
-                exclude = false;
-            if (!exclude)
+            if (!processTerm.isTerminated())
                 map.put(processName, processTerm);
         });
 

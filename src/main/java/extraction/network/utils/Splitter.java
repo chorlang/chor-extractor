@@ -5,8 +5,10 @@ import extraction.network.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 public class Splitter {
+    private static ProcessInteractionChecker interactionChecker = new ProcessInteractionChecker();
     /**
      * This function splits a Network into a set of Networks whose processes can function independently on each other.
      * If for two processes in the original Network, a and b, a never interacts with b, that be directly or
@@ -36,13 +38,20 @@ public class Splitter {
      * @param network The network to extract interacting process sets from.
      * @return List of sets of the names of processes that depend on each other.
      */
-    private static ArrayList<HashSet<String>> getProcessSets(Network network){
-        //Build a HashMap for all processes, storing a set of which other processes it interacts directly with.
+        private static ArrayList<HashSet<String>> getProcessSets(Network network){
+        //Build a map, mapping each process to a set of processes it directly interacts with.
         var map = new HashMap<String, HashSet<String>>();
-        network.processes.forEach((processName, processTerm) -> map.put(processName, new ProcessInteractionChecker().Visit(processTerm)));
+        network.processes.forEach((processName, processTerm) ->
+                map.put(processName, new HashSet<>(
+                        interactionChecker.Visit(processTerm).stream().filter(  //Create the set
+                                name -> network.processes.containsKey(name)     //Filter out variables
+                        ).toList()
+                ))
+        );
 
         var setList = new ArrayList<HashSet<String>>();
         var unprocessed = new HashSet<>(network.processes.keySet());
+
         //While there are processes which have not yet been grouped in a set.
         while (!unprocessed.isEmpty()) {
             //interactingProcesses is the set to be added to the list being returned at the end.
@@ -83,6 +92,17 @@ public class Splitter {
         @Override
         public HashSet<String> Visit(NetworkASTNode hostNode) {
             switch (hostNode.action){
+                case PROCESS_TERM:{
+                    var term = (ProcessTerm)hostNode;
+                    var processes = new HashSet<>(term.main().accept(this));
+                    term.procedures.forEach((__, behaviour) -> processes.addAll(behaviour.accept(this)));
+                    return processes;
+                }
+                case SPAWN:{
+                    //The spawned process is in the same set as its parent, and it cannot learn of a process outside
+                    //its parents set, so no need to check the child.
+                    return ((Spawn)hostNode).continuation.accept(this);
+                }
                 case INTRODUCE:{
                     var acquaint = (Introduce) hostNode;
                     var interacting = new HashSet<String>();
@@ -98,12 +118,6 @@ public class Splitter {
                     interacting.add(familiarize.sender);
                     interacting.addAll(familiarize.continuation.accept(this));
                     return interacting;
-                }
-                case PROCESS_TERM:{
-                    var term = (ProcessTerm)hostNode;
-                    var processes = new HashSet<>(term.main().accept(this));
-                    term.procedures.forEach((__, behaviour) -> processes.addAll(behaviour.accept(this)));
-                    return processes;
                 }
                 case CONDITION:{
                     var condition = (Condition)hostNode;

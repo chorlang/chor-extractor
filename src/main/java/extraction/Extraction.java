@@ -5,7 +5,7 @@ import extraction.choreography.Program;
 import extraction.network.Network;
 import extraction.network.utils.NetworkPurger;
 import extraction.network.utils.Splitter;
-import extraction.network.utils.WellFormedness;
+import extraction.network.WellFormedness;
 import parsing.Parser;
 
 import java.util.*;
@@ -39,19 +39,18 @@ public class Extraction {
         Network network = Parser.stringToNetwork(networkDescription);
         NetworkPurger.purgeNetwork(network);
 
-        if (!WellFormedness.compute(network)){
+        if (!WellFormedness.isWellFormed(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }
-        System.out.println("The extraction.network is well-formed and extraction can proceed");
+        System.out.println("The network is well-formed and extraction can proceed");
 
         var parallelNetworks = Splitter.splitNetwork(network);
         if (parallelNetworks == null){
-            System.out.println("The network could not be split into parallel networks. " +
-                    "Extraction proceeds assuming a fully connected network");
-            parallelNetworks = new HashSet<>(){{add(network);}};
-        } else
-            System.out.println("The input network has successfully been split into parallel independent networks");
+            System.out.println("The network could not be split into parallel networks, and extraction has been aborted");
+            return new Program(List.of(), List.of());
+        }
+        System.out.println("The input network has successfully been split into parallel independent networks");
 
         List<ChorStatsPair> results = Collections.synchronizedList(new ArrayList<>());
         parallelNetworks.parallelStream().forEach(net -> {
@@ -76,7 +75,7 @@ public class Extraction {
         Network network = Parser.stringToNetwork(networkDescription);
         NetworkPurger.purgeNetwork(network);
 
-        if (!WellFormedness.compute(network)){
+        if (!WellFormedness.isWellFormed(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }

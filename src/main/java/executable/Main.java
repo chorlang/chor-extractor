@@ -77,14 +77,41 @@ public class Main {
     static String parametizdTest =
             "a { def X(q) { q?; stop } main { b!<msg>; X(b)} } |" +
                     "b { main { a?; a!<resp>; stop } }";
+    static String nestedParameterTest =
+                    "a { def X(p) { p!<msg>; Y(p) } def Y(q) { q?; q!<hi>; Z(q) } def Z(r) { r!<ok>; X(r) } main { b?; X(b) } } |" +
+                    "b { def X(p) { p?; Y(p) } def Y(q) { q!<greet>; q?; Z(q) } def Z(r) { r?; X(r) } main { a!<start>; X(a) } }";
     static String spawn =
             "a { main {spawn b with a?; a!<resp>; stop continue b!<msg>; b?; stop} }";
+    static String oscilator =
+                    "a { def Rec(sender){ sender?; Send(sender) }" +
+                    "def Send(receiver){ receiver!<hi>; Rec(receiver) }" +
+                    "main { Send(b) } } | " +
+                    "b { def Rec(sender){ sender?; Send(sender) }" +
+                    "def Send(receiver){ receiver!<hi>; Rec(receiver) }" +
+                    "main { Rec(a) } }";
+    static String paramLoop =
+                    "a { def X(r){ spawn q with a?; stop continue q!<hi>; X(q) } main { c!<start>; b!<hi>; X(b) } } |" +
+                    "b { main { a?; stop } } |" +
+                    "c { main { a?; stop } }";
+    static String spawnLoop =
+            "a { def X{ spawn q with X continue X } main { X } }";
+    static String spawnOsci =
+            "p { " +
+                    "def X{ spawn a with p?q; Y(q) continue spawn b with p?r; Z(r) continue a<->b; X }" +
+                    "def Y(second){ second!<hi>; second?; Y(second) }" +
+                    "def Z(first){ first?; first!<hello>; Z(first) }" +
+                    "main { X } }";
+    static String paramIntro =
+                    "a { def X(q) { q<->b; stop } main { spawn z with a?d; d?; stop continue X(z) } } | " +
+                    "b { main { a?c; c!<hi>; stop } }";
+    static String identicalBound =
+                "p { def L1(q){ q!<hi>; q?; L1(q) }" +
+                    "def L2(a,b){ a?; b?; b!<ok>; a!<ok>; L2(a,b) }" +
+                    "def X{ spawn a with p?q; L1(q) continue spawn b with p?q; L1(q) continue spawn c with p?a; p?b; L2(a,b) continue a<->c; b<->c; X } main { X } }";
+
 
     public static void main(String []args){
         System.out.println("Hello World");
-
-        var dict = new LinkedHashMap<>();
-
         /*
         String chorString = chorLoop;
         Program chor = Parser.stringToProgram(chorString);
@@ -93,12 +120,12 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = spawn;
+        String networksString = spawnOsci;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
-        var choreography = extractor.extractChoreographySequentially(networksString, Set.of());
+        var choreography = extractor.extractChoreography(networksString, Set.of());
         String chor = choreography.toString();
         System.out.println(chor);
         //*/

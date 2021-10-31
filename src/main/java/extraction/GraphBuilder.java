@@ -359,11 +359,10 @@ public class GraphBuilder {
 
     private Integer hashMarkedNetwork(Network n, HashMap<String, Boolean> marking){
         var unique = new HashSet<ProcessTerm>(n.processes.size());
-        final int[] hash = {0};
+        final int[] hash = {0};     //lambdas do not allow direct modifications of ints.
         n.processes.forEach((key, term) -> {
-            if (unique.add(term)){
+            if (unique.add(term))  //Returns false, if the element is already in the set
                 hash[0] += term.hashCode() * 31 + marking.get(key).hashCode();
-            }
         });
         return hash[0];
         //return n.hashCode() + 31 * marking.hashCode();
