@@ -108,6 +108,20 @@ public class Main {
                 "p { def L1(q){ q!<hi>; q?; L1(q) }" +
                     "def L2(a,b){ a?; b?; b!<ok>; a!<ok>; L2(a,b) }" +
                     "def X{ spawn a with p?q; L1(q) continue spawn b with p?q; L1(q) continue spawn c with p?a; p?b; L2(a,b) continue a<->c; b<->c; X } main { X } }";
+    static String download =
+            "c { def download{ if getNextFile then " +
+                    "s+more; spawn w with c?sw; sw?; stop continue s?sw; w<->sw; download else " +
+                    "s+end; stop } " +
+                    "main { s!<req>; s?; download } " +
+               "} | " +
+            "s { def serve{ c&{more: spawn w with s?c; c?cw; cw!<file>; stop continue c<->w; serve, end: stop} } main { c?; c!<filelist>; serve } }";
+    static String mergeSort =
+            "sorter { " +
+                    "def msgSort(p, t){ p?; if listLengthIsOne then " +
+                    "   p!<list>; stop " +
+                    "else " +
+                    "   spawn a with msgSort(t, a) continue spawn b with msgSort(t, b) continue a!<leftHalf>; b!<rightHalf>; a?; b?; p!<mergedLists>; stop }" +
+                " main { spawn s with msgSort(sorter, s) continue s!<list>; s?; stop } }";
 
 
     public static void main(String []args){
@@ -120,12 +134,12 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = paramLoop;
+        String networksString = mergeSort;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
-        var choreography = extractor.extractChoreography(networksString, Set.of());
+        var choreography = extractor.extractChoreography(networksString, Set.of("stopped"));
         String chor = choreography.toString();
         System.out.println(chor);
         //*/

@@ -7,6 +7,7 @@ import extraction.network.Behaviour.*;
 import utility.Pair;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Network extends NetworkASTNode {
     public HashMap<String, ProcessTerm> processes;      //Map from process names to procedures
@@ -57,7 +58,7 @@ public class Network extends NetworkASTNode {
     public void restoreExcept(HashMap<String, ProcessTerm> originalProcesses, HashSet<String> exceptions){
         originalProcesses.forEach((name, term) -> {
             if (!exceptions.contains(name)){
-                processes.get(name).main = term.main;
+                processes.get(name).restore(term.main, term.substitutions);
             }
         });
     }
@@ -73,7 +74,7 @@ public class Network extends NetworkASTNode {
             if (oldTerm == null)
                 processes.remove(processName);  //Remove if process just spawned
             else
-                processes.get(processName).main = oldTerm.main;
+                processes.get(processName).restore(oldTerm.main, oldTerm.substitutions);
         });
     }
 
@@ -434,7 +435,11 @@ public class Network extends NetworkASTNode {
     public int hashCode(){
         return processes.entrySet().stream().mapToInt(
                 //Map each process to its hash value in the stream
-                entry -> entry.getKey().hashCode() * 31 + entry.getValue().hashCode() * 29
+                entry -> {
+                    if (entry.getValue().isTerminated())
+                        return 0;
+                    return entry.getKey().hashCode() * 31 + entry.getValue().hashCode() * 29;
+                }
         //Add up all the hash values of the stream and return the total.
         ).reduce(0, Integer::sum);
     }

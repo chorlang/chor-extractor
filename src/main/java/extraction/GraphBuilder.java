@@ -243,7 +243,7 @@ public class GraphBuilder {
             boolean fail = false;
             for (String processName : marking.keySet()){
                 String otherName = parameters.getOrDefault(processName, processName); //Get the mapped value if it exists
-                if (marking.get(processName) != otherNode.marking.get(otherName)){
+                if (!network.processes.get(processName).isTerminated() && marking.get(processName) != otherNode.marking.get(otherName)){
                 //if (!marking.get(processName) && otherNode.marking.get(otherName)){
                     fail = true;
                     break;
@@ -301,6 +301,7 @@ public class GraphBuilder {
                 return null;
         }
         //I used to remove terminated processes here, but it lead to infinite graphs in some networks.
+        unmatchedNames.removeIf(name -> fromProc.get(name).isTerminated());
 
         //Now there is a mapping to every process name in toNetwork.
         //Add mappings from the so-far unused process names in fromNetwork
@@ -361,7 +362,7 @@ public class GraphBuilder {
         var unique = new HashSet<ProcessTerm>(n.processes.size());
         final int[] hash = {0};     //lambdas do not allow direct modifications of ints.
         n.processes.forEach((key, term) -> {
-            if (unique.add(term))  //Returns false, if the element is already in the set
+            if (unique.add(term) && !term.isTerminated())  //Returns false, if the element is already in the set
                 hash[0] += term.hashCode() * 31 + marking.get(key).hashCode();
         });
         return hash[0];
@@ -375,7 +376,7 @@ public class GraphBuilder {
     }
 
     private void removeFromNodeHashes(ConcreteNode node){
-        ArrayList<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(node.network, node.marking));
+        ArrayList<ConcreteNode> viableNodes = nodeHashes.getOrDefault(hashMarkedNetwork(node.network, node.marking), new ArrayList<>());
         for (var viableNode : viableNodes){
             if (viableNode.network.equals(node.network)){
                 viableNodes.remove(viableNode);

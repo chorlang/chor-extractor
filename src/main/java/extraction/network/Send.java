@@ -30,9 +30,8 @@ public class Send extends Behaviour.Sender {
         return new Send(substitutions.get(receiver), expression, continuation);
     }
 
-    @Override
     public Label.InteractionLabel labelFrom(String process, ProcessTerm.ValueMap sub){
-        return new Label.CommunicationLabel(sub.get(process), sub.get(receiver), sub.get(expression));
+        return new Label.CommunicationLabel(sub.get(process), sub.get(receiver), expression);
     }
 
     public String toString(){

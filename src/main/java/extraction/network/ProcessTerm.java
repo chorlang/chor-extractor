@@ -36,7 +36,7 @@ public class ProcessTerm extends NetworkASTNode {
             return super.put(key, get(value));      //If value->pID exists, then create key->pID instead
         }
     }
-    private ValueMap substitutions = new ValueMap();
+    ValueMap substitutions = new ValueMap();
 
     /**
      * Constructor for ProcessTerm
@@ -56,6 +56,16 @@ public class ProcessTerm extends NetworkASTNode {
     private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, Behaviour main){
         this(procedures, parameters, main);
         this.substitutions = new ValueMap(substitutions);
+    }
+
+    /**
+     * Restores this process to a previous state.
+     * @param oldMain The main behaviour to restore to.
+     * @param oldVariables The variable assignments (Internally called substitutions) to restore to. This parameter is copied.
+     */
+    void restore(Behaviour oldMain, ValueMap oldVariables){
+        main = oldMain;
+        substitutions = new ValueMap(oldVariables);
     }
 
     /**

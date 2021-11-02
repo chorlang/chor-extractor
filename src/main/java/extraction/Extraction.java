@@ -3,6 +3,8 @@ package extraction;
 import extraction.choreography.Choreography;
 import extraction.choreography.Program;
 import extraction.network.Network;
+import extraction.network.ProcessTerm;
+import extraction.network.Termination;
 import extraction.network.utils.NetworkPurger;
 import extraction.network.utils.Splitter;
 import extraction.network.WellFormedness;
@@ -49,8 +51,10 @@ public class Extraction {
         if (parallelNetworks == null){
             System.out.println("The network could not be split into parallel networks, and extraction has been aborted");
             return new Program(List.of(), List.of());
-        }
-        System.out.println("The input network has successfully been split into parallel independent networks");
+        } else if (parallelNetworks.size() == 1)
+            System.out.println("All processes are interdependent");
+        else
+            System.out.println("The input network has been split into parallel independent networks");
 
         List<ChorStatsPair> results = Collections.synchronizedList(new ArrayList<>());
         parallelNetworks.parallelStream().forEach(net -> {
@@ -80,6 +84,7 @@ public class Extraction {
             return new Program(List.of(), List.of());
         }
         System.out.println("The Network is well-formed and extraction can proceed");
+        //network.processes.put("stopped", new ProcessTerm(new HashMap<>(), Termination.instance));
 
         ChorStatsPair result = extract(network, services);
         //List.of() requires non-null parameters, that's why the singletons.
