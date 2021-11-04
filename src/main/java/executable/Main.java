@@ -4,6 +4,7 @@ import endpointprojection.EndPointProjection;
 import extraction.Extraction;
 import extraction.Strategy;
 import extraction.choreography.Program;
+import extraction.choreography.Purger;
 import extraction.network.*;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
@@ -122,6 +123,8 @@ public class Main {
                     "else " +
                     "   spawn a with msgSort(t, a) continue spawn b with msgSort(t, b) continue a!<leftHalf>; b!<rightHalf>; a?; b?; p!<mergedLists>; stop }" +
                 " main { spawn s with msgSort(sorter, s) continue s!<list>; s?; stop } }";
+    static String terminationLoop =
+            "a { def loop{ spawn p with a?; a!<hello>; stop continue p!<hi>; p?; loop } main { spawn p with a?; a!<hello>; stop continue b?; p!<hi>; p?; loop } } | b { main { a!<start>; stop } }";
 
 
     public static void main(String []args){
@@ -134,14 +137,16 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = mergeSort;
+        String networksString = terminationLoop;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
         var choreography = extractor.extractChoreography(networksString, Set.of("stopped"));
+        //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
         String chor = choreography.toString();
         System.out.println(chor);
+        //System.out.println(purgedChor);
         //*/
 
         /*
