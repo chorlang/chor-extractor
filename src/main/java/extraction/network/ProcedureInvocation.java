@@ -1,5 +1,6 @@
 package extraction.network;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,6 +27,13 @@ public class ProcedureInvocation extends Behaviour {
     @Override
     Behaviour realValues(HashMap<String, String> substitutions){
         return new ProcedureInvocation(procedure, parameters.stream().map(substitutions::get).toList());
+    }
+
+    /**
+     * Returns a read-only view of the parameter values used in this invocation
+     */
+    public List<String> getParameters(){
+        return Collections.unmodifiableList(parameters);
     }
 
     public ProcedureInvocation(String procedure){

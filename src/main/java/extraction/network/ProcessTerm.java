@@ -1,10 +1,10 @@
 package extraction.network;
 
-import com.ibm.icu.impl.UResource;
 import extraction.Label.*;
 import extraction.network.Behaviour.*;
 import utility.Pair;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,9 +85,14 @@ public class ProcessTerm extends NetworkASTNode {
      * variable names will be replaced by real values in the Behaviours fields.
      * Behaviours stored in the returned Behaviour does not undergo variable substitution.
      */
-    public Behaviour main() {
+    public Behaviour runtimeMain() {
         return main.realValues(substitutions);
     }
+
+    /**
+     * Returns the main behaviour of this process as it is defined, not considering the current state of the network.
+     */
+    public Behaviour rawMain() { return main; }
 
     /**
      * Returns a InteractionLabel for the network operation needed to advance this process.
@@ -142,7 +147,7 @@ public class ProcessTerm extends NetworkASTNode {
      * until the main Behaviour is no longer ProcedureInvocation.
      */
     void unfoldRecursively() {
-        if (main() instanceof ProcedureInvocation invocation){
+        if (runtimeMain() instanceof ProcedureInvocation invocation){
             String procedure = invocation.procedure;
             var paramVar = parameters.get(procedure);
             var paramVal = invocation.parameters;
@@ -218,13 +223,21 @@ public class ProcessTerm extends NetworkASTNode {
     /**
      * Calculates the hashcode for this ProcessTerm.
      * The hash is calculated from the mapping, as well as the main behaviour
-     * @return the hashvalue considering all behaviours
+     * @return the hash value considering all behaviours
      */
     public int hashCode(){
         return 31 * proceduresHash + main.hashCode();
     }
     private int proceduresHashValue(){
         return procedures.hashCode();
+    }
+
+    /**
+     * @return a read only map form variable names, to their bound values. If a variable is not bound,
+     * the variable name is considered the variables value.
+     */
+    public Map<String, String> getVariables(){
+        return Collections.unmodifiableMap(substitutions);
     }
 
     /**

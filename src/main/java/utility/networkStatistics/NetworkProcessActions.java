@@ -24,7 +24,7 @@ public class NetworkProcessActions implements TreeVisitor<Integer, NetworkASTNod
                 for (var procedure : host.procedures.values()){
                     sum += procedure.accept(this);
                 }
-                return sum + host.main().accept(this);
+                return sum + host.runtimeMain().accept(this);
             case RECEIVE:
                 return ((Receive)hostNode).continuation.accept(this)+1;
             case SELECTION:

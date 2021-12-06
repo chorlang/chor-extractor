@@ -19,7 +19,7 @@ public class NetworkProcessConditionals implements TreeVisitor<Integer, NetworkA
                 return (int) ratio;
             }
             case PROCESS_TERM:
-                return ((ProcessTerm)hostNode).main().accept(this);
+                return ((ProcessTerm)hostNode).runtimeMain().accept(this);
             case RECEIVE:
                 return ((Receive)hostNode).continuation.accept(this);
             case SELECTION:

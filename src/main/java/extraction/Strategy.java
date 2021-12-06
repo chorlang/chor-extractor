@@ -28,10 +28,10 @@ public enum Strategy {
             LinkedHashMap<String, ProcessTerm> sortedNetwork = new LinkedHashMap<>(network.size());
 
             network.forEach((String processName, ProcessTerm process) -> {
-                if (process.main() instanceof Send
-                || process.main() instanceof Receive
-                || process.main() instanceof Selection
-                || process.main() instanceof Offering){
+                if (process.runtimeMain() instanceof Send
+                || process.runtimeMain() instanceof Receive
+                || process.runtimeMain() instanceof Selection
+                || process.runtimeMain() instanceof Offering){
                     sortedNetwork.put(processName, process.copy());
                 }
             });
@@ -53,11 +53,11 @@ public enum Strategy {
             var sortedNetwork = new LinkedHashMap<String, ProcessTerm>(network.size());
 
             network.forEach((processName, processTerm) ->{
-                if (processTerm.main() instanceof Condition)
+                if (processTerm.runtimeMain() instanceof Condition)
                     sortedNetwork.put(processName, processTerm.copy());
             });
             network.forEach((processName, processTerm) -> {
-                if (processTerm.main() instanceof Selection || processTerm.main() instanceof Offering)
+                if (processTerm.runtimeMain() instanceof Selection || processTerm.runtimeMain() instanceof Offering)
                     sortedNetwork.put(processName, processTerm.copy());
             });
             network.forEach((processName, processTerm) -> {
@@ -102,7 +102,7 @@ public enum Strategy {
                 if (marking)
                     markedList.add(processName);
                 else
-                    if (isInteraction(node.network.processes.get(processName).main()))
+                    if (isInteraction(node.network.processes.get(processName).runtimeMain()))
                         unmarkedInteractionsList.add(processName);
                     else
                         unmarkedOthersList.add(processName);
@@ -198,7 +198,7 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).main().action){
+                switch (node.network.processes.get(processName).runtimeMain().action){
                     case SELECTION:
                     case OFFERING:
                         if (marked)
@@ -244,7 +244,7 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).main().action){
+                switch (node.network.processes.get(processName).runtimeMain().action){
                     case CONDITION:
                         if (marked)
                             markedConditions.add(processName);
@@ -282,8 +282,8 @@ public enum Strategy {
     private static class SortByLength implements Comparator<Map.Entry<String, ProcessTerm>>{
         @Override
         public int compare(Map.Entry<String, ProcessTerm> entry1, Map.Entry<String, ProcessTerm> entry2) {
-            String term1 = entry1.getValue().main().toString();
-            String term2 = entry2.getValue().main().toString();
+            String term1 = entry1.getValue().runtimeMain().toString();
+            String term2 = entry2.getValue().runtimeMain().toString();
             return term1.length() - term2.length();
         }
     }

@@ -5,7 +5,6 @@ import extraction.network.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 
 public class Splitter {
     private static ProcessInteractionChecker interactionChecker = new ProcessInteractionChecker();
@@ -83,84 +82,4 @@ public class Splitter {
         return setList;
     }
 
-    /**
-     * This tree visitor visits a ProcessTerm in a Network (but not the Network itself) to find the names of
-     * all processes that directly interacts with the process in question.
-     */
-    private static class ProcessInteractionChecker implements TreeVisitor<HashSet<String>, NetworkASTNode>{
-
-        @Override
-        public HashSet<String> Visit(NetworkASTNode hostNode) {
-            switch (hostNode.action){
-                case PROCESS_TERM:{
-                    var term = (ProcessTerm)hostNode;
-                    var processes = new HashSet<>(term.main().accept(this));
-                    term.procedures.forEach((__, behaviour) -> processes.addAll(behaviour.accept(this)));
-                    return processes;
-                }
-                case SPAWN:{
-                    //The spawned process is in the same set as its parent, and it cannot learn of a process outside
-                    //its parents set, so no need to check the child.
-                    return ((Spawn)hostNode).continuation.accept(this);
-                }
-                case INTRODUCE:{
-                    var acquaint = (Introduce) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(acquaint.leftReceiver);
-                    interacting.add(acquaint.rightReceiver);
-                    interacting.addAll(acquaint.continuation.accept(this));
-                    return interacting;
-                }
-                case INTRODUCTEE:{
-                    var familiarize = (Introductee) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(familiarize.processID);
-                    interacting.add(familiarize.sender);
-                    interacting.addAll(familiarize.continuation.accept(this));
-                    return interacting;
-                }
-                case CONDITION:{
-                    var condition = (Condition)hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.addAll(condition.thenBehaviour.accept(this));
-                    interacting.addAll(condition.elseBehaviour.accept(this));
-                    return interacting;
-                }
-                case OFFERING: {
-                    var offer = (Offering) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(offer.sender);
-                    offer.branches.forEach((s, behaviour) -> interacting.addAll(behaviour.accept(this)));
-                    return interacting;
-                }
-                case SELECTION: {
-                    var selector = (Selection) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(selector.receiver);
-                    interacting.addAll(selector.continuation.accept(this));
-                    return interacting;
-                }
-                case RECEIVE: {
-                    var receiver = (Receive) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(receiver.sender);
-                    interacting.addAll(receiver.continuation.accept(this));
-                    return interacting;
-                }
-                case SEND: {
-                    var sender = (Send) hostNode;
-                    var interacting = new HashSet<String>();
-                    interacting.add(sender.receiver);
-                    interacting.addAll(sender.continuation.accept(this));
-                    return interacting;
-                }
-                case TERMINATION:
-                case PROCEDURE_INVOCATION:
-                    return new HashSet<>();
-                case NETWORK:
-                default:
-                    throw new UnsupportedOperationException("While splitting network, searching for which processes communicate, encountered behaviour of type " + hostNode.getClass().getName() + " which is not applicable");
-            }
-        }
-    }
 }
