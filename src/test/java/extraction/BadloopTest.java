@@ -1,6 +1,9 @@
 package extraction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class BadloopTest{
@@ -50,4 +53,42 @@ class BadloopTest{
 
         assertEquals(expected, actual);
     }
+
+    //The following two test intentionally fail extraction, but ideally they would succeed
+
+    //Tests that when a then branch of a conditional creates a node, but the else branch
+    //creates a bad loop, that the algorithm backtracks correctly.
+    @Test
+    void thenNodeElseBadloop(){
+        String network =
+                "a {def X { b?; if e then b+KO; c!<hi>; stop else b+OK; X } main {X} } |" +
+                "b {def X { a!<e>; a&{KO: stop, OK: X} } main {X} } |" +
+                "c {main {a?; stop} }";
+        //This test is supposed to cover specific parts of the extraction algorithm, so the
+        //strategy is specified
+        var actual = Extraction.extractChoreography(network, Strategy.InteractionsFirst);
+
+        assertNull(actual.choreographies.get(0), "A choreography was extracted from an non-extractable network");
+
+        var statistics = actual.statistics.get(0);
+        Assertions.assertTrue(statistics.badLoopCount == 1 && statistics.nodeCount == 1, "The extraction does not appear to have gone though the steps expected of this test. Have major changes been made, or did the test fail?");
+    }
+
+    //Tests that when a then branch of a conditional creates a loop, but the else branch
+    //is non-extractable, that the then loop is removed.
+    //God, it is difficult to create exactly the right conditions.
+    /*@Test
+    void thenLoopElseFail(){
+        String network =
+                "a {def X { b?; if e then X else b+OK; X } main {spawn s with stop continue X} } |" +
+                "b {def X { a!<e>; X } main {X} }";
+        //This test is supposed to cover specific parts of the extraction algorithm, so the
+        //strategy is specified
+        var actual = Extraction.extractChoreography(network, Strategy.InteractionsFirst);
+
+        assertNull(actual.choreographies.get(0), "A choreography was extracted from an non-extractable network");
+
+        var statistics = actual.statistics.get(0);
+        Assertions.assertTrue(statistics.badLoopCount == 1 && statistics.nodeCount == 1, "The extraction does not appear to have gone though the steps expected of this test. Have major changes been made, or did the test fail?");
+    }*/
 }

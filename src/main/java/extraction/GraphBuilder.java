@@ -80,7 +80,6 @@ public class GraphBuilder {
         var targetMarking = new HashMap<>(currentNode.marking);
         var label = advancement.label();
         var targetNetwork = advancement.network();
-        var createdNewNode = false;
 
         advancement.actors().forEach(name -> targetMarking.put(name, Boolean.TRUE));
         if (!targetMarking.containsValue(false))
@@ -119,79 +118,6 @@ public class GraphBuilder {
         return elseResult;
     }
 
-
-
-/*
-        //If a matching node already exists in the graph, add a new edge to it.
-
-        Procedure proc = findNodeInGraph(targetNetwork, targetMarking, currentNode);
-        ConcreteNode targetNode;
-        if (proc != null){
-            targetNode = proc.top;
-            label.becomes = proc.parameters;
-            //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
-            if (!addEdgeToGraph(currentNode, targetNode, label))
-                return BuildGraphResult.BAD_LOOP;
-        }
-        //If no matching node exists, add it to the graph and create an edge to it
-        else{
-            createdNewNode = true;
-            targetNode = createNode(targetNetwork, label, currentNode, targetMarking); //currentNode.formNode(targetNetwork, label, nextNodeID++, targetMarking);
-            addNodeAndEdgeToGraph(currentNode, targetNode, label);
-            //Build the graph out from the new node. Remove the new node and abort on failure
-            BuildGraphResult result = prospector.prospect(targetNode);
-            if (result != BuildGraphResult.OK){
-                removeNodeFromGraph(targetNode);
-                return result;
-            }
-        }
-
-        //If not working with a conditional, return success
-        if (advancement.elseLabel() == null)
-            return BuildGraphResult.OK;
-
-        //Now the then branch has successfully been build
-        //Repeat for the else branch
-        Label elseLabel = advancement.elseLabel();
-        Network elseNetwork = advancement.elseNetwork();
-        elseLabel.flipped = label.flipped;
-
-        //If a matching node already exists in the graph, add a new edge to it.
-        proc = findNodeInGraph(elseNetwork, targetMarking, currentNode);
-        ConcreteNode elseNode;
-        if (proc != null){
-            elseNode = proc.top;
-            elseLabel.becomes = proc.parameters;
-            //If that fails, the edge creates a bad loop, and the algorithm must backtrack.
-            if (!addEdgeToGraph(currentNode, elseNode, elseLabel)){
-                //Remove the then branch of the graph
-                if (createdNewNode)
-                    removeGraphBranch(targetNode.choicePath);
-                else
-                    graph.removeEdge(currentNode, targetNode);
-                return BuildGraphResult.BAD_LOOP;
-            }
-        }
-        //If no matching node exists, add it to the graph and create an edge to it
-        else{
-            elseNode = createNode(elseNetwork, elseLabel, currentNode, targetMarking);
-            addNodeAndEdgeToGraph(currentNode, elseNode, elseLabel);
-            //Build the graph out from the new node. Remove the new node and abort on failure
-            BuildGraphResult result = prospector.prospect(elseNode);
-            if (result != BuildGraphResult.OK){
-                removeNodeFromGraph(elseNode);
-                //Remove the then branch of the graph
-                if (createdNewNode)
-                    removeGraphBranch(targetNode.choicePath);
-                else
-                    graph.removeEdge(currentNode, targetNode);
-                return result;
-            }
-        }
-
-        return BuildGraphResult.OK;
-    }*/
-
     /**
      * Ensures that the graph contains a node with the provided network and state. Either it finds an existing node
      * and forms a loop, or it creates a new node (with an edge to that node) and builds recursively from that.<br>
@@ -202,7 +128,6 @@ public class GraphBuilder {
      * @param currentNode
      * @return
      */
-    //TODO figure out how to return the created node (if applicable)
     private extensionResult extendGraph(Network network, HashMap<String, Boolean> marking, Label label, ConcreteNode currentNode){
         //**Try to see if a loop can be formed**
 
@@ -324,51 +249,6 @@ public class GraphBuilder {
 
         return new ConcreteNode(network, choicePath, nextNodeID++, flipCounter, marking);
     }
-
-    /**
-     * Searches the graph for a Node with same Network, marking, and which begins with the same
-     * choicePath as the currentNode parameter.
-     * @param network The Network the matching Node should have.
-     * @param marking The marking the matching Node should have
-     * @param currentNode The Node with a choicePath beginning with the choicePath of the Node we are searching for.
-     * @return A matching Node or null if none found.
-     */
-    private Procedure findNodeInGraph(Network network, HashMap<String, Boolean> marking, ConcreteNode currentNode){
-        List<ConcreteNode> viableNodes = nodeHashes.get(hashMarkedNetwork(network, marking));
-        if (viableNodes == null){
-            return null;
-        }
-        for (ConcreteNode otherNode : viableNodes){
-            if (!currentNode.choicePath.startsWith(otherNode.choicePath)){
-                continue;
-            }
-
-            //perhaps check that all processes reduced here as an optimization?
-
-            //Check for resource leak if othernode has fewer non-terminated processes than the current network.
-
-            var parameters = findSurjectiveMapping(network, otherNode.network);
-            if (parameters == null || parameters.size() != parameters.values().stream().distinct().count()){
-                //The second half of the conditional ensures the mapping can be used with procedure invocation.
-                //It works by ensuring the actual map is bijective.
-                continue;
-            }
-            boolean fail = false;
-            for (String processName : marking.keySet()){
-                String otherName = parameters.getOrDefault(processName, processName); //Get the mapped value if it exists
-                if (!network.processes.get(processName).isTerminated() && marking.get(processName) != otherNode.marking.get(otherName)){
-                //if (!marking.get(processName) && otherNode.marking.get(otherName)){
-                    fail = true;
-                    break;
-                }
-            }
-            if (fail)
-                continue;
-            return new Procedure(otherNode, parameters);
-        }
-        return null;
-    }
-    private record Procedure(ConcreteNode top, Map<String, String> parameters){}
 
     /**
      * Checks if a resource leak has happened in the network. Specifically checks for infinite spawning
@@ -519,74 +399,6 @@ public class GraphBuilder {
             //There exists a bijective-mapping with the same (relevant) variable assignment. Success.
             return map;
         }
-    }
-
-    /**
-     * Generates a partial mapping from process names in fromNetwork, to process names in toNetwork,
-     * such that the corresponding ProcessTerms are equal, but their names different.
-     * The mapping is only generated if the following holds true for all processes in the Networks,
-     * regardless of if the processes are in the map:
-     * - There is at least one identical ProcessTerm in the other network.
-     * - If there are two (or more) identical ProcessTerm in toNetwork, then there must also be at least
-     * as many identical processes in fromNetwork.
-     * It is guaranteed that there exists a mapping to every process name in toNetwork, even if there
-     * are multiple identical ProcessTerm in toNetwork, unless there is an identical process with the
-     * same name in fromNetwork. That particular mapping is then omitted.
-     * @return A partial surjective Map if one could be made, or null otherwise.
-     */
-    private Map<String, String> findSurjectiveMapping(Network fromNetwork, Network toNetwork){
-        var fromProc = fromNetwork.processes;
-        var toProc = toNetwork.processes;
-        var unmatchedNames = new HashSet<>(fromProc.keySet());  //Keys not yet in the map
-        var map = new HashMap<String, String>();
-        //Ensure every process name in toNetwork is in the map
-        for (String name : toProc.keySet()){
-            var toTerm = toProc.get(name);
-            var fromTerm = fromProc.get(name);
-            //There is a better than random chance that a process maps to itself
-            if (fromTerm != null && fromTerm.equals(toTerm)){
-                //Mappings to itself is omitted.
-                unmatchedNames.remove(name);
-                continue;
-            }
-            //If not, look for a match
-            boolean matched = false;
-            for (String match : unmatchedNames){
-                fromTerm = fromProc.get(match);
-                if (toTerm.equals(fromTerm)){
-                    map.put(match, name);
-                    unmatchedNames.remove(match);
-                    matched = true;
-                    break;
-                }
-            }
-            //Fail if no match
-            if (!matched)
-                return null;
-        }
-        //I used to remove terminated processes here, but it lead to infinite graphs in some networks.
-        unmatchedNames.removeIf(name -> fromProc.get(name).isTerminated());
-
-        //Now there is a mapping to every process name in toNetwork.
-        //Add mappings from the so-far unused process names in fromNetwork
-        for (String name : unmatchedNames){
-            var fromTerm = fromProc.get(name);
-            //Try every process in toNetwork
-            boolean matched = false;
-            for (String match : toProc.keySet()){
-                var toTerm = fromProc.get(match);
-                if (toTerm.equals(fromTerm)){
-                    map.put(name, match);
-                    matched = true;
-                    break;
-                }
-            }
-            //Fail if no match
-            if (!matched)
-                return null;
-        }
-        //A surjective mapping was made.
-        return map;
     }
 
     /**

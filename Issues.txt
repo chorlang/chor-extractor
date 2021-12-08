@@ -1,0 +1,12 @@
+===================================================================================================
+** This document contains details for some major bugs, issues, and other problems
+===================================================================================================
+
+** Multicom **
+Certain non-extractable networks leads to an infinite loop:
+If process p wants to sents a message to q, and q wants to select some behaviour in p, (or other
+such deadlocks with different types of communications) within a loop of sending, then
+Network.multicomAdvance() will enter an infinite loop. This is because both communications are
+"blocking" the resolution of the other, but multicomAdvance assumes one will eventually be resolved
+(or fail) if it keeps sending more messages.
+
