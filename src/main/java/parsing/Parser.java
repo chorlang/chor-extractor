@@ -7,6 +7,8 @@ import antlrgen.NetworkParser;
 import extraction.choreography.Program;
 import extraction.network.*;
 import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.ByteArrayInputStream;
@@ -18,17 +20,8 @@ public class Parser {
         return NetworkASTToNetwork.toNetwork(networkAST);
     }
 
-    @SuppressWarnings("deprecation")
     private static NetworkParser.NetworkContext parseNetwork(String network) {
-        //The non-deprecated ANTLRInputStream do not work for some reason.
-        ANTLRInputStream inputStream = null;
-        try {
-            inputStream = new ANTLRInputStream(new ByteArrayInputStream(network.getBytes()));
-        } catch (IOException e) {
-            System.out.println("The extraction.network input string created an exception when converting to Stream, somehow.");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        CharStream inputStream = CharStreams.fromString(network);
         NetworkLexer lexer = new NetworkLexer(inputStream);
         NetworkParser parser = new NetworkParser(new CommonTokenStream(lexer));
         return parser.network();
@@ -39,7 +32,7 @@ public class Parser {
     }
 
     public static ChoreographyParser.ProgramContext parseChoreography(String choreographyDescription){
-        var stream = new ANTLRInputStream(choreographyDescription);
+        CharStream stream = CharStreams.fromString(choreographyDescription);
         var lexer = new ChoreographyLexer(stream);
         var parser = new ChoreographyParser(new CommonTokenStream(lexer));
         return parser.program();
