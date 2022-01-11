@@ -378,6 +378,15 @@ public class Network extends NetworkASTNode {
      */
     public String toString(){
         StringBuilder builder = new StringBuilder();
+        processes.forEach((processName, processTerm)->{
+            builder.append("%s ▹ ".formatted(processName)).append(processTerm.main.toString()).append(" |\n");
+        });
+        if (builder.length() >= 3)//Remove trailing " |\n"
+            builder.delete(builder.length() - 3, builder.length());
+        return builder.toString();
+    }
+    public String toSimpleString(){
+        StringBuilder builder = new StringBuilder();
         processes.forEach((processName, procedure) ->
                 builder.append(processName).append(procedure.toString()).append(" | "));
         if (builder.length() >= 3){ //Remove trailing " | "

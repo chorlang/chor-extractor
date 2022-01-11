@@ -309,18 +309,18 @@ public class GraphBuilder {
             }
         });
         //Match up the remaining processes
-        for (var toName : unmatchedTo){
-            var toTerm = toProcesses.get(toName);
-            for (var fromName : unmatchedFrom){
-                var fromTerm = fromProcesses.get(fromName);
+        for (var fromName : unmatchedFrom){
+            var fromTerm = fromProcesses.get(fromName);
+            for (var toName : unmatchedTo){
+                var toTerm = toProcesses.get(toName);
                 if (toTerm.equals(fromTerm)){
-                    unmatchedFrom.remove(fromName);
+                    unmatchedTo.remove(toName);
                     map.put(fromName, toName);
                     break;
                 }
             }
             //Check if the process could be matched. Fail if not
-            if (!map.containsKey(toName))
+            if (!map.containsKey(fromName))
                 return null;
         }
 
@@ -360,7 +360,7 @@ public class GraphBuilder {
                     if (map.getOrDefault(fromValue, fromValue).equals(toValue))
                         continue;
                         //Otherwise, if the variable is unchanged, it might not be used in the loop, and thus can be ignored
-                    else if (fromValue.equals(toValue)) {
+                    //else if (fromValue.equals(toValue)) {
                         //Creates a set of all variable names used by the process since the start of the loop
                         //(Procedure parameter vars may be considered variable names when they shouldn't.
                         //See the function source for more information)
@@ -368,7 +368,7 @@ public class GraphBuilder {
                         //If the problematic variable is not in the loop, its assignment does not affect correctness.
                         if (!usedVars.contains(varName))
                             continue;
-                    }
+                    //}
                     //The variables do not agree with the mapping
                     //Try to fix the mapping by swapping entries if possible, and then check again.
 

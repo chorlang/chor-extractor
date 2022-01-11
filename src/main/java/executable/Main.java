@@ -1,22 +1,56 @@
 package executable;
 
+import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import com.mxgraph.layout.mxCircleLayout;
+import com.mxgraph.layout.mxCompactTreeLayout;
+import com.mxgraph.layout.mxGraphLayout;
+import com.mxgraph.layout.mxOrganicLayout;
+import com.mxgraph.util.mxCellRenderer;
 import endpointprojection.EndPointProjection;
-import extraction.Extraction;
-import extraction.Strategy;
+import extraction.*;
+import extraction.Label;
 import extraction.choreography.Program;
 import extraction.choreography.Purger;
 import extraction.network.*;
 import org.jgrapht.Graph;
+import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
+import org.jgrapht.graph.DirectedPseudograph;
 import parsing.Parser;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 import static java.util.List.of;
 
 @SuppressWarnings("unused")
 public class Main {
+    static String logistics = "supplier {" +//retailer is a service process
+            "def X {shipper?; consignee?; Y} " +
+            "def Y {if needToShip " +
+            "then shipper+item; consignee+item; X " +
+            "else shipper+done; consignee+done; " +
+            "retailer!<UpdatePOandDeliverySchedule>; retailer?; retailer?; retailer!<FinalizedPOandDeliverySchedule>; stop}" +
+            "main { retailer!<PlannedOrderVariations>; retailer?; retailer?; Y}" +
+            "} | " +
+            "retailer {main {" +
+            "supplier?; supplier!<OrderDeliveryVariations>; supplier!<DeliverCheckPointRequest>; " +
+            "supplier?; supplier!<POandDeliveryScheduleMods>; shipper!<ConfirmationofDeliverySchedule>; " +
+            "supplier!<AcceptPOandDeliverySchedule>; supplier?; stop}} |" +
+            "consignee {" +
+            "def X{supplier!<DeliveryItem>; Z} " +
+            "def Z {supplier&{item: X, done: stop}}" +
+            "main{Z}} | " +
+            "shipper {" +
+            "def X{supplier!<DeliveryItem>; Z} " +
+            "def Z {supplier&{item: X, done: retailer?; stop}}" +
+            "main{Z}}";
     static String testNetwork =
             "c { def X {a!<pwd>; a&{ok: s?; stop, ko: X}} main {X}} | " +
                     "a { def X {c?; s?; if s then c+ok; s+ok; stop else c+ko; s+ko; X} main {X}} | " +
@@ -125,6 +159,14 @@ public class Main {
                 " main { spawn s with msgSort(sorter, s) continue s!<list>; s?; stop } }";
     static String terminationLoop =
             "a { def loop{ spawn p with a?; a!<hello>; stop continue p!<hi>; p?; loop } main { spawn p with a?; a!<hello>; stop continue b?; p!<hi>; p?; loop } } | b { main { a!<start>; stop } }";
+    static String serverless =
+            "handler { def listen{ client?; spawn worker with handler?client; handler?; client!<resp>; stop continue client<->worker; worker!<req>; listen } main { listen } } |" +
+                    "client { def request{ handler!<req>; handler?instance; instance?; request } main { request } }";
+    static String hierarchy =
+            "CEO { def w(man){ man?; man!<solution>; stop } " +
+                    "def m(dir, this){ dir?; spawn worker1 with w(this) continue spawn worker2 with w(this) continue worker1!<problem>; worker2!<problem>; worker1?; worker2?; dir!<solutions>; stop } " +
+                    "def d(p, this){ p?; spawn manager1 with m(this, manager1) continue spawn manager2 with m(this, manager2) continue manager1!<task1>; manager2!<task2>; manager1?; manager2?; p!<progress>; stop } " +
+                    "main { spawn director1 with d(CEO, director1) continue spawn director2 with d(CEO, director2) continue director1!<direction>; director2!<direction>; director1?; director2?; stop } }";
 
 
     public static void main(String []args){
@@ -137,15 +179,30 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = terminationLoop;
+        String networksString = logistics;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         var extractor = new Extraction(Strategy.Default);
-        var choreography = extractor.extractChoreography(networksString, Set.of("stopped"));
+        var choreography = extractor.extractChoreography(networksString, Set.of("retailer"));
         //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
         String chor = choreography.toString();
         System.out.println(chor);
+
+        GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
+        DirectedPseudograph<Node, Label> graph = container.graph();
+        JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
+        mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);
+        layout.execute(graphXAdapter.getDefaultParent());
+
+        BufferedImage image = mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
+        File imgFile = new File("graph.png");
+        try {
+            ImageIO.write(image, "PNG", imgFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         //System.out.println(purgedChor);
         //*/
 
