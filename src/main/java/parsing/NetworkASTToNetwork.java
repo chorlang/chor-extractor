@@ -9,15 +9,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
+/**
+ * Class used to convert the antlr parse tree into this program's internal network representation.
+ */
+class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
+    private static final NetworkASTToNetwork instance = new NetworkASTToNetwork();
+
+    /**
+     * Converts a parse tree to the Network representation used internally for extraction.
+     * @param parseTree The parse tree for the input network
+     * @return A Network object, used internally for extraction.
+     */
     static Network toNetwork(NetworkContext parseTree){
-        return (Network)(new NetworkASTToNetwork().getNetwork(parseTree));
+        return (Network)(instance.visit(parseTree));
     }
-
-    NetworkASTNode getNetwork(NetworkContext parseTree){
-        return this.visit(parseTree);
-    }
-
 
 
     @Override public NetworkASTNode visitNetwork(NetworkContext ctx){

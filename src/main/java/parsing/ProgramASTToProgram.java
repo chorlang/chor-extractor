@@ -10,18 +10,22 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-
-public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
+/**
+ * Class used to convert the antlr parse tree into this program's internal program/choreography representation
+ */
+class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
     private int iteration = 0;
-    private ArrayList<HashSet<String>> processesInChoreography = new ArrayList<>();
+    private final ArrayList<HashSet<String>> processesInChoreography = new ArrayList<>();
 
-    static Program toProgram(ParseTree tree){
-        return (Program)(new ChoreographyASTToProgram().getProgram(tree));
+    /**
+     * Converts a parse tree to the program/choreography representation used internally.
+     * @param parseTree The parse tree for the input program/choreography
+     * @return A Program object, used internally to represent choreographies.
+     */
+    static Program toProgram(ParseTree parseTree){
+        return (Program)(new ProgramASTToProgram().visit(parseTree));
     }
 
-    public ChoreographyASTNode getProgram(ParseTree tree){
-        return this.visit(tree);
-    }
 
     @Override public ChoreographyBody visitCommunication(CommunicationContext ctx) {
         var sender = ctx.process(0).getText();
@@ -73,7 +77,7 @@ public class ChoreographyASTToProgram extends ChoreographyBaseVisitor<Choreograp
 
     @Override public ChoreographyASTNode visitChoreography(ChoreographyContext ctx) {
         var procedures = new ArrayList<ProcedureDefinition>();
-        ctx.procedureDefinition().stream().forEach(i -> procedures.add((ProcedureDefinition)visit(i)));
+        ctx.procedureDefinition().forEach(i -> procedures.add((ProcedureDefinition)visit(i)));
         return new Choreography((ChoreographyBody)visit(ctx.main()), procedures, processesInChoreography.get(iteration));
     }
 
