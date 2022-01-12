@@ -41,7 +41,7 @@ public interface Node {
         }
         @Override
         public String toString(){
-            return network.toString();
+            return network.toPrettyString();
         }
         public ConcreteNode copy(){
             return new ConcreteNode(network, choicePath, ID, flipCounter, marking);
