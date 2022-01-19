@@ -12,16 +12,16 @@ public class Merging {
     }
 
     static Behaviour merge(Behaviour left, Behaviour right){
-        if (left.action != right.action)
+        if (!left.getClass().equals(right.getClass()))
             throw new MergingException("Can't merge " + left + " with " + right);
-        return switch (left.action) {
-            case SEND -> merge((Send) left, (Send) right);
-            case RECEIVE -> merge((Receive) left, (Receive) right);
-            case TERMINATION -> Termination.instance;
-            case SELECTION -> merge((Selection) left, (Selection) right);
-            case OFFERING -> merge((Offering) left, (Offering) right);
-            case CONDITION -> merge((Condition) left, (Condition) right);
-            case PROCEDURE_INVOCATION -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
+        return switch (left) {
+            case Send s -> merge((Send) left, (Send) right);
+            case Receive r -> merge((Receive) left, (Receive) right);
+            case Termination t -> Termination.instance;
+            case Selection s -> merge((Selection) left, (Selection) right);
+            case Offering o -> merge((Offering) left, (Offering) right);
+            case Condition c -> merge((Condition) left, (Condition) right);
+            case ProcedureInvocation pi -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
             default -> throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
         };
 
@@ -30,21 +30,21 @@ public class Merging {
     private static Behaviour merge(Send left, Send right){
         if (!left.receiver.equals(right.receiver) || !left.expression.equals(right.expression))
             throw new MergingException("Cant merge "+ left.receiver + " and " + right.receiver);
-        var m = merge(left.continuation, right.continuation);
+        var m = merge(left.getContinuation(), right.getContinuation());
         return new Send(left.receiver, left.expression, m);
     }
 
     private static Behaviour merge(Receive left, Receive right){
         if (!left.sender.equals(right.sender))
             throw new MergingException("Can't merge " + left.sender + " and " + right.sender);
-        var m = merge(left.continuation, right.continuation);
+        var m = merge(left.getContinuation(), right.getContinuation());
         return new Receive(left.sender, m);
     }
 
     private static Behaviour merge(Selection left, Selection right){
         if (!left.receiver.equals(right.receiver) || !left.label.equals(right.label))
             throw new MergingException("Can't merge " + left.receiver+"+"+left.label+" and "+right.receiver+"+"+right.label);
-        var m = merge(left.continuation, right.continuation);
+        var m = merge(left.getContinuation(), right.getContinuation());
         return new Selection(left.receiver, left.label, m);
     }
 

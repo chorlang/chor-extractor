@@ -1,7 +1,5 @@
 package extraction.network;
 
-import extraction.Label;
-
 import java.util.HashMap;
 
 /**
@@ -34,12 +32,11 @@ public class Introductee extends Behaviour.Receiver {
     public int hashCode() {
         return hash;
     }
+
     private int hashValue(){
-        int hash = continuation.hashCode() * 31;
-        hash += sender.hashCode();
-        hash *= 31;
+        int hash = sender.hashCode() * 31;
         hash += processID.hashCode();
-        return hash;
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 
     @Override

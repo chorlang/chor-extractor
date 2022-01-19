@@ -4,15 +4,15 @@ import extraction.Label;
 
 import java.util.HashMap;
 
-public class Spawn extends Behaviour{
+public class Spawn extends Behaviour.Interaction {
     public final String variable;
-    public final Behaviour processBehaviour, continuation;
+    public final Behaviour processBehaviour;
     private final int hash;
+
     public Spawn(String variable, Behaviour processBehaviour, Behaviour continuation){
-        super(Action.SPAWN);
+        super(Action.SPAWN, continuation);
         this.variable = variable;
         this.processBehaviour = processBehaviour;
-        this.continuation = continuation;
         hash = hashValue();
     }
 
@@ -32,7 +32,7 @@ public class Spawn extends Behaviour{
     private int hashValue(){
         int hash = variable.hashCode() * 31;
         hash += processBehaviour.hashCode();
-        return hash * 31 + continuation.hashCode();
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 
     @Override

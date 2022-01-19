@@ -3,12 +3,16 @@ package extraction.network;
 import extraction.Label;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public abstract class Behaviour extends NetworkASTNode {
-
-    public Behaviour(Action action){
+    Behaviour continuation;
+    public Behaviour(Action action, Behaviour continuation){
         super(action);
+        this.continuation = continuation;
+    }
+
+    public Behaviour getContinuation(){
+        return continuation;
     }
 
     /**
@@ -33,14 +37,20 @@ public abstract class Behaviour extends NetworkASTNode {
      */
     public abstract boolean equals(Behaviour other);
 
+    /**
+     * Subclasses that extends this class, are Behaviours that perform some interaction between processes.
+     */
     public static abstract class Interaction extends Behaviour{
-        public final Behaviour continuation;
         Interaction(Action action, Behaviour continuation){
-            super(action);
-            this.continuation = continuation;
+            super(action, continuation);
         }
     }
 
+    /**
+     * Subclasses that extends this class, are Behaviours that sends a message to a different process.
+     * These classes are guaranteed to have the field "receiver" for the name/variable of the process
+     * that will receive the message, and "expression" which contains the actual message.
+     */
     public static abstract class Sender extends Interaction{
         public final String receiver, expression;
         Sender(Action action, Behaviour continuation, String receiver, String expression){
@@ -61,11 +71,60 @@ public abstract class Behaviour extends NetworkASTNode {
         abstract Label.InteractionLabel labelFrom(String process, ProcessTerm.ValueMap substitutions);
     }
 
+    /**
+     * Subclasses that extends this class, are Behaviours that expect to receive a message from a different process.
+     * These classes are guaranteed to have the field "sender" which is the name/variable of the process
+     * that they expect to receive some message from.
+     */
     public static abstract class Receiver extends Interaction{
         public final String sender;
         Receiver(Action action, Behaviour continuation, String sender){
             super(action, continuation);
             this.sender = sender;
+        }
+    }
+
+    /**
+     * Behaviour with minimal impact on a process, designed to be replaced at runtime with a different behaviour.
+     * Whenever this behaviour becomes the end of a process' main behaviour, it should immediately be replaced
+     * by the continuation of an ancestor conditional or procedure invocation.
+     */
+    public static class BreakBehaviour extends Behaviour{
+        public static final BreakBehaviour instance = new BreakBehaviour();
+        private BreakBehaviour(){
+            super(null, null);
+        }
+
+        @Override
+        Behaviour realValues(HashMap<String, String> substitutions) {
+            throw new IllegalCallerException("This is a stand-in Behaviour object, and is supposed to be replaced before usage.");
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Behaviour other) {
+            return this == other;   //Constructor is private, so there is only ever one instance
+        }
+
+        @Override
+        public String toString() {
+            return "»";
+        }
+    }
+
+    /**
+     * Behaviour that means there is no continuation, because all preceding branches terminate or loop.
+     */
+    public static class NoneBehaviour extends BreakBehaviour{
+        public static final NoneBehaviour instance = new NoneBehaviour();
+        private NoneBehaviour(){super();}
+        @Override
+        public String toString(){
+            return "";
         }
     }
 }

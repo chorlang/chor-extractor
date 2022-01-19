@@ -44,12 +44,11 @@ public class Introduce extends Behaviour.Sender{
     public int hashCode() {
         return hash;
     }
+
     private int hashValue(){
-        int hash = continuation.hashCode() * 31;
-        hash += leftReceiver.hashCode();
-        hash *= 31;
+        int hash = leftReceiver.hashCode() * 31;
         hash += rightReceiver.hashCode();
-        return hash;
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 
     @Override

@@ -25,17 +25,20 @@ public class Termination extends Behaviour {
      * Termination.getTermination() instead, as it reduces resource usage.
      */
     private Termination(){
-        super(Action.TERMINATION);
-    }
+        super(Action.TERMINATION, null);
+    } //Cannot have a continuation
 
+    @Override
     public String toString(){
         return terminationTerm;
     }
 
+    @Override
     public boolean equals(Behaviour other){
-        return other.action == Action.TERMINATION;
+        return other instanceof Termination;
     }
 
+    @Override
     public int hashCode(){
         return 1;
     }

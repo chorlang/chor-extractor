@@ -23,17 +23,21 @@ public class Offering extends Behaviour.Receiver {
      * @param sender The process that the label is send from.
      * @param branches Map from labels (Strings) to branches (Behaviors)
      */
-    public Offering(String sender, Map<String, Behaviour> branches){
-        super(Action.OFFERING, null, sender); //Not sure what to do about continuation here
+    public Offering(String sender, Map<String, Behaviour> branches, Behaviour continuation){
+        super(Action.OFFERING, continuation, sender);
         this.branches = Collections.unmodifiableMap(branches);
         hash = hashValue();
+    }
+    public Offering(String sender, Map<String, Behaviour> branches){
+        this(sender, branches, null);
     }
 
     @Override
     Behaviour realValues(HashMap<String, String> substitutions) {
-        return new Offering(substitutions.get(sender), branches);
+        return new Offering(substitutions.get(sender), branches, continuation);
     }
 
+    @Override
     public String toString(){
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s&{", sender));
@@ -43,15 +47,17 @@ public class Offering extends Behaviour.Receiver {
                 ));
         builder.delete(builder.length()-2, builder.length());
         builder.append("}");
+        if (!(continuation instanceof BreakBehaviour))
+            builder.append("; %s".formatted(continuation));
         return builder.toString();
     }
 
+    @Override
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.action != Action.OFFERING)
+        if (!(other instanceof Offering otherOffer))
             return false;
-        Offering otherOffer = (Offering)other;
         if (!sender.equals(otherOffer.sender))
             return false;
         for (String label : branches.keySet()){
@@ -60,20 +66,17 @@ public class Offering extends Behaviour.Receiver {
             if (label == null || !thisOption.equals(otherOption))
                 return false;
         }
-        return true;
-        //return branches.equals(otherOffer.branches);
+        return continuation.equals(other.continuation);
     }
 
+    @Override
     public int hashCode(){
         return hash;
     }
+
     private int hashValue(){
         int hash = sender.hashCode() * 31;
         hash += branches.hashCode();
-        return hash;
-    }
-
-    public Action getAction(){
-        return Action.OFFERING;
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 }

@@ -23,13 +23,18 @@ public class Condition extends Behaviour {
      * @param expression The boolean expression to branch on
      * @param thenBehaviour The behavior for when the expression returns true.
      * @param elseBehaviour The behavior for when the expression returns false.
+     * @param continuation The continuation for any branch that does not terminate or loop.
      */
-    public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour){
-        super(Action.CONDITION);
+    public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour, Behaviour continuation){
+        super(Action.CONDITION, continuation);
         this.expression = expression;
         this.thenBehaviour = thenBehaviour;
         this.elseBehaviour = elseBehaviour;
         hash = hashValue();
+    }
+
+    public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour){
+        this(expression, thenBehaviour, elseBehaviour, null);
     }
 
     public Pair<Label.ConditionLabel.ThenLabel, Label.ConditionLabel.ElseLabel> labelsFrom(String process) {
@@ -39,26 +44,31 @@ public class Condition extends Behaviour {
     }
 
     public String toString(){
-        return String.format("if %s then %s else %s", expression, thenBehaviour, elseBehaviour);
+        String s = String.format("if %s then %s else %s", expression, thenBehaviour, elseBehaviour);
+        if (!(continuation instanceof BreakBehaviour))
+            s += " continue " + continuation;
+        return s;
     }
 
     public boolean equals(Behaviour other) {
         if (this == other)
             return true;
-        if (other.action != Action.CONDITION)
+        if (!(other instanceof Condition otherC))
             return false;
-        Condition otherC = (Condition)other;
         return expression.equals(otherC.expression) &&
                 thenBehaviour.equals(otherC.thenBehaviour) &&
-                elseBehaviour.equals(otherC.elseBehaviour);
+                elseBehaviour.equals(otherC.elseBehaviour) &&
+                continuation.equals(other.continuation);
     }
 
+    @Override
     public int hashCode(){
         return hash;
     }
     private int hashValue(){
         int hash = expression.hashCode() * 31;
-        hash += thenBehaviour.hashCode();
-        return hash * 31 + elseBehaviour.hashCode();
+        hash += thenBehaviour.hashCode() * 31;
+        hash += elseBehaviour.hashCode();
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 }

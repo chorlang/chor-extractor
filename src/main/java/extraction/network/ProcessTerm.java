@@ -4,10 +4,7 @@ import extraction.Label.*;
 import extraction.network.Behaviour.*;
 import utility.Pair;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
@@ -20,7 +17,7 @@ public class ProcessTerm extends NetworkASTNode {
      * Do NOT assign this field to what is returned from main(). Assigning it to the fields of
      * what is returned from main() is ok.
      */
-    Behaviour main;                                         //The main behaviour for the procedure
+    private Behaviour main;                                  //The main behaviour for the procedure
     //Used for getting real process names from variables.
     static class ValueMap extends HashMap<String, String>{
         public ValueMap(){}
@@ -37,6 +34,72 @@ public class ProcessTerm extends NetworkASTNode {
         }
     }
     ValueMap substitutions = new ValueMap();
+    private static class ContinuationStack{
+        private static record Continuation(Behaviour behaviour, int depth){}
+        private final LinkedList<Continuation> stack;
+        private int accumulatedHash = 0;
+        public ContinuationStack(){
+            stack = new LinkedList<>();
+        }
+        public ContinuationStack(ContinuationStack toClone){
+            stack = new LinkedList<>(toClone.stack);
+            accumulatedHash = toClone.accumulatedHash;
+        }
+        public void push(Behaviour continuation){
+            if (continuation instanceof BreakBehaviour)
+                return;
+            int depth = ProcessTerm.depth(continuation);
+            //If this does not allow to be followed up by a continuation
+            if (depth == -1){
+                stack.clear();
+                depth = 0;
+            }else{
+                accumulatedHash = continuation.hashCode() ^ Integer.rotateRight(accumulatedHash, depth);
+            }
+            stack.push(new Continuation(continuation, depth));
+        }
+        public Behaviour pop(){
+            //Pop the data off the stack
+            var cont = stack.pop();
+            int depth = cont.depth;
+            var continuation = cont.behaviour;
+            //Undo the changes to the hash done when this entry was inserted
+            accumulatedHash ^= continuation.hashCode();
+            accumulatedHash = Integer.rotateLeft(accumulatedHash, depth);
+
+            return continuation;
+        }
+        public int hashCode(){
+            return accumulatedHash;
+        }
+        public String toString(){
+            var builder = new StringBuilder();
+            for (var entry : stack){
+                builder.append(entry.behaviour);
+            }
+            return builder.toString();
+        }
+        public boolean equals(ContinuationStack other){
+            return stack.equals(other.stack); //I think this should work, but better double check
+        }
+    }
+    private ContinuationStack continuationStack = new ContinuationStack();
+    private int currentDepth;
+
+    /**
+     * Counts the number of continuations to dereference before reaching a Termination, or BreakBehaviour
+     * @return -1 if Termination, or the number of continuations if a BreakBehaviour is reached.
+     */
+    private static int depth(Behaviour behaviour){
+        int depth = 0;
+        while (!(behaviour instanceof Termination) && !(behaviour instanceof BreakBehaviour)){
+            behaviour = behaviour.continuation;
+            depth++;
+        }
+        if (behaviour instanceof Termination)
+            return -1;
+        return depth;
+    }
 
     /**
      * Constructor for ProcessTerm
@@ -52,20 +115,27 @@ public class ProcessTerm extends NetworkASTNode {
         this.parameters = parameters;
         this.main = main;
         proceduresHash = proceduresHashValue();
+        currentDepth = depth(main);
     }
+    //Instantiate a new object with the same fields, but where substitutions is a copy. (Its entries are copy-by-reference)
     private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, Behaviour main){
         this(procedures, parameters, main);
         this.substitutions = new ValueMap(substitutions);
     }
+    //Instantiate a new object with the same fields, but where substitutions and continuationStack is a copy. (Their entries are copy-by-reference)
+    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, ContinuationStack stack, Behaviour main){
+        this(procedures, parameters, substitutions, main);
+        this.continuationStack = new ContinuationStack(stack);
+    }
 
     /**
      * Restores this process to a previous state.
-     * @param oldMain The main behaviour to restore to.
-     * @param oldVariables The variable assignments (Internally called substitutions) to restore to. This parameter is copied.
+     * @param restoreFrom The term to copy main behaviour, variable assignments, and continuation stack from.
      */
-    void restore(Behaviour oldMain, ValueMap oldVariables){
-        main = oldMain;
-        substitutions = new ValueMap(oldVariables);
+    void restore(ProcessTerm restoreFrom){
+        main = restoreFrom.main;
+        substitutions = new ValueMap(restoreFrom.substitutions);
+        continuationStack = new ContinuationStack(restoreFrom.continuationStack);
     }
 
     /**
@@ -93,6 +163,44 @@ public class ProcessTerm extends NetworkASTNode {
      * Returns the main behaviour of this process as it is defined, not considering the current state of the network.
      */
     public Behaviour rawMain() { return main; }
+
+    /**
+     * If this process term's main is a Interaction that just advanced the network,
+     * call this function to reduce this process. This will replace the main behaviour with its continuation.
+     */
+    public void reduce(){
+        if (!(main instanceof Interaction interactor) || main instanceof Offering)
+            throw new IllegalStateException("Attempted to reduce a process assuming its main behaviour is non-branching, but it is. Process is: %s".formatted(toString()));
+        //Get the continuation.
+        main = interactor.continuation;
+        if (main instanceof BreakBehaviour) {
+            main = continuationStack.pop();
+        }
+        currentDepth--;
+    }
+
+    public void reduce(Boolean branch){
+        if (!(main instanceof Condition condition))
+            throw new IllegalStateException("Attempted to reduce a process assuming its main behaviour is a conditional, but it is not. Process is: %s".formatted(toString()));
+        if (branch)
+            main = condition.thenBehaviour;
+        else
+            main = condition.elseBehaviour;
+        continuationStack.push(condition.continuation);
+        if (main instanceof BreakBehaviour)
+            main = continuationStack.pop();
+        currentDepth = depth(main);
+    }
+
+    public void reduce(String label){
+        if (!(main instanceof Offering offer))
+            throw new IllegalStateException("Attempted to reduce a process assuming its main behaviour is Offering, but it is not. Process is: %s".formatted(toString()));
+        main = offer.branches.get(label);
+        continuationStack.push(offer.continuation);
+        if (main instanceof BreakBehaviour)
+            main = continuationStack.pop();
+        currentDepth = depth(main);
+    }
 
     /**
      * Returns a InteractionLabel for the network operation needed to advance this process.
@@ -135,7 +243,7 @@ public class ProcessTerm extends NetworkASTNode {
         return becomesTermination(main);
     }
     private boolean becomesTermination(Behaviour behaviour){
-        if (behaviour instanceof Termination)
+        if (behaviour instanceof Termination)//TODO is the procedure not already unfolded?
             return true;
         else if (behaviour instanceof ProcedureInvocation invocation)
             return becomesTermination(procedures.get(invocation.procedure));
@@ -160,6 +268,8 @@ public class ProcessTerm extends NetworkASTNode {
                 substitute(paramVar.get(i), substitutions.get(paramVal.get(i)));
             }
             main = procedures.get(invocation.procedure);
+            continuationStack.push(invocation.continuation);
+            currentDepth = depth(main);
             unfoldRecursively();
         }
     }
@@ -174,7 +284,8 @@ public class ProcessTerm extends NetworkASTNode {
         builder.append("{");
         procedures.forEach((key, value) ->
                 builder.append(String.format("def %s%s{%s} ", key, parametersToString(parameters.get(key)), value)));
-        builder.append(String.format("main {%s}}", main));
+        builder.append(String.format("main {%s%s}}", main, continuationStack));
+
         return builder.toString();
     }
     private String parametersToString(List<String> parameters){
@@ -191,7 +302,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        return new ProcessTerm(procedures, parameters, substitutions, main);
+        return new ProcessTerm(procedures, parameters, substitutions, continuationStack, main);
     }
 
     /**
@@ -212,7 +323,7 @@ public class ProcessTerm extends NetworkASTNode {
             if (otherBehaviour == null || !otherBehaviour.equals(procedures.get(procedureName)))
                 return false;
         }
-        return true;
+        return continuationStack.equals(other.continuationStack);
     }
     public boolean equals(Object other){
         if (!(other instanceof ProcessTerm otherTerm))
@@ -226,7 +337,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return the hash value considering all behaviours
      */
     public int hashCode(){
-        return 31 * proceduresHash + main.hashCode();
+        return proceduresHash + (main.hashCode() ^ Integer.rotateRight(continuationStack.hashCode(), currentDepth));
     }
     private int proceduresHashValue(){
         return procedures.hashCode();

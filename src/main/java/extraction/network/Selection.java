@@ -3,7 +3,6 @@ package extraction.network;
 import extraction.Label;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This behavior represents sending a label to a process
@@ -36,29 +35,30 @@ public class Selection extends Behaviour.Sender {
         return new Label.SelectionLabel(sub.get(process), sub.get(receiver), sub.get(label));
     }
 
+    @Override
     public String toString(){
         return String.format("%s + %s; %s", receiver, label, continuation);
     }
 
+    @Override
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.action != Action.SELECTION)
+        if (!(other instanceof Selection otherSelect))
             return false;
-        Selection otherSelect = (Selection)other;
         return receiver.equals(otherSelect.receiver) &&
                 label.equals(otherSelect.label) &&
                 continuation.equals(otherSelect.continuation);
     }
 
+    @Override
     public int hashCode(){
         return hash;
     }
+
     private int hashValue(){
-        int hash = continuation.hashCode() * 31;
-        hash += receiver.hashCode();
-        hash *= 31;
+        int hash = receiver.hashCode() * 31;
         hash += label.hashCode();
-        return hash;
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 }

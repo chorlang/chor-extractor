@@ -39,28 +39,22 @@ public class NetworkShifter {
     }
 
     private static Behaviour replace(Map<String, Behaviour> newCalls, Behaviour b){
-        switch (b.action){
-            case TERMINATION:
+        switch (b){
+            case Termination t:
                 return b;
-            case PROCEDURE_INVOCATION:
-                var p = (ProcedureInvocation)b;
+            case ProcedureInvocation p:
                 return newCalls.get(p.procedure);
-            case SEND:
-                var sen = (Send)b;
-                return new Send(sen.receiver, sen.expression, replace(newCalls, sen.continuation));
-            case RECEIVE:
-                var r = (Receive)b;
-                return new Receive(r.sender, replace(newCalls, r.continuation));
-            case SELECTION:
-                var sel = (Selection)b;
-                return new Selection(sel.receiver, sel.label, replace(newCalls, sel.continuation));
-            case OFFERING:
-                var o = (Offering)b;
+            case Send sen:
+                return new Send(sen.receiver, sen.expression, replace(newCalls, sen.getContinuation()));
+            case Receive r:
+                return new Receive(r.sender, replace(newCalls, r.getContinuation()));
+            case Selection sel:
+                return new Selection(sel.receiver, sel.label, replace(newCalls, sel.getContinuation()));
+            case Offering o:
                 var branches = new HashMap<String, Behaviour>();
                 o.branches.forEach((label, branch) -> branches.put(label, replace(newCalls, branch)));
                 return new Offering(o.sender, branches);
-            case CONDITION:
-                var c = (Condition)b;
+            case Condition c:
                 return new Condition(c.expression, replace(newCalls, c.thenBehaviour), replace(newCalls, c.elseBehaviour));
             default:
                 throw new IllegalStateException();
@@ -68,27 +62,24 @@ public class NetworkShifter {
     }
 
     private static BPair computeShift(String name, Behaviour b, double p){
-        switch (b.action){
-            case SEND:
+        switch (b){
+            case Send s:
                 if (random.nextDouble() < p){
-                    var s = (Send)b;
-                    var shift = computeShift(name, s.continuation, p);
+                    var shift = computeShift(name, s.getContinuation(), p);
                     return new BPair(new Send(s.receiver, s.expression, shift.prefix), shift.newBody);
                 } else{
                     return new BPair(new ProcedureInvocation(name), b);
                 }
-            case RECEIVE:
+            case Receive r:
                 if (random.nextDouble() < p){
-                    var r = (Receive)b;
-                    var shift = computeShift(name, r.continuation, p);
+                    var shift = computeShift(name, r.getContinuation(), p);
                     return new BPair(new Receive(r.sender, shift.prefix), shift.newBody);
                 }else {
                     return new BPair(new ProcedureInvocation(name), b);
                 }
-            case SELECTION:
+            case Selection s:
                 if (random.nextDouble() < p){
-                    var s = (Selection)b;
-                    var shift = computeShift(name, s.continuation, p);
+                    var shift = computeShift(name, s.getContinuation(), p);
                     return new BPair(new Selection(s.receiver, s.label, shift.prefix), shift.newBody);
                 } else {
                     return new BPair(new ProcedureInvocation(name), b);

@@ -6,6 +6,8 @@ import extraction.network.utils.TreeVisitor;
 import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
+import static extraction.network.WellFormedness.ContinueStatus.*;
+
 public class WellFormedness{
     /**
      * Returns true if the Network is both well-formed and guarded.
@@ -19,16 +21,25 @@ public class WellFormedness{
             String name = process.getKey();
             ProcessTerm term = process.getValue();
             var processes = new HashSet<>(network.processes.keySet());
-            if (!new WellFormedChecker(processes, term, name).Visit(term.main)) {
-                System.out.println("The following process is not well-formed: " + name + " " + term);
+            if (!new WellFormedChecker(processes, term, name).Visit(term.rawMain())) {
+                System.err.println("The following process is not well-formed: " + name + " " + term);
                 return false;
             }
             for (var procedure : term.procedures.entrySet()) {
                 if (!isGuarded(Set.of(procedure.getKey()), procedure.getValue(), term.procedures)){
-                    System.out.println("The procedure " + procedure.getKey() + " in process " + name + " is not well guarded.");
+                    System.err.println("The procedure " + procedure.getKey() + " in process " + name + " is not well guarded.");
                     return false;
                 }
             }
+        }
+        try{
+            ReachableCodeChecker.checkReachability(network);
+        } catch (UnreachableBehaviourException e){
+            System.err.printf("A Behaviour in the input network cannot be executed:%n\t%s%n", e.getMessage());
+            return false;
+        } catch (IncompleteBehaviourException e){
+            System.err.printf("A Behaviour in the input network is incomplete:%n\t%s%n", e.getMessage());
+            return false;
         }
         return true;
     }
@@ -104,9 +115,8 @@ public class WellFormedness{
          */
         @Override
         public Boolean Visit(NetworkASTNode hostNode){
-            switch (hostNode.action){
-                case PROCEDURE_INVOCATION:
-                    ProcedureInvocation procedureInvocation = ((ProcedureInvocation)hostNode);
+            switch (hostNode){
+                case ProcedureInvocation procedureInvocation:
                     String procedure = procedureInvocation.procedure;
                     if (!checkTerm.procedures.containsKey(procedure))
                         return false;   //Procedure does not exist
@@ -119,53 +129,191 @@ public class WellFormedness{
                         checkedProcedures.add(procedure);
                         //Add the parameters to list of known other processes.
                         otherProcesses.addAll(checkTerm.parameters.get(procedure));
-                        return checkTerm.procedures.get(procedure).accept(this);
+                        return checkTerm.procedures.get(procedure).accept(this)
+                                && procedureInvocation.continuation.accept(this);
                     }
-                case TERMINATION:
+                case Termination t:
                     return true;
-
-                case SEND:
-                case SELECTION:
-                    var sender = (Sender)hostNode;
-                    return !checkName.equals(sender.receiver) && otherProcesses.contains(sender.receiver) && sender.continuation.accept(this);
-                case INTRODUCE:
-                    var introducer = (Introduce) hostNode;
+                case BreakBehaviour b:
+                    return true;
+                case Introduce introducer:
                     return !checkName.equals(introducer.leftReceiver) && !checkName.equals(introducer.rightReceiver) &&
                             otherProcesses.contains(introducer.leftReceiver) && otherProcesses.contains(introducer.rightReceiver)
                             && introducer.continuation.accept(this);
-
-                case INTRODUCTEE:
-                    var introductee = (Introductee) hostNode;
-                    //Check it's not self communication, in case it introduces itself to itself. The SnitchSet could get fooled otherwise
-                    if (checkName.equals(introductee.sender))
-                        return false;
-                    otherProcesses.add(introductee.processID);  //Introduced process is now known
-                case RECEIVE:
-                    var receiver = (Receiver)hostNode;
-                    return !checkName.equals(receiver.sender) && otherProcesses.contains(receiver.sender) && receiver.continuation.accept(this);
-                case OFFERING:
-                    var offer = (Offering)hostNode;
+                case Sender sender:
+                    return !checkName.equals(sender.receiver) && otherProcesses.contains(sender.receiver) && sender.continuation.accept(this);
+                case Offering offer:
                     if (checkName.equals(offer.sender) || !otherProcesses.contains(offer.sender))
                         return false;
                     for (Behaviour procedureBehaviour : offer.branches.values())
                         if (!procedureBehaviour.accept(this))
                             return false;
-                    return true;
-
-                case SPAWN:
-                    var spawner = (Spawn) hostNode;
+                    return offer.continuation.accept(this);
+                case Receiver receiver:
+                    if (receiver instanceof Introductee introductee){
+                        //Check it's not self communication, in case it introduces itself to itself. The SnitchSet could get fooled otherwise
+                        if (checkName.equals(introductee.sender))
+                            return false;
+                        otherProcesses.add(introductee.processID);  //Introduced process is now known
+                    }
+                    return !checkName.equals(receiver.sender) && otherProcesses.contains(receiver.sender) && receiver.continuation.accept(this);
+                case Spawn spawner:
                     otherProcesses.add(spawner.variable);
                     return this.copy(spawner.variable).Visit(spawner.processBehaviour) && spawner.continuation.accept(this);
 
-                case CONDITION:
-                    var conditional = (Condition)hostNode;
-                    return copy().Visit(conditional.thenBehaviour) && copy().Visit(conditional.elseBehaviour);
+                case Condition conditional:
+                    return copy().Visit(conditional.thenBehaviour) && copy().Visit(conditional.elseBehaviour)
+                            && conditional.continuation.accept(this);
 
-                case NETWORK:
-                case PROCESS_TERM:
                 default:
                     throw new RuntimeException(new OperationNotSupportedException("While checking for well-formedness in the extraction.network AST, an object of type " + hostNode.getClass().getName() + " was visited which suggest a degenerate tree."));
             }
+        }
+    }
+
+    /**
+     * Thrown when a Behaviour that branches has a continuation, but the continuation will never be
+     * executed in the network.
+     */
+    private static class UnreachableBehaviourException extends IllegalStateException{
+        public UnreachableBehaviourException(String message){
+            super(message);
+        }
+    }
+
+    /**
+     * Thrown when a Behaviour needs to return to an ancestor branching Behaviour's continuation,
+     * (because it neither terminates nor loops) but no ancestor has a continuation to return to.
+     */
+    private static class IncompleteBehaviourException extends IllegalStateException {
+        public IncompleteBehaviourException(String message){
+            super(message);
+        }
+    }
+
+    enum ContinueStatus { MUST, CAN, WONT };
+    private static class ReachableCodeChecker implements TreeVisitor<ContinueStatus, NetworkASTNode>{
+        private static ContinueStatus strongest(ContinueStatus ... statuses){
+            boolean can = false;
+            for (var status : statuses){
+                if (status == MUST)
+                    return MUST;
+                if (status == CAN)
+                    can = true;
+            }
+            if (can)
+                return CAN;
+            return WONT;
+        }
+        /**
+         * Checks if the continue status of the branch(es) and the continuation are compatible.
+         * This is used with behaviours that branch (Conditionals, ProcedureInvocations, Offerings)
+         * with an optional continuation.
+         * Throws IllegalStateException if the branch(es) cannot have a continuation, but there is one.
+         * @param branchStatus If the branch can/must/wont have a continuation (aggregate multiple branches with strongest() first if needed)
+         * @param continuation The behaviour that is the continuation of the behaviour being checked.
+         * @return WONT if no continuation is allowed. CAN if a continuation is possible, but not needed. MUST if a continuation must be supplied by a parent behaviour.
+         */
+        private ContinueStatus checkBranchAndContinue(ContinueStatus branchStatus, Behaviour continuation) throws UnreachableBehaviourException{
+            ContinueStatus continuationStatus = continuation.accept(this);
+            boolean hasContinuation = !(continuation instanceof Behaviour.BreakBehaviour);
+            //If the conditional has a (reducible) continuation, but no branches can continue, the continuation will never be executed.
+            if (branchStatus == WONT && hasContinuation)
+                throw new UnreachableBehaviourException("A branching Behaviour had no branches that could continue, but had a continuation anyway.");
+            //If a continuation is guaranteed, the branches are automatically satisfied.
+            if (hasContinuation)
+                return continuationStatus;
+            //If the conditional took on a continuation, it would be unreachable if the branches don't break out
+            if (branchStatus == WONT)
+                return WONT;
+            //At least one branch can or must have a continuation.
+            return strongest(branchStatus, continuationStatus);
+        }
+
+        private final HashMap<String, Behaviour> procedures;
+        private final HashMap<String, ContinueStatus> procedureStatus = new HashMap<>();
+        private ReachableCodeChecker(HashMap<String, Behaviour> procedures){
+            this.procedures = procedures;
+        }
+
+        /**
+         * Checks if the main Behaviour of all processes satisfies:<br>
+         * - All descendant Behaviour can be executed by at least one branch.<br>
+         * - If a branching Behaviour except to return to an ancestors' continuation,
+         * there is a continuation for it to do so.<br>
+         *
+         * @param network The network to check
+         * @throws IncompleteBehaviourException If the Behaviour from a branch needs to continue as an
+         * ancestor branching Behaviour's continuation, but no such ancestor exists.
+         * @throws UnreachableBehaviourException If a branching Behaviour has a continuation, but none
+         * of its branches Behaviours continue as it.
+         */
+        public static void checkReachability(Network network) throws UnreachableBehaviourException, IncompleteBehaviourException{
+            for (Map.Entry<String, ProcessTerm> entry : network.processes.entrySet()){
+                ProcessTerm process = entry.getValue();
+                //Construct a checker with this process' procedures
+                var checker = new ReachableCodeChecker(process.procedures);
+                //Check if there are any unsatisfied continuations
+                if (checker.Visit(process.rawMain()) == MUST){
+                    throw new IncompleteBehaviourException("A branch in process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.".formatted(entry.getKey()));
+                }
+            }
+        }
+
+
+        /**
+         * Only for internal use. use checkReachability() instead.
+         * <br><br>
+         * Explores a Behaviour tree to check for unreachable code, and finding branching behaviours that expect
+         * a continuation from their ancestor branching behaviour where there is none.
+         * @param hostNode The next node to check
+         * @return If the called behaviour Cannot have, Can have, or Must have, a branching ancestor with a continuation to return to.
+         */
+        @Override
+        public ContinueStatus Visit(NetworkASTNode hostNode) throws UnreachableBehaviourException{
+            switch (hostNode){
+                case NoneBehaviour n: return CAN;
+                case BreakBehaviour bb: return MUST;
+                case Termination t: return WONT;
+                case Condition condition: {
+                    ContinueStatus branches = strongest(condition.thenBehaviour.accept(this), condition.elseBehaviour.accept(this));
+                    //Check if the branches and continuation are compatible, and return the continue status of this conditional
+                    return checkBranchAndContinue(branches, condition.continuation);
+                }
+                case ProcedureInvocation invocation: {
+                    String procedure = invocation.procedure;
+                    if (procedureStatus.containsKey(procedure)){
+                        //If the status is in the map, but set to null, this is a loop, which won't accept continuations
+                        procedureStatus.putIfAbsent(procedure, WONT);
+                    }
+                    else{
+                        //Add a null-entry so it can detect if the procedure loops
+                        procedureStatus.put(procedure, null);
+                        //Find the continue status for the procedure body, and add it to the map.
+                        ContinueStatus status = procedures.get(procedure).accept(this);
+                        procedureStatus.put(procedure, status);
+                    }
+                    //The procedure status is now non-null and can be retrieved.
+                    ContinueStatus branch = procedureStatus.get(procedure);
+                    //Check for compatibility against the continuation
+                    return checkBranchAndContinue(branch, invocation.continuation);
+                }
+                case Offering offering: {
+                    //Collect the continuestatus of all branches
+                    ContinueStatus[] branchStatuses = offering.branches.values().stream().map(behaviour ->
+                            behaviour.accept(this)).toArray(ContinueStatus[]::new);
+                    //Aggregate the statues of the branches
+                    ContinueStatus branchStatus= strongest(branchStatuses);
+                    //Check branch and continuation compatibility
+                    return checkBranchAndContinue(branchStatus, offering.continuation);
+                }
+                case Behaviour b:
+                    return b.continuation.accept(this);
+                default:
+                    throw new IllegalStateException("Unexpected node type when checking code-completeness: " + hostNode + ". Not a Behaviour");
+            }
+
+
         }
     }
 }

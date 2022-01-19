@@ -39,7 +39,7 @@ public class Network extends NetworkASTNode {
     public HashMap<String, ProcessTerm> unfold(){
         HashMap<String, ProcessTerm> unfoldedProcesses = new HashMap<>();
         processes.forEach((name, term) -> {
-            if (term.main instanceof ProcedureInvocation) {
+            if (term.rawMain() instanceof ProcedureInvocation) {
                 unfoldedProcesses.put(name, term.copy());
                 term.unfoldRecursively();
             }
@@ -57,7 +57,7 @@ public class Network extends NetworkASTNode {
     public void restoreExcept(HashMap<String, ProcessTerm> originalProcesses, HashSet<String> exceptions){
         originalProcesses.forEach((name, term) -> {
             if (!exceptions.contains(name)){
-                processes.get(name).restore(term.main, term.substitutions);
+                processes.get(name).restore(term);
             }
         });
     }
@@ -73,7 +73,7 @@ public class Network extends NetworkASTNode {
             if (oldTerm == null)
                 processes.remove(processName);  //Remove if process just spawned
             else
-                processes.get(processName).restore(oldTerm.main, oldTerm.substitutions);
+                processes.get(processName).restore(oldTerm);
         });
     }
 
@@ -98,7 +98,7 @@ public class Network extends NetworkASTNode {
      */
     public Advancement spawnAdvance(String process){
         ProcessTerm spawnerTerm = processes.get(process);
-        if (!(spawnerTerm.main instanceof Spawn spawner))
+        if (!(spawnerTerm.rawMain() instanceof Spawn spawner))
             return null;
 
         String variableName = spawner.variable;
@@ -112,7 +112,7 @@ public class Network extends NetworkASTNode {
         introduced.spawn(process, realName);                    //Parent and child are introduced at spawn
 
         SpawnLabel label = new SpawnLabel(process, realName);   //Create the label for this spawn
-        spawnerTerm.main = spawner.continuation;                //Reduce the parent process
+        spawnerTerm.reduce();                                   //Reduce the parent process
         return new Advancement(label, this, new HashSet<>(){{add(process); add(realName);}});
     }
 
@@ -153,12 +153,12 @@ public class Network extends NetworkASTNode {
         var thenLabel = labels.first;
         var elseLabel = labels.second;
         String process = thenLabel.process; //Name of the process with the conditional
-        if (!(processes.get(process).main instanceof Condition conditional))
+        if (!(processes.get(process).rawMain() instanceof Condition conditional))
             return null;
 
-        processes.get(process).main = conditional.thenBehaviour;
         Network elseNetwork = this.copy();
-        elseNetwork.processes.get(process).main = conditional.elseBehaviour;
+        processes.get(process).reduce(true);
+        elseNetwork.processes.get(process).reduce(false);
 
         return new Advancement(thenLabel, this, elseNetwork, elseLabel, getInvolvedProcesses(thenLabel));
     }
@@ -187,29 +187,28 @@ public class Network extends NetworkASTNode {
         if (    label instanceof CommunicationLabel &&
                 sender instanceof Send send &&
                 receiver instanceof Receive receive){
-            sendProcess.main = send.continuation;
-            receiveProcess.main = receive.continuation;
+            sendProcess.reduce();
+            receiveProcess.reduce();
             reduced = true;
         }
         else if ( label instanceof SelectionLabel &&
                 sender instanceof Selection select &&
                 receiver instanceof Offering offer){
-            sendProcess.main = select.continuation;
-            receiveProcess.main = offer.branches.get(select.label);
+            sendProcess.reduce();
+            receiveProcess.reduce(select.label);
             reduced = true;
         }
-        //expression and receiver corresponds to process 1 and 2.
-        //I kept them as expression and receiver here to ensure the order is correct.
         else if ( label instanceof IntroductionLabel intro &&
                 sender instanceof Introduce introducer &&
                 receiver instanceof Introductee introducteeR &&
+                //Check the process hidden as the expression term
                 processes.get(intro.leftProcess).runtimeMain() instanceof Introductee introducteeL &&
                 introducteeL.sender.equals(intro.introducer) &&
                 introduced.isIntroduced(intro.introducer, intro.leftProcess)){
             ProcessTerm receiveProcessL = processes.get(intro.leftProcess);
             //We need the unmodified mains to get the variable names for the introduced process
-            introducteeL = (Introductee) receiveProcessL.main;
-            introducteeR = (Introductee) receiveProcess.main;
+            introducteeL = (Introductee) receiveProcessL.rawMain();
+            introducteeR = (Introductee) receiveProcess.rawMain();
             //Bind varname in left process to the name of the right, and vice versa.
             receiveProcessL.substitute(introducteeL.processID, intro.rightProcess);
             receiveProcess.substitute(introducteeR.processID, intro.leftProcess);
@@ -217,9 +216,9 @@ public class Network extends NetworkASTNode {
             introduced.introduce(intro.leftProcess, intro.rightProcess);
 
             //Advance the network.
-            sendProcess.main = introducer.continuation;
-            receiveProcess.main = introducteeR.continuation;
-            receiveProcessL.main = introducteeL.continuation;
+            sendProcess.reduce();
+            receiveProcess.reduce();
+            receiveProcessL.reduce();
             reduced = true;
         }
         if (!reduced)
@@ -251,7 +250,7 @@ public class Network extends NetworkASTNode {
         var actors = new HashSet<String>();
         var waiting = new LinkedList<InteractionLabel>();
 
-        if (!(processTerm.main instanceof Sender sender))
+        if (!(processTerm.rawMain() instanceof Sender sender))
             return null; //Only sending behaviours can start a multicom
         //Add initial Label to the waiting list
         var label = processTerm.prospectInteraction(process);
@@ -259,7 +258,7 @@ public class Network extends NetworkASTNode {
             //Introductions are handles with two labels which are both considered two-way communications
             waiting.add(new FauxIntroductionLabel(label.sender, label.receiver, label.expression));
         waiting.add(label);
-        processTerm.main = sender.continuation; //Reduce the added interaction
+        processTerm.reduce(); //Reduce the added interaction
 
         while (waiting.size() > 0){
             var next = waiting.remove();
@@ -287,7 +286,7 @@ public class Network extends NetworkASTNode {
                 if (sender instanceof Introduce)
                     waiting.add(new FauxIntroductionLabel(label.sender, label.receiver, label.expression));
                 waiting.add(label);
-                processTerm.main = sender.continuation;
+                processTerm.reduce();
                 blocking = processTerm.runtimeMain();  //Blocking must have actual variable values.
             }
 
@@ -298,11 +297,11 @@ public class Network extends NetworkASTNode {
                 return null;
             //Reduce the network, and check the Label and receiver type matches
             if (receiver instanceof Offering offering && next instanceof SelectionLabel)
-                processTerm.main = offering.branches.get(next.expression);
+                processTerm.reduce(next.expression);
             else if (receiver instanceof Receive && next instanceof CommunicationLabel ||
                      receiver instanceof Introductee &&
                              (next instanceof IntroductionLabel || next instanceof FauxIntroductionLabel))
-                processTerm.main = receiver.continuation;
+                processTerm.reduce();
             else
                 return null; //Label and receiver type does not match.
             //Introduce processes. Real IntroductionLabel always comes after the faux one, so at this point,
@@ -394,7 +393,7 @@ public class Network extends NetworkASTNode {
     public String toPrettyString(){
         StringBuilder builder = new StringBuilder();
         processes.forEach((processName, processTerm)->{
-            builder.append("%s ▹ ".formatted(processName)).append(processTerm.main.toString()).append(" |\n");
+            builder.append("%s ▹ ".formatted(processName)).append(processTerm.rawMain().toString()).append(" |\n");
         });
         if (builder.length() >= 3)//Remove trailing " |\n"
             builder.delete(builder.length() - 3, builder.length());

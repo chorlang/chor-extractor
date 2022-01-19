@@ -168,6 +168,11 @@ public class Main {
                     "def d(p, this){ p?; spawn manager1 with m(this, manager1) continue spawn manager2 with m(this, manager2) continue manager1!<task1>; manager2!<task2>; manager1?; manager2?; p!<progress>; stop } " +
                     "main { spawn director1 with d(CEO, director1) continue spawn director2 with d(CEO, director2) continue director1!<direction>; director2!<direction>; director1?; director2?; stop } }";
 
+    static String parseError =
+            "a { def X {b!<pwd>; stop} main {X}} | " +
+                    "b {def X {a?; stop} main {X}}";
+    static String generalContinuation =
+            "a { def X{ b?; } main { b!<hi>; X; b!<hello>; stop} } | b { main { a?; a!<resp>; a?; stop } }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -179,17 +184,18 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = logistics;
+        String networksString = generalContinuation;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
+        WellFormedness.isWellFormed(network);
         var extractor = new Extraction(Strategy.Default);
         var choreography = extractor.extractChoreography(networksString, Set.of("retailer"));
         //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
         String chor = choreography.toString();
         System.out.println(chor);
 
-        GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
+        /*GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
         DirectedPseudograph<Node, Label> graph = container.graph();
         JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
         mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);

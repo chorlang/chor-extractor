@@ -42,28 +42,22 @@ public class NetworkUnfolder {
     }
 
     private static Behaviour compute(Behaviour b, Map<String, Behaviour> procedures, double p){
-        switch (b.action){
-            case TERMINATION:
+        switch (b){
+            case Termination t:
                 return Termination.instance;
-            case SEND:
-                var s = (Send)b;
-                return new Send(s.receiver, s.expression, compute(s.continuation, procedures, p));
-            case RECEIVE:
-                var r = (Receive)b;
-                return new Receive(r.sender, compute(r.continuation, procedures, p));
-            case SELECTION:
-                var sel = (Selection)b;
-                return new Selection(sel.receiver, sel.label, compute(sel.continuation, procedures, p));
-            case OFFERING:
-                Offering o = (Offering)b;
+            case Send s:
+                return new Send(s.receiver, s.expression, compute(s.getContinuation(), procedures, p));
+            case Receive r:
+                return new Receive(r.sender, compute(r.getContinuation(), procedures, p));
+            case Selection sel:
+                return new Selection(sel.receiver, sel.label, compute(sel.getContinuation(), procedures, p));
+            case Offering o:
                 var branches = new HashMap<String, Behaviour>();
                 o.branches.forEach((key, value) -> branches.put(key, compute(value, procedures, p)));
-                return new Offering(o.sender, branches);
-            case CONDITION:
-                var c = (Condition)b;
-                return new Condition(c.expression, compute(c.thenBehaviour, procedures, p), compute(c.elseBehaviour, procedures, p));
-            case PROCEDURE_INVOCATION:
-                var proc = (ProcedureInvocation)b;
+                return new Offering(o.sender, branches, null);
+            case Condition c:
+                return new Condition(c.expression, compute(c.thenBehaviour, procedures, p), compute(c.elseBehaviour, procedures, p), null);
+            case ProcedureInvocation proc:
                 if (random.nextDouble() < p){
                     return procedures.get(proc.procedure);
                 } else{

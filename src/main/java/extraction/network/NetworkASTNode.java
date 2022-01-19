@@ -6,14 +6,13 @@ import extraction.network.utils.TreeVisitor;
 public abstract class NetworkASTNode implements TreeHost<NetworkASTNode> {
 
     protected NetworkASTNode(Action action) {
-        this.action = action;
     }
 
     public <T> T accept(TreeVisitor<T, NetworkASTNode> visitor) {
         return visitor.Visit(this);
     }
 
-    public final Action action;
+    //public final Action action;
 
     /**
      * Network nodes are expected to overwrite the toString() methods

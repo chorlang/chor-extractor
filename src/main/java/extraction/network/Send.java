@@ -3,7 +3,6 @@ package extraction.network;
 import extraction.Label;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Behavior for evaluating an expression and sending the result ot another process.
@@ -34,29 +33,29 @@ public class Send extends Behaviour.Sender {
         return new Label.CommunicationLabel(sub.get(process), sub.get(receiver), expression);
     }
 
+    @Override
     public String toString(){
         return String.format("%s!<%s>; %s", receiver, expression, continuation);
     }
 
+    @Override
     public boolean equals(Behaviour other){
         if (this == other)
             return true;
-        if (other.action != Action.SEND)
+        if (!(other instanceof Send otherS))
             return false;
-        Send otherS = (Send)other;
         return receiver.equals(otherS.receiver) &&
                 expression.equals(otherS.expression) &&
                 continuation.equals(otherS.continuation);
     }
 
+    @Override
     public int hashCode(){
         return hash;
     }
     private int hashValue(){
-        int hash = continuation.hashCode() * 31;
-        hash += receiver.hashCode();
-        hash *= 31;
+        int hash = receiver.hashCode() * 31;
         hash += expression.hashCode();
-        return hash;
+        return hash ^ Integer.rotateRight(continuation.hashCode(), 1);
     }
 }

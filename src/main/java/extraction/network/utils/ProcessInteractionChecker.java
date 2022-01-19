@@ -13,76 +13,74 @@ public class ProcessInteractionChecker implements TreeVisitor<HashSet<String>, N
 
     @Override
     public HashSet<String> Visit(NetworkASTNode hostNode) {
-        switch (hostNode.action) {
-            case PROCESS_TERM: {
-                var term = (ProcessTerm) hostNode;
+        switch (hostNode) {
+            case ProcessTerm term: {
                 var processes = new HashSet<>(term.runtimeMain().accept(this));
                 term.procedures.forEach((__, behaviour) -> processes.addAll(behaviour.accept(this)));
                 return processes;
             }
-            case SPAWN: {
+            case Spawn spawn: {
                 //The spawned process is in the same set as its parent, and it cannot learn of a process outside
                 //its parents set, so no need to check the child.
-                return ((Spawn) hostNode).continuation.accept(this);
+                return spawn.getContinuation().accept(this);
             }
-            case INTRODUCE: {
-                var acquaint = (Introduce) hostNode;
+            case Introduce introducer: {
                 var interacting = new HashSet<String>();
-                interacting.add(acquaint.leftReceiver);
-                interacting.add(acquaint.rightReceiver);
-                interacting.addAll(acquaint.continuation.accept(this));
+                interacting.add(introducer.leftReceiver);
+                interacting.add(introducer.rightReceiver);
+                interacting.addAll(introducer.getContinuation().accept(this));
                 return interacting;
             }
-            case INTRODUCTEE: {
-                var familiarize = (Introductee) hostNode;
+            case Introductee introductee: {
                 var interacting = new HashSet<String>();
-                interacting.add(familiarize.processID);
-                interacting.add(familiarize.sender);
-                interacting.addAll(familiarize.continuation.accept(this));
+                interacting.add(introductee.processID);
+                interacting.add(introductee.sender);
+                interacting.addAll(introductee.getContinuation().accept(this));
                 return interacting;
             }
-            case CONDITION: {
-                var condition = (Condition) hostNode;
+            case Condition condition: {
                 var interacting = new HashSet<String>();
                 interacting.addAll(condition.thenBehaviour.accept(this));
                 interacting.addAll(condition.elseBehaviour.accept(this));
+                interacting.addAll(condition.getContinuation().accept(this));
                 return interacting;
             }
-            case OFFERING: {
-                var offer = (Offering) hostNode;
+            case Offering offer: {
                 var interacting = new HashSet<String>();
                 interacting.add(offer.sender);
                 offer.branches.forEach((s, behaviour) -> interacting.addAll(behaviour.accept(this)));
+                interacting.addAll(offer.getContinuation().accept(this));
                 return interacting;
             }
-            case SELECTION: {
-                var selector = (Selection) hostNode;
+            case Selection selector: {
                 var interacting = new HashSet<String>();
                 interacting.add(selector.receiver);
-                interacting.addAll(selector.continuation.accept(this));
+                interacting.addAll(selector.getContinuation().accept(this));
                 return interacting;
             }
-            case RECEIVE: {
-                var receiver = (Receive) hostNode;
+            case Receive receiver: {
                 var interacting = new HashSet<String>();
                 interacting.add(receiver.sender);
-                interacting.addAll(receiver.continuation.accept(this));
+                interacting.addAll(receiver.getContinuation().accept(this));
                 return interacting;
             }
-            case SEND: {
-                var sender = (Send) hostNode;
+            case Send sender: {
                 var interacting = new HashSet<String>();
                 interacting.add(sender.receiver);
-                interacting.addAll(sender.continuation.accept(this));
+                interacting.addAll(sender.getContinuation().accept(this));
                 return interacting;
             }
-            case TERMINATION:
-                return new HashSet<>();
-            case PROCEDURE_INVOCATION: {
-                var inv = (ProcedureInvocation) hostNode;
-                return new HashSet<>(inv.getParameters());
+            case ProcedureInvocation invocation: {
+                HashSet<String> interacting = new HashSet<>(invocation.getParameters());
+                interacting.addAll(invocation.getContinuation().accept(this));
+                return interacting;
             }
-            case NETWORK:
+            case Termination t:
+                return new HashSet<>();
+            case Behaviour.BreakBehaviour b:
+                //The continuation will be checked when checking the ancestor branching behaviour
+                return new HashSet<>();
+            case Network n:{}
             default:
                 throw new UnsupportedOperationException("While splitting network, searching for which processes communicate, encountered behaviour of type " + hostNode.getClass().getName() + " which is not applicable");
         }
@@ -113,76 +111,72 @@ public class ProcessInteractionChecker implements TreeVisitor<HashSet<String>, N
 
         @Override
         public HashSet<String> Visit(NetworkASTNode hostNode) {
-            switch (hostNode.action) {
-                case SPAWN: {
+            switch (hostNode) {
+                case Spawn spawn: {
                     //The spawned process is in the same set as its parent, and it cannot learn of a process outside
                     //its parents set, so no need to check the child.
-                    return ((Spawn) hostNode).continuation.accept(this);
+                    return spawn.getContinuation().accept(this);
                 }
-                case INTRODUCE: {
-                    var acquaint = (Introduce) hostNode;
+                case Introduce introducer: {
                     var interacting = new HashSet<String>();
-                    interacting.add(acquaint.leftReceiver);
-                    interacting.add(acquaint.rightReceiver);
-                    interacting.addAll(acquaint.continuation.accept(this));
+                    interacting.add(introducer.leftReceiver);
+                    interacting.add(introducer.rightReceiver);
+                    interacting.addAll(introducer.getContinuation().accept(this));
                     return interacting;
                 }
-                case INTRODUCTEE: {
-                    var familiarize = (Introductee) hostNode;
+                case Introductee introductee: {
                     var interacting = new HashSet<String>();
-                    interacting.add(familiarize.processID);
-                    interacting.add(familiarize.sender);
-                    interacting.addAll(familiarize.continuation.accept(this));
+                    interacting.add(introductee.processID);
+                    interacting.add(introductee.sender);
+                    interacting.addAll(introductee.getContinuation().accept(this));
                     return interacting;
                 }
-                case CONDITION: {
-                    var condition = (Condition) hostNode;
+                case Condition condition: {
                     var interacting = new HashSet<String>();
                     interacting.addAll(condition.thenBehaviour.accept(this));
                     interacting.addAll(condition.elseBehaviour.accept(this));
+                    interacting.addAll(condition.getContinuation().accept(this));
                     return interacting;
                 }
-                case OFFERING: {
-                    var offer = (Offering) hostNode;
+                case Offering offer: {
                     var interacting = new HashSet<String>();
                     interacting.add(offer.sender);
                     offer.branches.forEach((s, behaviour) -> interacting.addAll(behaviour.accept(this)));
+                    interacting.addAll(offer.getContinuation().accept(this));
                     return interacting;
                 }
-                case SELECTION: {
-                    var selector = (Selection) hostNode;
+                case Selection selector: {
                     var interacting = new HashSet<String>();
                     interacting.add(selector.receiver);
-                    interacting.addAll(selector.continuation.accept(this));
+                    interacting.addAll(selector.getContinuation().accept(this));
                     return interacting;
                 }
-                case RECEIVE: {
-                    var receiver = (Receive) hostNode;
+                case Receive receiver: {
                     var interacting = new HashSet<String>();
                     interacting.add(receiver.sender);
-                    interacting.addAll(receiver.continuation.accept(this));
+                    interacting.addAll(receiver.getContinuation().accept(this));
                     return interacting;
                 }
-                case SEND: {
-                    var sender = (Send) hostNode;
+                case Send sender: {
                     var interacting = new HashSet<String>();
                     interacting.add(sender.receiver);
-                    interacting.addAll(sender.continuation.accept(this));
+                    interacting.addAll(sender.getContinuation().accept(this));
                     return interacting;
                 }
-                case TERMINATION:
-                    return new HashSet<>();
-                case PROCEDURE_INVOCATION: {
-                    var inv = (ProcedureInvocation) hostNode;
-                    HashSet<String> interacting = new HashSet<>(inv.getParameters());
-                    if (!checkedProcedures.contains(inv.procedure)){
-                        checkedProcedures.add(inv.procedure);
-                        interacting.addAll(procedures.get(inv.procedure).accept(this));
+                case ProcedureInvocation invocation: {
+                    HashSet<String> interacting = new HashSet<>(invocation.getParameters());
+                    if (!checkedProcedures.contains(invocation.procedure)){
+                        checkedProcedures.add(invocation.procedure);
+                        interacting.addAll(procedures.get(invocation.procedure).accept(this));
                     }
+                    interacting.addAll(invocation.getContinuation().accept(this));
                     return interacting;
                 }
-                case NETWORK:
-                case PROCESS_TERM:
+                case Termination t:
+                    return new HashSet<>();
+                case Behaviour.BreakBehaviour b:
+                    return new HashSet<>();
+                //Network and ProcessTerm intentionally left out
                 default:
                     throw new UnsupportedOperationException("While finding used variable names, encountered term with behaviour of type " + hostNode.getClass().getName() + " which is not applicable");
             }

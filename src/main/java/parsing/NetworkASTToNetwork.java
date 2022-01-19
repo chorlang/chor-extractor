@@ -3,6 +3,7 @@ package parsing;
 import antlrgen.NetworkBaseVisitor;
 import extraction.network.*;
 import antlrgen.NetworkParser.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Arrays;
@@ -24,6 +25,12 @@ class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
         return (Network)(instance.visit(parseTree));
     }
 
+    @Override
+    public NetworkASTNode visit(ParseTree tree) {
+        if (tree == null)
+            return Behaviour.NoneBehaviour.instance;
+        return super.visit(tree);
+    }
 
     @Override public NetworkASTNode visitNetwork(NetworkContext ctx){
         int numOfProcesses = ctx.processBehaviour().size();
@@ -51,6 +58,17 @@ class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
         return new ProcessTerm(procedures, parameters, (Behaviour) visit(ctx.behaviour()));
     }
 
+    @Override public NetworkASTNode visitNothing(NothingContext ctx){
+        //Branching behaviours may omit their continuation
+        //Commented out because it should be handled by visit() as defined above, but keeping it just in case
+        /*if (ctx.parent instanceof ConditionContext ||
+                ctx.parent instanceof ProcedureInvocationContext ||
+                ctx.parent instanceof OfferingContext)
+            return Behaviour.NoneBehaviour.instance;*/
+        //Other behaviours must break out to a branching behaviours continuation (unless they terminate or loop)
+        return Behaviour.BreakBehaviour.instance;
+    }
+
     @Override public NetworkASTNode visitSending(SendingContext ctx){
         return new Send(ctx.process().getText(), ctx.expression().getText(), (Behaviour) visit(ctx.behaviour()));
     }
@@ -68,27 +86,22 @@ class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
         for (LabeledBehaviourContext label : ctx.labeledBehaviour()){
             labeledBehaviours.put(label.expression().getText(), (Behaviour) visit(label.behaviour()));
         }
-        return new Offering(ctx.process().getText(), labeledBehaviours);
+        return new Offering(ctx.process().getText(), labeledBehaviours, (Behaviour) visit(ctx.continuation));
     }
 
     @Override public NetworkASTNode visitIntroduce(IntroduceContext ctx){
-        List<ProcessContext> processContexts = ctx.process();
-        ProcessContext pc1 = processContexts.get(0);
-        ProcessContext pc2 = processContexts.get(1);
-        return new Introduce(pc1.getText(), pc2.getText(), (Behaviour) visit(ctx.behaviour()));
+        return new Introduce(ctx.introductee1.getText(), ctx.introductee2.getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
     @Override public NetworkASTNode visitIntroductee(IntroducteeContext ctx){
-        List<ProcessContext> processContexts = ctx.process();
-        ProcessContext snd = processContexts.get(0);
-        ProcessContext pid = processContexts.get(1);
-        return new Introductee(snd.getText(), pid.getText(), (Behaviour) visit(ctx.behaviour()));
+        return new Introductee(ctx.introducer.getText(), ctx.introducedProcess.getText(), (Behaviour) visit(ctx.behaviour()));
     }
 
     @Override public NetworkASTNode visitCondition(ConditionContext ctx){
         return new Condition(ctx.expression().getText(),
-                (Behaviour) visit(ctx.behaviour(0)),
-                (Behaviour) visit(ctx.behaviour(1)));
+                (Behaviour) visit(ctx.thenBehaviour),
+                (Behaviour) visit(ctx.elseBehaviour),
+                (Behaviour) visit(ctx.continuation));
     }
 
     @Override public NetworkASTNode visitProcedureDefinition(ProcedureDefinitionContext ctx){
@@ -103,14 +116,12 @@ class NetworkASTToNetwork extends NetworkBaseVisitor<NetworkASTNode> {
             parameters = Arrays.stream(parametersctx.parameterList().getText().split(",")).toList();
         else
             parameters = List.of();
-        return new ProcedureInvocation(procedureName, parameters);
+        return new ProcedureInvocation(procedureName, parameters, (Behaviour) visit(ctx.continuation));
     }
 
     @Override public NetworkASTNode visitSpawn(SpawnContext ctx){
         String variable = ctx.process().getText();
-        Behaviour processBehaviour = (Behaviour) visit(ctx.behaviour(0));
-        Behaviour continuation = (Behaviour) visit(ctx.behaviour(1));
-        return new Spawn(variable, processBehaviour, continuation);
+        return new Spawn(variable, (Behaviour) visit(ctx.childbehaviour), (Behaviour) visit(ctx.continuation));
     }
 
     @Override public NetworkASTNode visitTerminal(TerminalNode n){

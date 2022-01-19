@@ -115,10 +115,7 @@ public enum Strategy {
             return sortedProcesses;
         }
         private boolean isInteraction(Behaviour b){
-            return switch (b.action) {
-                case SEND, RECEIVE, SELECTION, OFFERING -> true;
-                default -> false;
-            };
+            return b instanceof Behaviour.Interaction;
         }
     },
 
@@ -198,25 +195,26 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).runtimeMain().action){
-                    case SELECTION:
-                    case OFFERING:
-                        if (marked)
-                            markedSelections.add(processName);
-                        else
-                            unmarkedSelections.add(processName);
-                    case SEND:
-                    case RECEIVE:
-                        if (marked)
-                            markedSending.add(processName);
-                        else
-                            unmarkedSending.add(processName);
-                    default:
-                        if (marked)
-                            markedElse.add(processName);
-                        else
-                            unmarkedElse.add(processName);
+                Behaviour main = node.network.processes.get(processName).runtimeMain();
+                if (main instanceof Selection || main instanceof Offering) {
+                    if (marked)
+                        markedSelections.add(processName);
+                    else
+                        unmarkedSelections.add(processName);
                 }
+                else if (main instanceof Send || main instanceof Receive) {
+                    if (marked)
+                        markedSending.add(processName);
+                    else
+                        unmarkedSending.add(processName);
+                }
+                else {
+                    if (marked)
+                        markedElse.add(processName);
+                    else
+                        unmarkedElse.add(processName);
+                }
+
             });
 
             copyProcesses(unmarkedSelections, processes, sortedProcesses);
@@ -244,23 +242,24 @@ public enum Strategy {
             var unmarkedElse = new ArrayList<String>();
 
             node.marking.forEach((processName, marked) -> {
-                switch (node.network.processes.get(processName).runtimeMain().action){
-                    case CONDITION:
-                        if (marked)
-                            markedConditions.add(processName);
-                        else
-                            unmarkedConditions.add(processName);
-                    case SELECTION:
-                    case OFFERING:
-                        if (marked)
-                            markedSelections.add(processName);
-                        else
-                            unmarkedSelections.add(processName);
-                    default:
-                        if (marked)
-                            markedElse.add(processName);
-                        else
-                            unmarkedElse.add(processName);
+                Behaviour main = node.network.processes.get(processName).runtimeMain();
+                if (main instanceof Condition) {
+                    if (marked)
+                        markedConditions.add(processName);
+                    else
+                        unmarkedConditions.add(processName);
+                }
+                else if (main instanceof Selection || main instanceof Offering) {
+                    if (marked)
+                        markedSelections.add(processName);
+                    else
+                        unmarkedSelections.add(processName);
+                }
+                else{
+                    if (marked)
+                        markedElse.add(processName);
+                    else
+                        unmarkedElse.add(processName);
                 }
             });
 

@@ -6,28 +6,25 @@ import extraction.network.utils.TreeVisitor;
 public class ProcessSize implements TreeVisitor<Integer, NetworkASTNode> {
     @Override
     public Integer Visit(NetworkASTNode hostNode){
-        switch (hostNode.action){
-            case CONDITION:
-                var con = (Condition)hostNode;
+        switch (hostNode){
+            case Condition con:
                 return con.thenBehaviour.accept(this) + con.elseBehaviour.accept(this) + 1;
-            case OFFERING:
+            case Offering offering:
                 int sum = 0;
                 for (Behaviour branch : ((Offering)hostNode).branches.values()){
                     sum += branch.accept(this);
                 }
                 return sum + 1;
-            case RECEIVE:
-                return ((Receive)hostNode).continuation.accept(this) + 1;
-            case SELECTION:
-                return ((Selection)hostNode).continuation.accept(this) + 1;
-            case SEND:
-                return ((Send)hostNode).continuation.accept(this) + 1;
-            case PROCEDURE_INVOCATION:
+            case Receive r:
+                return ((Receive)hostNode).getContinuation().accept(this) + 1;
+            case Selection s:
+                return ((Selection)hostNode).getContinuation().accept(this) + 1;
+            case Send s:
+                return ((Send)hostNode).getContinuation().accept(this) + 1;
+            case ProcedureInvocation pi:
                 return 1;
-            case TERMINATION:
+            case Termination t:
                 return 0;
-            case NETWORK:
-            case PROCESS_TERM:
             default:
                 throw new UnsupportedOperationException("ERROR: Unable to get process-size because of invalid Network AST. Cannot visit type " + hostNode.getClass().getName());
         }

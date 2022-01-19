@@ -7,36 +7,33 @@ import java.util.ArrayList;
 
 public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, NetworkASTNode> {
     public Integer Visit(NetworkASTNode hostNode){
-        switch (hostNode.action){
-            case CONDITION:{
-                var host = (Condition)hostNode;
+        switch (hostNode){
+            case Condition host:{
                 return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);
             }
-            case OFFERING: {
-                var host = (Offering) hostNode;
+            case Offering host: {
                 int sum = 0;
                 for (var branch : host.branches.values())
                     sum += branch.accept(this);
                 return sum;
             }
-            case PROCESS_TERM:
-                var host = (ProcessTerm)hostNode;
+            case ProcessTerm host:
+
                 int sum = 0;
                 for (var procedure : host.procedures.values()){
                     sum += procedure.accept(this);
                 }
                 return sum;
-            case RECEIVE:
-                return ((Receive)hostNode).continuation.accept(this)+1;
-            case SELECTION:
-                return ((Selection)hostNode).continuation.accept(this)+1;
-            case SEND:
-                return ((Send)hostNode).continuation.accept(this)+1;
+            case Receive host:
+                return ((Receive)hostNode).getContinuation().accept(this)+1;
+            case Selection host:
+                return ((Selection)hostNode).getContinuation().accept(this)+1;
+            case Send host:
+                return ((Send)hostNode).getContinuation().accept(this)+1;
 
-            case PROCEDURE_INVOCATION:
-            case TERMINATION:
-                return 0;
-            case NETWORK:
+            case ProcedureInvocation host: {return 0;}
+            case Termination host: {return 0;}
+            case Network host:{}
             default:
                 throw new UnsupportedOperationException("Invalid Network AST");
         }
