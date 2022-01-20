@@ -181,7 +181,6 @@ public class Network extends NetworkASTNode {
                 introduced.isIntroduced(label.sender, label.receiver)))
             return null;
 
-        boolean reduced = false;
 
         //Check interaction is of the right type
         if (    label instanceof CommunicationLabel &&
@@ -189,14 +188,12 @@ public class Network extends NetworkASTNode {
                 receiver instanceof Receive receive){
             sendProcess.reduce();
             receiveProcess.reduce();
-            reduced = true;
         }
         else if ( label instanceof SelectionLabel &&
                 sender instanceof Selection select &&
                 receiver instanceof Offering offer){
             sendProcess.reduce();
             receiveProcess.reduce(select.label);
-            reduced = true;
         }
         else if ( label instanceof IntroductionLabel intro &&
                 sender instanceof Introduce introducer &&
@@ -219,10 +216,10 @@ public class Network extends NetworkASTNode {
             sendProcess.reduce();
             receiveProcess.reduce();
             receiveProcessL.reduce();
-            reduced = true;
         }
-        if (!reduced)
+        else {
             return null;
+        }
         return new Advancement(label, this, getInvolvedProcesses(label));
     }
 
@@ -241,6 +238,8 @@ public class Network extends NetworkASTNode {
                 return String.format("%s.%s<->%s Debug only", sender, expression, receiver);
             }
         }
+        record ProcessProcedure(String processName, String procedure){}
+        var checkedProcedures = new HashMap<ProcessProcedure, Boolean>();   //Keeps track of invoked procedures to prevent infinite loop.
 
         var processes = copyProcesses(); //Shadow processes with a copy to modify
         var known = introduced.copy();
@@ -273,7 +272,12 @@ public class Network extends NetworkASTNode {
             processTerm = processes.get(next.receiver);
             Behaviour blocking = processTerm.runtimeMain();
             while (!(blocking instanceof Receiver receiver)){
-                if (blocking instanceof ProcedureInvocation){
+                if (blocking instanceof ProcedureInvocation invocation){
+                    //This bit catches a special case infinite loop, where the receiver process sends forever.
+                    if (checkedProcedures.getOrDefault(new ProcessProcedure(next.receiver, invocation.procedure), false))
+                        return null;
+                    checkedProcedures.put(new ProcessProcedure(next.receiver, invocation.procedure), true);
+
                     processTerm.unfoldRecursively();
                     blocking = processTerm.runtimeMain();
                     continue;

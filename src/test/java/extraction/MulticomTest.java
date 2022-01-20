@@ -3,6 +3,8 @@ package extraction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 public class MulticomTest {
 
     @Test
@@ -49,5 +51,14 @@ public class MulticomTest {
         var actual = Extraction.extractChoreography(test).toString();
 
         Assertions.assertEquals(expected, actual);
+    }
+
+    @Test   //Tests a special tricky condition such as X=q!<>;p!<>;X which used to create an infinite loop in multicom
+    void infiniteSend(){
+        //The network is not extractable, but it doesn't matter
+        var test =
+                "a { def X{ b!<msg>; X } main{ X } } |" +
+                "b { def X{ a!<start>; X } main{ X } }";
+        Assertions.assertTimeoutPreemptively(Duration.ofSeconds(3), ()->Extraction.extractChoreography(test));
     }
 }

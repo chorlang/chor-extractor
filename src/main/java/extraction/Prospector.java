@@ -24,7 +24,7 @@ import java.util.function.Function;
 public class Prospector {
     private final Strategy strategy;
     private final GraphBuilder builder;
-    public boolean disableMulticom = true; //Infinite loop in multicom for some non-extractable networks
+    public boolean disableMulticom = false;
     Prospector(Strategy extractionStrategy, GraphBuilder builder){
         strategy = extractionStrategy;
         this.builder = builder;

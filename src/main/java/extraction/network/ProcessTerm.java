@@ -88,7 +88,7 @@ public class ProcessTerm extends NetworkASTNode {
     private int currentDepth;
 
     /**
-     * Counts the number of continuations to dereference before reaching a Termination, or BreakBehaviour
+     * Counts the number of continuations to dereference before reaching a Termination or BreakBehaviour
      * @return -1 if Termination, or the number of continuations if a BreakBehaviour is reached.
      */
     private static int depth(Behaviour behaviour){
@@ -247,7 +247,7 @@ public class ProcessTerm extends NetworkASTNode {
         return becomesTermination(main);
     }
     private boolean becomesTermination(Behaviour behaviour){
-        if (behaviour instanceof Termination)//TODO is the procedure not already unfolded?
+        if (behaviour instanceof Termination)
             return true;
         else if (behaviour instanceof ProcedureInvocation invocation)
             return becomesTermination(procedures.get(invocation.procedure));
@@ -317,6 +317,11 @@ public class ProcessTerm extends NetworkASTNode {
     public boolean equals(ProcessTerm other){
         if (this == other)                          //Trivially true if it is the same object
             return true;
+        /*TODO
+            The continuation stack is supposed to function identical to appending continuations to
+            the end of the main behaviour, which is the case for hashCode(), but not for
+            main.equals(other.main) because of the way behaviours handle equality.
+         */
         if (    hashCode() != other.hashCode() ||   //The terms cannot be identical with different hash-codes
                 !main.equals(other.main) ||         //The main Behaviours must be identical
                 procedures.size() != other.procedures.size())   //Must have the same number of procedures
