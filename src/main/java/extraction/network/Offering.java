@@ -1,5 +1,7 @@
 package extraction.network;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collections;
 
 import java.util.HashMap;
@@ -23,13 +25,13 @@ public class Offering extends Behaviour.Receiver {
      * @param sender The process that the label is send from.
      * @param branches Map from labels (Strings) to branches (Behaviors)
      */
-    public Offering(String sender, Map<String, Behaviour> branches, Behaviour continuation){
+    public Offering(String sender, Map<String, Behaviour> branches, @NotNull Behaviour continuation){
         super(Action.OFFERING, continuation, sender);
         this.branches = Collections.unmodifiableMap(branches);
         hash = hashValue();
     }
     public Offering(String sender, Map<String, Behaviour> branches){
-        this(sender, branches, null);
+        this(sender, branches, NoneBehaviour.instance);
     }
 
     @Override

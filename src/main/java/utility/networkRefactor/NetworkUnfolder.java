@@ -54,9 +54,9 @@ public class NetworkUnfolder {
             case Offering o:
                 var branches = new HashMap<String, Behaviour>();
                 o.branches.forEach((key, value) -> branches.put(key, compute(value, procedures, p)));
-                return new Offering(o.sender, branches, null);
+                return new Offering(o.sender, branches);
             case Condition c:
-                return new Condition(c.expression, compute(c.thenBehaviour, procedures, p), compute(c.elseBehaviour, procedures, p), null);
+                return new Condition(c.expression, compute(c.thenBehaviour, procedures, p), compute(c.elseBehaviour, procedures, p));
             case ProcedureInvocation proc:
                 if (random.nextDouble() < p){
                     return procedures.get(proc.procedure);

@@ -1,6 +1,7 @@
 package extraction.network;
 
 import extraction.Label;
+import org.jetbrains.annotations.NotNull;
 import utility.Pair;
 
 import java.util.HashMap;
@@ -25,7 +26,7 @@ public class Condition extends Behaviour {
      * @param elseBehaviour The behavior for when the expression returns false.
      * @param continuation The continuation for any branch that does not terminate or loop.
      */
-    public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour, Behaviour continuation){
+    public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour, @NotNull Behaviour continuation){
         super(Action.CONDITION, continuation);
         this.expression = expression;
         this.thenBehaviour = thenBehaviour;
@@ -34,7 +35,7 @@ public class Condition extends Behaviour {
     }
 
     public Condition(String expression, Behaviour thenBehaviour, Behaviour elseBehaviour){
-        this(expression, thenBehaviour, elseBehaviour, null);
+        this(expression, thenBehaviour, elseBehaviour, NoneBehaviour.instance);
     }
 
     public Pair<Label.ConditionLabel.ThenLabel, Label.ConditionLabel.ElseLabel> labelsFrom(String process) {
