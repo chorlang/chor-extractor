@@ -53,6 +53,7 @@ public class ProcessTerm extends NetworkASTNode {
             if (depth == -1){
                 stack.clear();
                 depth = 0;
+                accumulatedHash = continuation.hashCode();
             }else{
                 accumulatedHash = continuation.hashCode() ^ Integer.rotateRight(accumulatedHash, depth);
             }
@@ -175,8 +176,11 @@ public class ProcessTerm extends NetworkASTNode {
         main = interactor.continuation;
         if (main instanceof BreakBehaviour) {
             main = continuationStack.pop();
+            currentDepth = depth(main);
         }
-        currentDepth--;
+        else {
+            currentDepth--;
+        }
     }
 
     public void reduce(Boolean branch){
