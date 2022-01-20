@@ -15,14 +15,19 @@ import java.util.BitSet;
  * The purpose is to abort when there are problems with the input. This is not the default behaviour.
  */
 class ErrorListener extends BaseErrorListener {
-    public static ErrorListener instance = new ErrorListener();
+    private final String[] inputLines;
+    public ErrorListener(String input){
+        inputLines = input.split("\r\n|[\r\n]");//Split on line-break
+    }
 
     //Listens for syntax errors in the parser
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
                             int line, int charPositionInLine, String msg,
                             RecognitionException e) throws ParseCancellationException {
-        String errMessage = "Syntax error at line %d, position %d: %s".formatted(line, charPositionInLine, msg);
+        String errMessage = ("Syntax error at line %d, position %d: %s%n" +
+                "%s%n" +
+                "%s^").formatted(line, charPositionInLine, msg, inputLines[line-1], " ".repeat(charPositionInLine));
         throw new ParseCancellationException(errMessage);
     }
 

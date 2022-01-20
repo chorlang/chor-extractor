@@ -24,7 +24,7 @@ public class Parser {
         NetworkParser parser = new NetworkParser(new CommonTokenStream(lexer));
         //Add custom error listener, that makes the parser throw an error if it fails for parse the input
         parser.removeErrorListeners();                      //remove default listener
-        parser.addErrorListener(ErrorListener.instance);
+        parser.addErrorListener(new ErrorListener(networkDescription));
 
         try{
             //Parse, get the root of the parse tree, then convert it to internal representation.
@@ -50,7 +50,7 @@ public class Parser {
         ChoreographyParser parser = new ChoreographyParser(new CommonTokenStream(lexer));
         //Add custom error listener, that makes the parser throw an error if it fails for parse the input
         parser.removeErrorListeners();                      //remove default listener
-        parser.addErrorListener(ErrorListener.instance);
+        parser.addErrorListener(new ErrorListener(programDescription));
 
         try{
             //Parse, get the root of the parse tree, then convert it to internal representation.
