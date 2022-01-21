@@ -26,8 +26,8 @@ class ErrorListener extends BaseErrorListener {
                             int line, int charPositionInLine, String msg,
                             RecognitionException e) throws ParseCancellationException {
         String errMessage = ("Syntax error at line %d, position %d: %s%n" +
-                "%s%n" +
-                "%s^").formatted(line, charPositionInLine, msg, inputLines[line-1], " ".repeat(charPositionInLine));
+                "\t%s%n" +
+                "\t%s^").formatted(line, charPositionInLine, msg, inputLines[line-1], " ".repeat(charPositionInLine));
         throw new ParseCancellationException(errMessage);
     }
 

@@ -173,6 +173,9 @@ public class Main {
                     "b {def X {a?; stop} main {X}}";
     static String generalContinuation =
             "a { def X{ b?; } main { b!<hi>; X; b!<hello>; stop} } | b { main { a?; a!<resp>; a?; stop } }";
+    static String generalContinuationLoop =
+            "a { def Y{ X; b&{retry: Y, fin: } } def X{ if e then b+ok; X else b+ko; b?; } main{ b!<init>; Y; stop} } |" +
+            "b { def X{ a&{ok: X, ko: a!<akn>; if retry then a+retry; X else a+fin; } } main{ a?; X; stop} }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -184,7 +187,7 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = generalContinuation;
+        String networksString = generalContinuationLoop;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
@@ -195,7 +198,7 @@ public class Main {
         String chor = choreography.toString();
         System.out.println(chor);
 
-        /*GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
+        GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
         DirectedPseudograph<Node, Label> graph = container.graph();
         JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
         mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);
