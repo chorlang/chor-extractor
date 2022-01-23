@@ -1,4 +1,4 @@
-#Network Syntax Guide
+# Network Syntax Guide
 This document details how to write the input networks. As this project is still in early development, changes to syntax may not be reflected here immediately. Create an issue, or check the grammar specification [from the source file](/src/main/antlr4/Network.g4).
 
 ## Introduction to the basics
