@@ -4,14 +4,14 @@ import java.util.List;
 
 public class Program extends ChoreographyASTNode{
     public final List<Choreography> choreographies;
-    public final List<GraphStatistics> statistics;
+    public final List<GraphData> statistics;
 
     private final Type chorType = Type.PROGRAM;
     public Type getType(){
         return chorType;
     }
 
-    public Program(List<Choreography> choreographies, List<GraphStatistics> statistics){
+    public Program(List<Choreography> choreographies, List<GraphData> statistics){
         this.choreographies = choreographies;
         this.statistics = statistics;
     }
@@ -21,13 +21,13 @@ public class Program extends ChoreographyASTNode{
         //Here it is important to use String.valueOf(choreography) (called implicit) rather than choreography.toString() to handle null values
         choreographies.forEach(choreography -> builder.append(choreography).append(" || "));
         if (builder.isEmpty())
-            builder.append("(Empty Program)1234");
+            builder.append("(Empty Program)1234");//The 1234 is removed at the next line
         builder.delete(builder.length() - 4, builder.length()); //Remove last four characters to remove trailing " || ".
         return builder.toString();
     }
 
-    public static class GraphStatistics{
-        public GraphStatistics(int nodeCount, int badLoopCount){
+    public static class GraphData {
+        public GraphData(int nodeCount, int badLoopCount){
             this.nodeCount = nodeCount;
             this.badLoopCount = badLoopCount;
         }

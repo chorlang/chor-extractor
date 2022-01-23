@@ -27,7 +27,7 @@ public class TestUtil {
 
     static void runSequentialExtractionTest(String network, String ... services){
         printExtractionResult(network,
-                new Extraction(Strategy.Default).extractChoreographySequentially(
+                new Extraction(Strategy.Default).sequentialExtraction().extract(
                         network, Set.of(services)
                 ).toString());
     }

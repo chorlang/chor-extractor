@@ -16,9 +16,6 @@ public class GraphBuilder {
     private final Set<String> services;
     private int badLoopCounter = 0;
     private int nextNodeID = 0;
-    enum BuildGraphResult{
-        OK, BAD_LOOP, FAIL
-    }
 
     private GraphBuilder(Strategy extractionStrategy, Set<String> services){
         prospector = new Prospector(extractionStrategy, this);
@@ -119,14 +116,25 @@ public class GraphBuilder {
     }
 
     /**
-     * Ensures that the graph contains a node with the provided network and state. Either it finds an existing node
-     * and forms a loop, or it creates a new node (with an edge to that node) and builds recursively from that.<br>
+     * Attempts to do one of the following:<br>
+     * 1. Adds an edge from currentNode to a different existing node in the graph, such that the existing node
+     * contains the same marking and equivalent network to the marking and network parameters. Then
+     * returns and object with the found node, and the BuildGraphResult OK<br>
+     * 2. Attempts 1, but finds that such and edge would create and invalid loop. Returns an object
+     * containing the BuildGraphResult BAD_LOOP.<br>
+     * 3. Adds a new node to the graph with the provided network and marking, and then adds an edge from currentNode to
+     * that new node. Then attempts to build the graph out from that new node. Returns an object with the new node,
+     * the result of building the graph out from that node, and boolean being true to indicate a new node was added.<br>
      *
-     * @param network
-     * @param marking
-     * @param label
-     * @param currentNode
-     * @return
+     * The provided label is stored in the new edge in all cases. The returned object may also contain
+     * the BuildGraphResult FAIL in case it detects a resource leak.
+     *
+     * @param network The network to either add to a new node, or check a node with an equivalent network already exists.
+     * @param marking The marking of the network.
+     * @param label The label to store in the created edge.
+     * @param currentNode The node previously added to the graph, which is the origin of the new edge.
+     * @return An object denoting the target node of the new edge, the success of extending the graph, and a
+     * boolean indicating if a new node was added to the graph or not.
      */
     private extensionResult extendGraph(Network network, HashMap<String, Boolean> marking, Label label, ConcreteNode currentNode){
         //**Try to see if a loop can be formed**
@@ -141,7 +149,7 @@ public class GraphBuilder {
         //Iterate though the nodes with the same hash, and see if they have equivalent behaviour.
         viableIterator: for (ConcreteNode otherNode : viableNodes){
             if (flipCounter > otherNode.flipCounter && detectResourceLeak(network, otherNode.network)) {
-                System.out.println("Resource leak detected. Extraction not possible");
+                System.err.println("Resource leak detected. Extraction not possible");
                 return new extensionResult(null, BuildGraphResult.FAIL);   //Fail on resource leak.
             }
 

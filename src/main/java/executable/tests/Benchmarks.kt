@@ -214,7 +214,16 @@ fun extractionSoundnessC41() {
             out.println(EXTRACTION_STATISTICS_HEADER)
             extractionMap.forEach { (id, pair) ->
                 val program = pair.first
-                val statistics = program.statistics.fold(Program.GraphStatistics(0, 0), { one, two -> Program.GraphStatistics(one.nodeCount + two.nodeCount, one.badLoopCount + two.badLoopCount) } )
+                val statistics = program.statistics.fold(
+                    Program.GraphData(
+                        0,
+                        0
+                    ), { one, two ->
+                        Program.GraphData(
+                            one.nodeCount + two.nodeCount,
+                            one.badLoopCount + two.badLoopCount
+                        )
+                    } )
                 val choreographyProcedures = program.choreographies.map { it!!.procedures.size }.fold( 0, Int::plus )
                 val lengthOfProcedures = program.choreographies.flatMap { LengthOfProcedures().getLength(it!!) }
                 val numberOfActions = program.choreographies.map { NumberOfActions.compute(it!!) }.fold( 0, Int::plus )

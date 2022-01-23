@@ -1,6 +1,5 @@
 package extraction;
 
-import extraction.GraphBuilder.BuildGraphResult;
 import extraction.Node.ConcreteNode;
 import extraction.network.Network;
 import extraction.network.ProcessTerm;

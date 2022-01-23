@@ -9,10 +9,12 @@ import com.mxgraph.util.mxCellRenderer;
 import endpointprojection.EndPointProjection;
 import extraction.*;
 import extraction.Label;
+import extraction.choreography.Choreography;
 import extraction.choreography.Program;
 import extraction.choreography.Purger;
 import extraction.network.*;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
@@ -21,6 +23,7 @@ import parsing.Parser;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.event.HierarchyBoundsAdapter;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -192,25 +195,13 @@ public class Main {
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         WellFormedness.isWellFormed(network);
-        var extractor = new Extraction(Strategy.Default);
-        var choreography = extractor.extractChoreography(networksString, Set.of("retailer"));
+        var choreography = Extraction.newExtractor().extract(networksString, Set.of("retailer"));
         //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
         String chor = choreography.toString();
         System.out.println(chor);
 
         GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
-        DirectedPseudograph<Node, Label> graph = container.graph();
-        JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
-        mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);
-        layout.execute(graphXAdapter.getDefaultParent());
 
-        BufferedImage image = mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
-        File imgFile = new File("graph.png");
-        try {
-            ImageIO.write(image, "PNG", imgFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         //System.out.println(purgedChor);
         //*/
@@ -245,6 +236,20 @@ public class Main {
         }
         long stop = System.currentTimeMillis();
         System.out.println(stop-start);//*/
+    }
+    static void generateImage(Graph<Node, Label> graph, String imgPath){
+        JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
+
+        mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);
+        layout.execute(graphXAdapter.getDefaultParent());
+
+        BufferedImage image = mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
+        File imgFile = new File(imgPath);
+        try {
+            ImageIO.write(image, "PNG", imgFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static class graphContainer{
