@@ -21,7 +21,7 @@ public class Parameters {
     @Parameter(names = {"-h", "--help"}, help = true, description = "Print this help message")
     public boolean help = false;
 
-    @Parameter(names = {"-d", "--debug"}, description = "Print debug info to stdout")
+    @Parameter(names = {"-d", "--debug"}, description = "Print debug info to stdout")//TODO Currently does nothing
     public boolean debug = false;
 
     @Parameter(names = {"-p", "--disable-purge"}, description = "Disable purging of processes that immediately terminate")

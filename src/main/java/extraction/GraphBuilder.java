@@ -28,13 +28,6 @@ public class GraphBuilder {
     /**
      * Builds a Symbolic ExecutionGraph (SEG) over the execution paths that a network may take.
      * @param network The network to build an SEG for.
-     * @return A container with the graph, its root, the success status of the construction, and
-     * how many times a failed attempt to create a loop in the graph was made.
-     */
-    public static SEGContainer buildSEG(Network network, Strategy strategy) { return buildSEG(network, Set.of(), strategy); }
-    /**
-     * Builds a Symbolic ExecutionGraph (SEG) over the execution paths that a network may take.
-     * @param network The network to build an SEG for.
      * @param services Set of names of processes that are allowed to be starved.
      * @return A container with the graph, its root, the success status of the construction, and
      * how many times a failed attempt to create a loop in the graph was made.
@@ -264,7 +257,7 @@ public class GraphBuilder {
      * Returns true if for every process in currentNetwork, a process with identical behaviour is in previousNetwork,
      * and currentNetwork has more processes than previousNetwork, ignoring terminated processes.
      */
-    //I'm assuming here that the variables do not need to be chekced.
+    //I'm assuming here that the variables do not need to be checked.
     private boolean detectResourceLeak(Network currentNetwork, Network previousNetwork){
         var currentNonTerminated = currentNetwork.processes.values().stream().filter(term -> !term.isTerminated()).toList();
         var previousNonTerminated = previousNetwork.processes.values().stream().filter(term -> !term.isTerminated()).toList();
@@ -389,7 +382,7 @@ public class GraphBuilder {
                         String altToName = swappableMapping.getValue();
                         String altFromName = swappableMapping.getKey();
                         ProcessTerm altToTerm = toProcesses.get(altToName);
-                        //If the existing and alt mapping maps to processes with identical behaviour, and the target
+                        //If the existing and alt mapping, maps to processes with identical behaviour, and the target
                         //of the alt mapping has not previously been assigned the current process, then swap them,
                         //and re-check the variable assignments for the new mapping.
                         if (altToTerm.equals(fromTerm) && !invalidAssignments.contains(altToName)) {

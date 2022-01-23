@@ -1,16 +1,35 @@
-# Project is WIP
+# Choreographic Extractor
+This project aims to autogenerate choreographic descriptions of distributed systems. This can help developers ensure their implementations adhere to their protocol, better analyze the behaviour of their systems, and ensure the absence of deadlocks.
 
-## Overview
-This projects aim to implement an algorithm for extracting choreographies in Java, based on the work of Luíz Cruz-Filipe, Fabrizio Montesi, and Larisa Safina.
+Based on the work of Luíz Cruz-Filipe, Fabrizio Montesi, and Larisa Safina.
 
-## Compiling and Executing
-First generate the network parser using maven as described in the below section. This only needs to be done once.
-You can check things are working by compiling SimpleTest.java from the package executable, and execute the compiled class, to run a hardcoded example of network extraction.
+## How it works
+The program takes as input a *network*, which is a description of several parallel processes, reduced to all actions that are relevant for choreographies: interactions, and conditionals. It then simulates the processes to generate a tree-like graph called an *Symbolic Execution Graph* showing all paths of execution. It then converts all loops to procedures (functions), and traverses the graph to generate the corresponding choreography. 
 
-Instead of compiling SimpleTest.java, you can compile ExtractionTesting.java (also from package executable). Executing it with the name of a test as argument will run that test. 
-Executing without any argument will make it enter interactive mode. It will list possible tests, and allow you to enter the desired test to run.
+## Compiling and running
 
-## Generating extraction.network parser
-The project uses Antlr4 to generate parsers for network grammars. Build target "antlr4" with Maven.
-
+First, generate the parser for converting string representations of networks to the applications internal representation. The project uses Antlr4 to generate its parsers. To do this, build target "antlr4" with Maven. 
 When using IntelliJ, this can be achieved by creating a new Maven build target, and setting the  field "Command line" to `compile antlr4:antlr4`
+
+The project uses Java 17 with preview features. When compiling and running, use the parameter `--enable-preview`. If using Intellij, this may automatically be picked up by the maven configuration. Although several classes are executable, no class is the correct "main" class, so you may want to create your own.
+
+## Using in code
+To use the application in code, simply run
+```java
+String networkDescription = getInput(); //Insert your own function here
+var result = Extraction.newExtractor().extract(networkDesciption);
+System.out.println(result.program.toString());
+```
+to parse the input string, extract the choreography, and write it to the console output. 
+
+### Details
+The function `extract()` returns a record with two fields: `program` and `extractionInfo`. The first is the result of the extraction. A program contains a public list `choreographies` of all extracted choreographies. The reason there may be multiple, is because a pre-processing step attempts to split the network into smaller networks that interact independently of the other split networks. Each such split is extracted independently. If all processes of your input is interdependent, there will be only one entry. If extraction fails, the choreography will be `null`. Calling `toString()` on the program will return the choreographic description of the system.
+
+The other field, `extractionInfo` contains information generated during extraction. It is a list of record instances, where their index in the list corresponds to the same index of the choreography in `result.program.choreographies` whose extraction generated the data. The record is the following: 
+```java
+public static record Data(DirectedPseudograph<Node,Label> symbolicExecutionGraph,
+                          DirectedPseudograph<Node,Label> unrolledGraph,
+                          int badLoopCount, int nodeCount,
+                          BuildGraphResult result, Node rootNode){}
+```
+The `symbolicExecutionGraph` is the graph generated during extraction, and is made using the library JgraphT. `badLoopCount` is how many times the program attempted to create a loop in the SEG but failed because not all processes was involved in the loop. `nodeCount` is how many vertices of the SEG. `result` is an enum that can be `OK` or `FAIL` depending on if extraction was successful or not. `rootNode` is the initial node of the SEG, representing the state of the network before starting the simulation. Each outgoing edge then represents an interaction, or conditional evaluation, and the node it leads to then contains the state of the network resulting from that operation.

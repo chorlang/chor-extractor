@@ -16,8 +16,9 @@ import java.util.*;
 /**
  * This class is made for interfacing with the choreography extraction algorithm.
  */
+@SuppressWarnings("UnusedReturnValue")
 public class Extraction {
-    //Options
+    //Options, and their default values
     Strategy extractionStrategy = Strategy.Default;
     boolean multicomEnable = true;
     boolean purge = true;
