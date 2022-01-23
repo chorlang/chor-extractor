@@ -179,6 +179,16 @@ public class Main {
     static String generalContinuationLoop =
             "a { def Y{ X; b&{retry: Y, fin: } } def X{ if e then b+ok; X else b+ko; b?; } main{ b!<init>; Y; stop} } |" +
             "b { def X{ a&{ok: X, ko: a!<akn>; if retry then a+retry; X else a+fin; } } main{ a?; X; stop} }";
+    static String spawnConditional = "a{ def X{ if e then spawn child with X continue stop else stop } main{ X } }";
+
+    static String spawnRecursive = "a{ \n" +
+            "  def X(parent){ \n" +
+            "    if end then parent!<result>; stop else spawn child with X(child) continue child?; parent!<result>; stop\n" +
+            "  } main { X(b) } \n" +
+            "} |\n" +
+            "b{ main{ a?; stop } } ";
+
+    static String osci = "a{ def osci(p){ p?; p!<resp>; osci(p) } main { spawn b with osci(a) continue b!<start>; osci(b) } }";
 
     public static void main(String []args){
         System.out.println("Hello World");
@@ -190,14 +200,14 @@ public class Main {
         System.out.println(EndPointProjection.project(chorString));
         //*/
         //*
-        String networksString = generalContinuationLoop;
+        String networksString = osci;
         System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
         WellFormedness.isWellFormed(network);
-        var choreography = Extraction.newExtractor().extract(networksString, Set.of("retailer"));
+        var result = Extraction.newExtractor().extract(networksString, Set.of("retailer"));
         //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
-        String chor = choreography.toString();
+        String chor = result.program.toString();
         System.out.println(chor);
 
         GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);

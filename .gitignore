@@ -5,3 +5,5 @@
 /src/main/java/antlrgen/
 /tests/*
 /.idea/inspectionProfiles/Project_Default.xml
+/src/main/java/META-INF
+/out

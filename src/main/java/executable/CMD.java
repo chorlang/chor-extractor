@@ -47,7 +47,7 @@ public class CMD {
             StringBuilder inputBuilder = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))){
                 if (!reader.ready()){
-                    System.err.println("Please pipe the input network to stdin, or specify an input file with -i");
+                    System.err.println("Please pipe the input network to stdin, or specify an input file with -i. Use --help for help");
                     System.exit(1);
                 }
                 String line;

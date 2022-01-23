@@ -1,6 +1,8 @@
 # Choreographic Extractor
 This project aims to autogenerate choreographic descriptions of distributed systems. This can help developers ensure their implementations adhere to their protocol, better analyze the behaviour of their systems, and ensure the absence of deadlocks.
 
+The project is still in early development and may undergo big changes. An early [precompiled binary](#pre-compiled-command-line-application) is provided for convenience.
+
 Based on the work of Luíz Cruz-Filipe, Fabrizio Montesi, and Larisa Safina.
 
 ## How it works
@@ -33,3 +35,16 @@ public static record Data(DirectedPseudograph<Node,Label> symbolicExecutionGraph
                           BuildGraphResult result, Node rootNode){}
 ```
 The `symbolicExecutionGraph` is the graph generated during extraction, and is made using the library JgraphT. `badLoopCount` is how many times the program attempted to create a loop in the SEG but failed because not all processes was involved in the loop. `nodeCount` is how many vertices of the SEG. `result` is an enum that can be `OK` or `FAIL` depending on if extraction was successful or not. `rootNode` is the initial node of the SEG, representing the state of the network before starting the simulation. Each outgoing edge then represents an interaction, or conditional evaluation, and the node it leads to then contains the state of the network resulting from that operation.
+
+## Pre-compiled command-line application
+If you simply want to try out choreographic extraction, a simple command-line application is available under releases on GitHub. Although the algorithm is theoretically sound (proof will be released later), I make no guarantees for the correctness of the implementation.
+
+Minimal working example (you **must** use java 17):
+```bash
+echo 'a{main{b!<hello>;b?;stop}} | b{main{a?;a!<world>;stop}}' | java -jar --enable-preview chorextr.jar
+```
+Use the `--help` option to see more options.
+
+##Program input
+The input is plaintext describing the network to extract a choreography from. The description details only the information relevant to choreographies, namely interactions, and conditionals. For more details and a guide, see the [network syntax guide](NetworkSyntax.md)
+

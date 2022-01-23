@@ -6,7 +6,7 @@
 
     <groupId>dk.sdu.chor-extraction-java</groupId>
     <artifactId>chor-extraction</artifactId>
-    <version>1.0</version>
+    <version>1.5-alpha</version>
     <properties> <!--I believe properties need to be before dependencies-->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
