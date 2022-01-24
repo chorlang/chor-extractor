@@ -45,6 +45,6 @@ echo 'a{main{b!<hello>;b?;stop}} | b{main{a?;a!<world>;stop}}' | java -jar --ena
 ```
 Use the `--help` option to see more options.
 
-##Program input
+## Program input
 The input is plaintext describing the network to extract a choreography from. The description details only the information relevant to choreographies, namely interactions, and conditionals. For more details and a guide, see the [network syntax guide](NetworkSyntax.md)
 
