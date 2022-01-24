@@ -40,6 +40,7 @@ public class ProcessTerm extends NetworkASTNode {
         private int accumulatedHash = 0;
         public ContinuationStack(){
             stack = new LinkedList<>();
+
         }
         public ContinuationStack(ContinuationStack toClone){
             stack = new LinkedList<>(toClone.stack);
@@ -317,13 +318,9 @@ public class ProcessTerm extends NetworkASTNode {
     public boolean equals(ProcessTerm other){
         if (this == other)                          //Trivially true if it is the same object
             return true;
-        /*TODO
-            The continuation stack is supposed to function identical to appending continuations to
-            the end of the main behaviour, which is the case for hashCode(), but not for
-            main.equals(other.main) because of the way behaviours handle equality.
-         */
+        //Fast false condition checks
         if (    hashCode() != other.hashCode() ||   //The terms cannot be identical with different hash-codes
-                !main.equals(other.main) ||         //The main Behaviours must be identical
+                //!main.equals(other.main) ||         //The main Behaviours must be identical
                 procedures.size() != other.procedures.size())   //Must have the same number of procedures
             return false;
         //Compare all processes, and fail if there is a difference.
@@ -332,8 +329,87 @@ public class ProcessTerm extends NetworkASTNode {
             if (otherBehaviour == null || !otherBehaviour.equals(procedures.get(procedureName)))
                 return false;
         }
-        return continuationStack.equals(other.continuationStack);
+
+        //Compare the main behaviours properly
+        return compareBehaviours(main, new ContinuationStack(continuationStack),
+                other.main, new ContinuationStack(other.continuationStack));
+        //return continuationStack.equals(other.continuationStack);
     }
+
+    /**
+     * Compares the main behaviour of two processes, taking their ContinuationStack into account.
+     * Effectively (not actually) re-writes the behaviour to no longer use the stack as it traverses
+     * the behaviours recursively, comparing data as it goes.
+     * This function modifies the provided stacks.
+     * @param A The main behaviour of the first process
+     * @param AS (A copy of) the ContinuationStack of the first process
+     * @param B The main behaviour of the second process
+     * @param BS (A copy of) the ContinuationStack of the second process
+     * @return true if the behaviours are equivalent, and false otherwise
+     */
+    private boolean compareBehaviours(Behaviour A, ContinuationStack AS,
+                                      Behaviour B, ContinuationStack BS){
+        if (A instanceof BreakBehaviour)
+            A = AS.pop().continuation;
+        if (B instanceof BreakBehaviour)
+            B = BS.pop().continuation;
+        if (!A.compareData(B))
+            return false;
+        switch (A){
+            case Condition CA:{
+                var CB = (Condition)B;
+                //Add the conditionals continuations to the stacks
+                AS.push(A.continuation);
+                BS.push(B.continuation);
+                //Copy the stack for the else branch
+                var ASElse = new ContinuationStack(AS);
+                var BSElse = new ContinuationStack(BS);
+                //Check both branches
+                return compareBehaviours(CA.thenBehaviour, AS, CB.thenBehaviour, BS) &&
+                        compareBehaviours(CA.elseBehaviour, ASElse, CB.elseBehaviour, BSElse);
+            }
+            case Offering OA:{
+                var OB = (Offering)B;
+                //Add the Offerings continuations to the stacks
+                AS.push(OA.continuation);
+                BS.push(OB.continuation);
+                //Return true only if the following lambda function returns true for all branches
+                return OA.branches.entrySet().stream().allMatch(entry ->{
+                    //Ensure both offerings have a behaviour with the same label
+                    String label = entry.getKey();
+                    Behaviour BBranch = OB.branches.get(label);
+                    if (BBranch == null)
+                        return false;
+                    Behaviour ABranch = entry.getValue();
+
+                    //Copy the stacks
+                    var ASBranch = new ContinuationStack(AS);
+                    var BSBranch = new ContinuationStack(BS);
+
+                    //Check the branch
+                    return compareBehaviours(ABranch, ASBranch, BBranch, BSBranch);
+                });
+            }
+            case ProcedureInvocation pi:{
+                /*The call to compareData checks the child behaviours are equivalent using equals().
+                * This is technically not correct, as they could be equivalent, but using continuations
+                * differently. If you decide to change that, remember to change compareData()
+                * in Spawn.java as well.*/
+                //Do not check the continuation
+                return true;
+            }
+            case Termination t:{
+                //Do not check the continuation
+                return true;
+            }
+            default:{
+                //Check the next behaviour
+                return compareBehaviours(A.continuation, AS, B.continuation, BS);
+            }
+        }
+    }
+
+
     public boolean equals(Object other){
         if (!(other instanceof ProcessTerm otherTerm))
             return false;

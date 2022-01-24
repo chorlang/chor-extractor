@@ -72,6 +72,11 @@ public class ProcedureInvocation extends Behaviour {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof ProcedureInvocation pi && procedure.equals(pi.procedure);
+    }
+
+    @Override
     public int hashCode(){
         return hash;
     }

@@ -44,6 +44,7 @@ public class Condition extends Behaviour {
         return new Pair<>(thenLabel, elseLabel);
     }
 
+    @Override
     public String toString(){
         String s = String.format("if %s then %s else %s", expression, thenBehaviour, elseBehaviour);
         if (!(continuation instanceof BreakBehaviour))
@@ -51,6 +52,7 @@ public class Condition extends Behaviour {
         return s;
     }
 
+    @Override
     public boolean equals(Behaviour other) {
         if (this == other)
             return true;
@@ -60,6 +62,11 @@ public class Condition extends Behaviour {
                 thenBehaviour.equals(otherC.thenBehaviour) &&
                 elseBehaviour.equals(otherC.elseBehaviour) &&
                 continuation.equals(other.continuation);
+    }
+
+    @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Condition con && expression.equals(con.expression);
     }
 
     @Override

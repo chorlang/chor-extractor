@@ -39,6 +39,11 @@ public class Receive extends Behaviour.Receiver {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Receive rec && sender.equals(((Receive) other).sender);
+    }
+
+    @Override
     public int hashCode(){
         return hash;
     }

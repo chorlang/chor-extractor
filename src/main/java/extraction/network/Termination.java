@@ -39,6 +39,11 @@ public class Termination extends Behaviour {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Termination;
+    }
+
+    @Override
     public int hashCode(){
         return 1;
     }

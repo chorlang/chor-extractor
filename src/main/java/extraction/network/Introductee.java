@@ -52,6 +52,11 @@ public class Introductee extends Behaviour.Receiver {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Introductee intr && processID.equals(intr.processID) && sender.equals(intr.sender);
+    }
+
+    @Override
     public String toString() {
         return String.format("%s?%s; %s", sender, processID, continuation);
     }

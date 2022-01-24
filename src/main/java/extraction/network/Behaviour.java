@@ -3,6 +3,7 @@ package extraction.network;
 import extraction.Label;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 public abstract class Behaviour extends NetworkASTNode {
     Behaviour continuation;
@@ -36,6 +37,13 @@ public abstract class Behaviour extends NetworkASTNode {
      * @return true of the objects are equivalent, false otherwise
      */
     public abstract boolean equals(Behaviour other);
+
+    /**
+     * Compare every field that is not a Behaviour between this instance, and other
+     * @return true if both this object and the other object are the same type of behaviour,
+     * and have the same non-Behaviour fields.
+     */
+    abstract boolean compareData(Behaviour other);
 
     /**
      * Subclasses that extends this class, are Behaviours that perform some interaction between processes.
@@ -108,6 +116,12 @@ public abstract class Behaviour extends NetworkASTNode {
         @Override
         public boolean equals(Behaviour other) {
             return this == other;   //Constructor is private, so there is only ever one instance
+        }
+
+        @Override
+        boolean compareData(Behaviour other){
+            throw new UnsupportedOperationException("Internal error: Called compareData() on a BreakBehaviour, " +
+                    "which is a stand-in Behaviour meant to be replaced before being used.");
         }
 
         @Override

@@ -63,6 +63,12 @@ public class Introduce extends Behaviour.Sender{
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Introduce intr && leftReceiver.equals(intr.leftReceiver) &&
+                rightReceiver.equals(intr.rightReceiver);
+    }
+
+    @Override
     public String toString() {
         return String.format("%s<->%s; %s", leftReceiver, rightReceiver, continuation);
     }

@@ -50,6 +50,11 @@ public class Send extends Behaviour.Sender {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Send send && receiver.equals(send.receiver) && expression.equals(send.expression);
+    }
+
+    @Override
     public int hashCode(){
         return hash;
     }

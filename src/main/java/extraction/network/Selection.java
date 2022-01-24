@@ -52,6 +52,11 @@ public class Selection extends Behaviour.Sender {
     }
 
     @Override
+    boolean compareData(Behaviour other){
+        return other instanceof Selection sel && receiver.equals(sel.receiver) && label.equals(sel.label);
+    }
+
+    @Override
     public int hashCode(){
         return hash;
     }
