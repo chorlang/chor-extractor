@@ -38,8 +38,9 @@ class ErrorListener extends BaseErrorListener {
                                 int startIndex, int stopIndex, boolean exact, BitSet ambigAlts,
                                 ATNConfigSet configs) throws ParseCancellationException{
         super.reportAmbiguity(recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs);
-        String errMessage = "Parser encountered an ambiguity. Began at %d. Ambiguity at %d.".formatted(startIndex, stopIndex);
-        throw new ParseCancellationException(errMessage);
+        String errMessage = "Parser encountered an ambiguity. The parser will attempt to auto-resolve it, but does not guarantee it is parsed as intended. Began at %d. Ambiguity at %d.".formatted(startIndex, stopIndex);
+        System.err.println("WARNING: "+errMessage);
+        //throw new ParseCancellationException(errMessage);
     }
 
     //There are more listener functions https://www.antlr.org/api/Java/org/antlr/v4/runtime/ANTLRErrorListener.html

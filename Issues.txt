@@ -2,4 +2,10 @@
 ** This document contains details for some major bugs, issues, and other problems
 ===================================================================================================
 
+The "continue" literal following a conditional is ambiguous in the network grammar. For example:
+if e1 then a+l1; else if e2 then a+l2; else a+l3; continue ...
+The "continue" could be long to either conditional by the grammar. By the rules of
+well-formedness it must belong to the outer to resolve the continuation of the then branch,
+and therefore the ambiguity can be resolved (I suspect that is always the case, not just
+for this example) but I don't think the parser knows how to do that.
 

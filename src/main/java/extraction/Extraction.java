@@ -76,7 +76,7 @@ public class Extraction {
      * It will also contain the Symbolic Execution Graph generated during extraction (regardless if extraction
      * succeeds or not), the number of bad loops encountered during extraction, and the number of nodes in the graph.
      */
-    public ExtractionResult extract(String network){
+    public ExtractionResult extract(@NotNull String network){
         return extract(network, Set.of());
     }
     /**

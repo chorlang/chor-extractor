@@ -390,11 +390,12 @@ public class ProcessTerm extends NetworkASTNode {
                     return compareBehaviours(ABranch, ASBranch, BBranch, BSBranch);
                 });
             }
+            /* About spawning:
+             * The call to compareData checks the child behaviours are equivalent using equals().
+             * This is technically not correct, as they could be equivalent, but using continuations
+             * differently. If you decide to change that, remember to change compareData()
+             * in Spawn.java as well.*/
             case ProcedureInvocation pi:{
-                /*The call to compareData checks the child behaviours are equivalent using equals().
-                * This is technically not correct, as they could be equivalent, but using continuations
-                * differently. If you decide to change that, remember to change compareData()
-                * in Spawn.java as well.*/
                 //Do not check the continuation
                 return true;
             }
