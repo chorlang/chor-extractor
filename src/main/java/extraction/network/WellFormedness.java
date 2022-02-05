@@ -103,8 +103,8 @@ public class WellFormedness{
             return new WellFormedChecker(new HashSet<>(otherProcesses), checkTerm, checkName, new HashSet<>(checkedProcedures));
         }
         //Copies this checker, but change the name of the process to check. Used when spawning
-        private WellFormedChecker copy(String newCheckheckName) {
-            return new WellFormedChecker(new HashSet<>(otherProcesses), checkTerm, newCheckheckName, new HashSet<>(checkedProcedures));
+        private WellFormedChecker copy(String newCheckName) {
+            return new WellFormedChecker(new HashSet<>(otherProcesses), checkTerm, newCheckName, new HashSet<>(checkedProcedures));
         }
 
         /**
@@ -162,8 +162,12 @@ public class WellFormedness{
                     return this.copy(spawner.variable).Visit(spawner.processBehaviour) && spawner.continuation.accept(this);
 
                 case Condition conditional:
-                    return copy().Visit(conditional.thenBehaviour) && copy().Visit(conditional.elseBehaviour)
-                            && conditional.continuation.accept(this);
+                    WellFormedChecker thenBranch = copy();
+                    WellFormedChecker elseBranch = copy();
+                            //Check both branches individually, using separate data
+                    return thenBranch.Visit(conditional.thenBehaviour) && elseBranch.Visit(conditional.elseBehaviour)
+                            //Check the continuation, using the data from both branches.
+                            && thenBranch.Visit(conditional.continuation) && elseBranch.Visit(conditional.continuation);
 
                 default:
                     throw new RuntimeException(new OperationNotSupportedException("While checking for well-formedness in the extraction.network AST, an object of type " + hostNode.getClass().getName() + " was visited which suggest a degenerate tree."));
@@ -191,7 +195,7 @@ public class WellFormedness{
         }
     }
 
-    enum ContinueStatus { MUST, CAN, WONT };
+    enum ContinueStatus { MUST, CAN, WONT }
     private static class ReachableCodeChecker implements TreeVisitor<ContinueStatus, NetworkASTNode>{
         private static ContinueStatus strongest(ContinueStatus ... statuses){
             boolean can = false;
