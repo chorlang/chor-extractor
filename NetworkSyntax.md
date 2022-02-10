@@ -55,6 +55,11 @@ While this does not add to the expressive power of networks, it is nice to have,
 ```
 def sort{ if baseCase then stop else sort; sort }
 ```
+Nested conditionals with fewer continuations than conditionals, can lead to ambiguities which the parser will refuse. For example 
+```
+if e1 then a+L1; else if e2 then a+L2; else a+L3; continue a!<end>; stop
+```
+makes it unclear if the `continue` belongs to the outer, or inner conditional. In some cases the ambiguity could be resolved from context, but the parser does not check for those cases. Therefore, you should always add `endif` to indicate the end of your nested conditionals. The above example could be resolved as `endif continue a!<end>; stop` to append the continuation to the outer conditional, or `continue a!<end>; stop endif` to append to the inner conditional. If none of your nested conditionals use continuations, you do not need to insert `endif`. 
 
 ## Process spawning and variable process names
 Processes can be spawned at runtime. A spawned process retains its parent's procedure definitions, but otherwise acts like any other process. the syntax is `spawn childName with child_behaviour continue parent_behaviour` where `childName` is the name of the spawned process. The child will assume the `child_behaviour` as its main behaviour, while the parent continues by executing `parent_behaviour`.
@@ -87,4 +92,4 @@ Spaces, tabs, and newlines, are always ignored.
 If you wish for a behaviour to resume to a previous branching behaviour's continuation, you must write it as if there where a continuation to that behaviour. For example `a?; b?` is syntactically wrong, but `a?; b?;` will resume a continuation. If it is contained within a branching behaviour that optionally has a continuation, but doesn't, it will return to that behaviour's parent's continuation instead if it exists. For example `... else a&{end: stop, cont, a!<ok>;} continue a+res;...` is valid, and returns to the conditional's continuation, even though the offering behaviour does not define a continuation.
 
 The reserved keywords are:
-`if`,`then`,`else`,`continue`,`stop`,`spawn`,`with`,`def`,`main`,
+`if`,`then`,`else`,`continue`,`endif`,`stop`,`spawn`,`with`,`def`,`main`,

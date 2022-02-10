@@ -46,7 +46,10 @@ introduce: introductee1=process '<->' introductee2=process ';' behaviour;
 introductee: introducer=process '?' introducedProcess=process ';' behaviour;
 
 //Conditional branching
-condition: 'if' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour ('continue' continuation=behaviour)?;
+condition   : 'if' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour
+            | 'if' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'continue' continuation=behaviour
+            | 'if' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'endif'
+            ;
 
 //Invocation of procedures
 procedureInvocation: procedure parameters? (';' continuation=behaviour)?;
