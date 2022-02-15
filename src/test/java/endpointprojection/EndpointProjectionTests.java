@@ -3,13 +3,16 @@ package endpointprojection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.InputMismatchException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EndpointProjectionTests {
 
     @Test
     public void tst1(){
-        var test = "def X {Y} def Y { p.e->q; stop } main {q.e->p;X}";
+        var test = "def X { Y} def Y { p.e->q; stop } main {q.e->p;X}";
 
         var actual = EndPointProjection.project(test).toString();
         //  println(EndPointProjection.getChoreographyStatistic(f));
@@ -213,10 +216,10 @@ class EndpointProjectionTests {
     public void tst13(){
         var test = "def X {Y} def Y { p.e->q; stop } main {q.e->p;X} || def X {Y} def Y { p.e->q; stop } main {q.e->p;X}";
 
-        var actual = EndPointProjection.project(test).toString();
-        var expected = "p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}} || p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}}";
+        assertThrows(InputMismatchException.class, () -> EndPointProjection.project(test));
 
-        //This also causes InputMismatchException in the Kotlin implementations
-        assertEquals(expected, actual);
+        //Previously, this test tried to project, checking if it was equal to the below network,
+        //which seems to assume networks can contain parallel networks.
+        //var expected = "p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}} || p{def X{Y} def Y{q!<e>; stop} main {q?; X}} | q{def X{Y} def Y{p?; stop} main {p!<e>; X}}";
     }
 }

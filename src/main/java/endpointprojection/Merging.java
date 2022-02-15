@@ -59,7 +59,7 @@ public class Merging {
         for (var leftKey : leftBranches.keySet()){
             if (rightBranches.containsKey(leftKey)){
                 labels.put(leftKey, merge(leftBranches.get(leftKey), rightBranches.get(leftKey)));
-                rightBranches.remove(leftKey);
+                rightBranches.remove(leftKey);//Remove?
             } else{
                 labels.put(leftKey, leftBranches.get(leftKey));
             }

@@ -3,6 +3,7 @@ package utility.choreographyStatistics;
 import extraction.choreography.ChoreographyASTNode;
 import extraction.choreography.ChoreographyBody;
 import extraction.choreography.Condition;
+import extraction.choreography.ProcedureInvocation;
 import extraction.network.utils.TreeVisitor;
 
 import java.util.HashSet;
@@ -24,8 +25,9 @@ public class UsedProcedures implements TreeVisitor<Set<String>, ChoreographyASTN
                 return host.getContinuation().accept(this);
             }
             case TERMINATION:
-            case PROCEDURE_INVOCATION:
                 return new HashSet<>();
+            case PROCEDURE_INVOCATION:
+                return new HashSet<>(){{add(((ProcedureInvocation)hostNode).procedure);}};
 
             case PROCEDURE_DEFINITION:
             case CHOREOGRAPHY:
@@ -35,7 +37,12 @@ public class UsedProcedures implements TreeVisitor<Set<String>, ChoreographyASTN
         }
     }
 
-    public static Set<String> usedProcedures(ChoreographyASTNode hostNode){
+    /**
+     * Finds all procedures that are invoked within a ChoreographyBody.
+     * @param hostNode The ChoreographyBody to examine.
+     * @return A set containing the names of all found ProcedureInvocations
+     */
+    public static Set<String> usedProcedures(ChoreographyBody hostNode){
         return hostNode.accept(new UsedProcedures());
     }
 }

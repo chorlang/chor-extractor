@@ -50,7 +50,7 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
             case CHOREOGRAPHY:
             case PROGRAM:
             default:
-                throw new UnsupportedOperationException("");
+                throw new UnsupportedOperationException("Could not project behaviour of unexpected type");
         }
     }
 
@@ -75,6 +75,7 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
     }
 
     static ProcessTerm project(Choreography choreography, String processName){
+        //From procedure names, to a set of process names that are used by that procedure
         var usedProcesses = UsedProcesses.usedProcesses(choreography);
 
         var procedureProjections = new HashMap<String, Behaviour>();
