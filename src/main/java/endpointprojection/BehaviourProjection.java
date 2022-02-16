@@ -32,8 +32,11 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
                 return visitSelection((Selection)hostNode);
             case CONDITION: {
                 var host = (Condition)hostNode;
-                if (processName.equals(host.process))
-                    return new extraction.network.Condition(host.expression, host.thenChoreography.accept(this), host.elseChoreography.accept(this));
+                if (processName.equals(host.process)) {
+                    Behaviour continuation = host.continuation instanceof ChoreographyBody.NoneBody ?
+                            Behaviour.NoneBehaviour.instance : host.continuation.accept(this);//NoneBehaviour is different from BreakBehaviour in networks, but not in choreographies
+                    return new extraction.network.Condition(host.expression, host.thenChoreography.accept(this), host.elseChoreography.accept(this), continuation);
+                }
                 else
                     return Merging.merge(host.thenChoreography.accept(this), host.elseChoreography.accept(this));
             }
@@ -41,11 +44,16 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
                 return extraction.network.Termination.instance;
             case PROCEDURE_INVOCATION: {
                 var host = (ProcedureInvocation)hostNode;
-                if (usedProcesses.get(host.procedure).contains(processName))
-                    return new extraction.network.ProcedureInvocation(host.procedure);
+                if (usedProcesses.get(host.procedure).contains(processName)) {
+                    Behaviour continuation = host.continuation instanceof ChoreographyBody.NoneBody ?
+                            Behaviour.NoneBehaviour.instance : host.continuation.accept(this);
+                    return new extraction.network.ProcedureInvocation(host.procedure, host.parameters, host.continuation.accept(this));
+                }
                 else
                     return extraction.network.Termination.instance;
             }
+            case NONE:
+                return Behaviour.BreakBehaviour.instance;
             case PROCEDURE_DEFINITION:
             case CHOREOGRAPHY:
             case PROGRAM:

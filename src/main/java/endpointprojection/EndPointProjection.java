@@ -12,18 +12,21 @@ import java.util.List;
 
 public class EndPointProjection {
     /**
-     * @param choreographyDescription
-     * @return (parallel) networks projected from the initial choreography
+     * Parses a choreography in string form to internal representation, then uses endpoint projection
+     * to project it into a Network.
+     * @param choreographyDescription String representation of the choreography to project
+     * @return A Network instance projected from the provided choreography, or null on failure.
      */
     public static Network project(String choreographyDescription){
         var program = Parser.stringToProgram(choreographyDescription);
+        if (program == null)
+            return null;
         return project(program);
     }
 
     /**
-     * Projects choreographies to networks
-     * @param program
-     * @return
+     * Projects a choreography to a network.
+     * @param program The choreography to project
      */
     public static Network project(Program program){
         var choreographyList = program.choreographies;

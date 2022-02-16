@@ -1,6 +1,6 @@
 package extraction.choreography;
 
-import static extraction.choreography.ChoreographyASTNode.Type.RESUME;
+import static extraction.choreography.ChoreographyASTNode.Type.NONE;
 
 public abstract class ChoreographyBody extends ChoreographyASTNode {
 
@@ -52,7 +52,7 @@ public abstract class ChoreographyBody extends ChoreographyASTNode {
         }
         @Override
         public Type getType(){
-            return RESUME;
+            return NONE;
         }
 
     }

@@ -22,6 +22,8 @@ public class Merging {
             case Offering o -> merge((Offering) left, (Offering) right);
             case Condition c -> merge((Condition) left, (Condition) right);
             case ProcedureInvocation pi -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
+            case Behaviour.NoneBehaviour nb -> Behaviour.NoneBehaviour.instance;
+            case Behaviour.BreakBehaviour bb -> Behaviour.BreakBehaviour.instance;
             default -> throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
         };
 
@@ -56,32 +58,41 @@ public class Merging {
         var rightBranches = right.branches;
         var labels = new HashMap<String, Behaviour>();
 
+        //For all keys in the left offering term
         for (var leftKey : leftBranches.keySet()){
+            //If the right offering term contains the same label, merge the behaviours for that label.
             if (rightBranches.containsKey(leftKey)){
                 labels.put(leftKey, merge(leftBranches.get(leftKey), rightBranches.get(leftKey)));
-                rightBranches.remove(leftKey);//Remove?
-            } else{
+            }
+            //Else, add the labeled behaviour from the left offering term.
+            else{
                 labels.put(leftKey, leftBranches.get(leftKey));
             }
         }
+
+        //For all the labels of the right offering, if the left offering contains no such label,
+        //add the labeled behaviour from the right offering term.
         for (var rightKey : rightBranches.keySet()){
-            labels.put(rightKey, rightBranches.get(rightKey));
+            if (!leftBranches.containsKey(rightKey))
+                labels.put(rightKey, rightBranches.get(rightKey));
         }
 
         return new Offering(left.sender, labels);
     }
 
     private static Behaviour merge(Condition left, Condition right){
-        var leftCondition = merge(left.thenBehaviour, right.thenBehaviour);
-        var rightCondition = merge(left.elseBehaviour, right.elseBehaviour);
+        Behaviour leftCondition = merge(left.thenBehaviour, right.thenBehaviour);
+        Behaviour rightCondition = merge(left.elseBehaviour, right.elseBehaviour);
+        Behaviour continuation = merge(left.continuation, right.continuation);
+
         if (!left.expression.equals(right.expression))
             throw new MergingException("Can't merge conditions "+leftCondition+" and "+rightCondition);
-        return new Condition(left.expression, leftCondition, rightCondition);
+        return new Condition(left.expression, leftCondition, rightCondition, continuation);
     }
 
     private static Behaviour merge(ProcedureInvocation left, ProcedureInvocation right){
-        if (left.procedure.equals(right.procedure))
-            return new ProcedureInvocation(left.procedure);
+        if (left.procedure.equals(right.procedure) && left.getParameters().equals(right.getParameters()))
+            return new ProcedureInvocation(left.procedure, left.getParameters(), merge(left.continuation, right.continuation));
         else
             throw new MergingException("Can't merge procedures "+left.procedure+" and "+right.procedure);
     }

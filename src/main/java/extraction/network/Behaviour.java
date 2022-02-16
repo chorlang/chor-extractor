@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public abstract class Behaviour extends NetworkASTNode {
-    Behaviour continuation;
+    public final Behaviour continuation;
     public Behaviour(Action action, Behaviour continuation){
         super(action);
         this.continuation = continuation;

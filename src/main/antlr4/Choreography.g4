@@ -25,6 +25,7 @@ behaviour : interaction
 nothing:;
 
 condition : 'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'continue' continuation=behaviour
+        |   'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'endif'
         |   'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour
         ;
 
