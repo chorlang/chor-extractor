@@ -1,5 +1,7 @@
 package extraction.choreography;
 
+import static extraction.choreography.ChoreographyASTNode.Type.RESUME;
+
 public abstract class ChoreographyBody extends ChoreographyASTNode {
 
     @Override public int hashCode(){
@@ -26,6 +28,33 @@ public abstract class ChoreographyBody extends ChoreographyASTNode {
         public abstract ChoreographyBody getContinuation();
         public abstract String getSender();
         public abstract String getReceiver();
+    }
+
+    /**
+     * Class representing the end of a choreography body, but not termination,
+     * instead continuing as some other behaviour.
+     * This can be used in procedure bodies, or conditional branches, to indicate that
+     * the next body is the continuation of their parent invocation/conditional.
+     * Is also used for continuations of invocations or conditionals, to indicate that
+     * their continuation is empty.
+     */
+    public static class NoneBody extends ChoreographyBody{
+        public static final NoneBody instance = new NoneBody();
+        private NoneBody(){}
+
+        @Override
+        public int hashCode(){return 0;}
+        @Override
+        public String toString(){return "";}
+        @Override
+        public boolean equals(Object o){
+            return o instanceof NoneBody;
+        }
+        @Override
+        public Type getType(){
+            return RESUME;
+        }
+
     }
 
 }

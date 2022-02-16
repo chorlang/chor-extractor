@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -28,37 +29,36 @@ class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
 
 
     @Override public ChoreographyBody visitCommunication(CommunicationContext ctx) {
-        var sender = ctx.process(0).getText();
-        var receiver = ctx.process(1).getText();
+        var sender = ctx.sender.getText();
+        var receiver = ctx.receiver.getText();
         var expression = ctx.expression().getText();
 
         processesInChoreography.get(iteration).add(sender);
         processesInChoreography.get(iteration).add(receiver);
 
-        var continuation = visit(ctx.behaviour());
+        var continuation = visit(ctx.continuation);
 
         return new Communication(sender, receiver, expression, (ChoreographyBody)continuation);
     }
 
     @Override public ChoreographyBody visitSelection(SelectionContext ctx) {
-        var sender = ctx.process(0).getText();
-        var receiver = ctx.process(1).getText();
+        var sender = ctx.sender.getText();
+        var receiver = ctx.receiver.getText();
         var expression = ctx.expression().getText();
 
         processesInChoreography.get(iteration).add(sender);
         processesInChoreography.get(iteration).add(receiver);
 
-        var continuation = visit(ctx.behaviour());
+        var continuation = visit(ctx.continuation);
 
         return new Selection(sender, receiver, expression, (ChoreographyBody)continuation);
     }
 
     @Override public ChoreographyBody visitIntroduction(IntroductionContext ctx){
-        List<ProcessContext> processes = ctx.process();
-        String introducer = processes.get(0).getText();
-        String process1 = processes.get(1).getText();
-        String process2 = processes.get(2).getText();
-        ChoreographyASTNode continuation = visit(ctx.behaviour());
+        String introducer = ctx.introducer.getText();
+        String process1 = ctx.leftIntroductee.getText();
+        String process2 = ctx.rightIntroductee.getText();
+        ChoreographyASTNode continuation = visit(ctx.continuation);
 
         return new Introduction(introducer, process1, process2, (ChoreographyBody) continuation);
     }
@@ -69,10 +69,11 @@ class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
 
         processesInChoreography.get(iteration).add(process);
 
-        var thenChoreography = visit(ctx.behaviour(0));
-        var elseChoreography = visit(ctx.behaviour(1));
+        var thenChoreography = visit(ctx.thenBehaviour);
+        var elseChoreography = visit(ctx.elseBehaviour);
+        var continuation = visit(ctx.continuation);
 
-        return new Condition(process, expression, (ChoreographyBody)thenChoreography, (ChoreographyBody)elseChoreography);
+        return new Condition(process, expression, (ChoreographyBody)thenChoreography, (ChoreographyBody)elseChoreography, (ChoreographyBody) continuation);
     }
 
     @Override public ChoreographyASTNode visitChoreography(ChoreographyContext ctx) {
@@ -92,8 +93,14 @@ class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
     }
 
     @Override public ChoreographyASTNode visitProcedureDefinition(ProcedureDefinitionContext ctx) {
-        return new ProcedureDefinition(ctx.procedure().getText(), (ChoreographyBody)visit(ctx.behaviour()));
-        //, processesInChoreography.get(iteration));
+        var parametersctx = ctx.parameters();
+        List<String> parameters;
+        if (parametersctx != null && parametersctx.parameterList() != null)
+            parameters = Arrays.stream(parametersctx.parameterList().getText().split(",")).toList();
+        else
+            parameters = List.of();
+        return new ProcedureDefinition(ctx.procedure().getText(), parameters,
+                (ChoreographyBody)visit(ctx.behaviour()));
     }
 
     @Override public ChoreographyASTNode visitMain(MainContext ctx) {
@@ -102,11 +109,29 @@ class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
 
     @Override public ChoreographyASTNode visitProcedureInvocation(ProcedureInvocationContext ctx) {
         var procedureName = ctx.procedure().getText();
-        return new ProcedureInvocation(procedureName);
+        var parametersctx = ctx.parameters();
+        List<String> parameters;
+        if (parametersctx != null && parametersctx.parameterList() != null)
+            parameters = Arrays.stream(parametersctx.parameterList().getText().split(",")).toList();
+        else
+            parameters = List.of();
+        return new ProcedureInvocation(procedureName, parameters,
+                (ChoreographyBody) visit(ctx.continuation));
     }
 
     @Override public ChoreographyASTNode visitTerminal(TerminalNode node) {
         return Termination.getInstance();
+    }
+
+    @Override public ChoreographyASTNode visitNothing(NothingContext ctx){
+        return ChoreographyBody.NoneBody.instance;
+    }
+
+    //Handle missing optional terms
+    @Override public ChoreographyASTNode visit(ParseTree tree){
+        if (tree == null)
+            return ChoreographyBody.NoneBody.instance;
+        return super.visit(tree);
     }
     
 }

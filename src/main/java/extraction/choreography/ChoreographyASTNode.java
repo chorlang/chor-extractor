@@ -19,7 +19,8 @@ public abstract class ChoreographyASTNode implements TreeHost<ChoreographyASTNod
         TERMINATION,
         MULTICOM,
         INTRODUCTION,
-        SPAWN
+        SPAWN,
+        RESUME
     }
 
     /**
