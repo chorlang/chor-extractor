@@ -47,8 +47,7 @@ public class Condition extends Behaviour {
     @Override
     public String toString(){
         String s = String.format("if %s then %s else %s", expression, thenBehaviour, elseBehaviour);
-        if (!(continuation instanceof BreakBehaviour))
-            s += " continue " + continuation;
+        s += continuation instanceof BreakBehaviour ? " endif" : " continue " + continuation;
         return s;
     }
 
