@@ -7,7 +7,7 @@ public class NetworkProcessActions implements TreeVisitor<Integer, NetworkASTNod
     public Integer Visit(NetworkASTNode hostNode){
         switch (hostNode){
             case Condition host:{
-                return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);
+                return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this) + host.continuation.accept(this);
             }
             case Offering host: {
                 int sum = 0;
@@ -31,9 +31,10 @@ public class NetworkProcessActions implements TreeVisitor<Integer, NetworkASTNod
 
             case ProcedureInvocation host: {return 0;}
             case Termination host: {return 0;}
+            case Behaviour.BreakBehaviour b: {return 0;}
             case Network host: {}
             default:
-                throw new UnsupportedOperationException("Invalid Network AST");
+                throw new UnsupportedOperationException("Invalid Network AST of type " + hostNode.getClass().getName() + " toString: "+hostNode);
         }
     }
 }

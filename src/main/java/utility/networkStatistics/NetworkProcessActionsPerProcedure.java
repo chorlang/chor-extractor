@@ -9,16 +9,15 @@ public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, N
     public Integer Visit(NetworkASTNode hostNode){
         switch (hostNode){
             case Condition host:{
-                return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this);
+                return host.thenBehaviour.accept(this) + host.elseBehaviour.accept(this) + host.continuation.accept(this);
             }
             case Offering host: {
                 int sum = 0;
                 for (var branch : host.branches.values())
                     sum += branch.accept(this);
-                return sum;
+                return sum + host.continuation.accept(this);
             }
             case ProcessTerm host:
-
                 int sum = 0;
                 for (var procedure : host.procedures.values()){
                     sum += procedure.accept(this);
@@ -33,9 +32,10 @@ public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, N
 
             case ProcedureInvocation host: {return 0;}
             case Termination host: {return 0;}
+            case Behaviour.BreakBehaviour b: {return 0;}
             case Network host:{}
             default:
-                throw new UnsupportedOperationException("Invalid Network AST");
+                throw new UnsupportedOperationException("Invalid Network AST of type "+hostNode.getClass().getName());
         }
     }
 

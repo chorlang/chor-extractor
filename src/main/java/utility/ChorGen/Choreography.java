@@ -70,23 +70,23 @@ public class Choreography {
      * Returns the list of processesInChoreography used in each name.
      */
     private HashMap<String,HashSet<String>> usedProcesses() {
-        Set<String> keys = procedures.keySet();
+        Set<String> procedureNames = procedures.keySet();
 
         // first: maps from body to process names and name calls in it
-        HashMap<String,HashSet<String>> calls = new HashMap<String,HashSet<String>>();
-        for (String name:keys)
+        var calls = new HashMap<String,HashSet<String>>();
+        for (String name : procedureNames)
             calls.put(name,UsedProcedures.run(procedures.get(name)));
 
         // second: iteratively compute a fixpoint...
-        HashMap<String,HashSet<String>> usedProcesses = new HashMap<String,HashSet<String>>(),
-            auxUsedProcesses = new HashMap<String,HashSet<String>>();
+        HashMap<String,HashSet<String>> usedProcesses = new HashMap<>(),
+            auxUsedProcesses = new HashMap<>();
 
-        for (String name:keys)
+        for (String name : procedureNames)
             auxUsedProcesses.put(name,UsedProcesses.run(procedures.get(name)));
         while (!usedProcesses.equals(auxUsedProcesses)) {
-            for (String name:keys)
+            for (String name : procedureNames)
                 usedProcesses.put(name,auxUsedProcesses.get(name));
-            for (String name:keys) {
+            for (String name : procedureNames) {
                 HashSet<String> processSet = new HashSet<String>(usedProcesses.get(name));
                 for (String called:calls.get(name))
                     processSet.addAll(usedProcesses.get(called));

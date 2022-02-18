@@ -21,10 +21,10 @@ public class Merging {
     }
 
     private Behaviour merge(Behaviour left, Behaviour right){
-        if (left == Behaviour.BreakBehaviour.instance)
+        /*if (left == Behaviour.BreakBehaviour.instance)
             left = continuation;
         if (right == Behaviour.BreakBehaviour.instance)
-            right = continuation;
+            right = continuation;*/
 
         if (!left.getClass().equals(right.getClass()))
             throw new MergingException("Can't merge " + left + " with " + right);
@@ -38,7 +38,7 @@ public class Merging {
             case Condition c -> merge((Condition) left, (Condition) right);
             case ProcedureInvocation pi -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
             case Behaviour.NoneBehaviour nb -> Behaviour.NoneBehaviour.instance;
-            case Behaviour.BreakBehaviour bb -> Behaviour.BreakBehaviour.instance;
+            case Behaviour.BreakBehaviour bb -> continuation;//Behaviour.BreakBehaviour.instance;
             default -> throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
         };
 

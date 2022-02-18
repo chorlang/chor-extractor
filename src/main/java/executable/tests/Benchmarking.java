@@ -58,8 +58,6 @@ public class Benchmarking {
                 var projectionMap = new HashMap<String, Pair<Program, Network>>();
                 chorMap.forEach((chorID, choreography)->{
                     System.out.printf("Projecting %s from %s%s%n",chorID,CHOREOGRAPHY_PREFIX,fileID);
-                    if (chorID.equals("C7680"))
-                        System.out.println("here");
                     Program program = Parser.stringToProgram(choreography);
                     if (program == null)
                         throw new RuntimeException("Could not parse choreography: \n"+choreography);

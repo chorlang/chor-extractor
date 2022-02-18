@@ -95,8 +95,6 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
         var allUsedProcesses = new HashMap<String, Set<String>>();
         var directlyUsedProcesses = new HashMap<String, Set<String>>();
         choreography.procedures.forEach(procedure -> {
-            if (procedure.name.equals("S"))
-                System.out.println("here");
             var processes = mentionedProcesses(procedure.body);
             directlyUsedProcesses.put(procedure.name, processes);
         });

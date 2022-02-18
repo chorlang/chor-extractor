@@ -31,10 +31,15 @@ public class UsedProcedures implements CNVisitor {
     public void visit(ConditionalNode n) {
         n.getThenAction().accept(this);
         n.getElseAction().accept(this);
+        n.getContinuation().accept(this);
     }
 
     public void visit(CallNode n) {
         calls.add(n.getProcedure());
+    }
+
+    public void visit(ChoreographyNode n){
+        throw new UnsupportedOperationException("While attempting to collect used procedures, encountered a node of type "+n.getClass().getName() + "which is not supported.");
     }
 
     /*

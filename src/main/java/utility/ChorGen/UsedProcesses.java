@@ -37,6 +37,7 @@ public class UsedProcesses implements CNVisitor {
 	n.getPreAction().accept(this);
         n.getThenAction().accept(this);
         n.getElseAction().accept(this);
+        n.getContinuation().accept(this);
     }
 
     public void visit(CallNode n) {}

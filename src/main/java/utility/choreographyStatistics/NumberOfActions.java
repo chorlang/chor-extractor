@@ -11,7 +11,7 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
         switch (hostNode.getType()){
             case CONDITION:{
                 var host = (Condition)hostNode;
-                return host.thenChoreography.accept(this) + host.elseChoreography.accept(this) + 1;
+                return host.thenChoreography.accept(this) + host.elseChoreography.accept(this) + host.continuation.accept(this) + 1;
             }
 
             case COMMUNICATION:
@@ -19,6 +19,7 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
                 var host = (ChoreographyBody.Interaction)hostNode;
                 return host.getContinuation().accept(this) + 1;
 
+            case NONE:
             case TERMINATION:
             case PROCEDURE_INVOCATION:
                 return 1;
@@ -27,7 +28,7 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
             case CHOREOGRAPHY:
             case PROGRAM:
             default:
-                throw new UnsupportedOperationException("Invalid AST or incorrect root node for this function");
+                throw new UnsupportedOperationException("Invalid AST or incorrect root node for this function. Has type: "+hostNode.getType());
         }
     }
 
