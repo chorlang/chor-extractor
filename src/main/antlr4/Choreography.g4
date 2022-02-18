@@ -14,7 +14,8 @@ parameter : process;
 
 main : 'main {' behaviour '}';
 
-behaviour : interaction
+behaviour : communication
+    |   selection
     |   condition
     |   procedureInvocation
     |   introduction
@@ -24,14 +25,13 @@ behaviour : interaction
 
 nothing:;
 
-condition : 'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'continue' continuation=behaviour
+//The top case must be first, or it causes the parser to report an ambiguity for some reason
+condition : 'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour
+        |   'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'continue' continuation=behaviour
         |   'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour 'endif'
-        |   'if' process '.' expression 'then' thenBehaviour=behaviour 'else' elseBehaviour=behaviour
         ;
 
 procedureInvocation: procedure parameters? (';' continuation=behaviour)?;
-
-interaction : communication | selection;
 
 communication: sender=process '.' expression '->' receiver=process ';' continuation=behaviour;
 selection: sender=process '->' receiver=process '[' expression '];' continuation=behaviour;

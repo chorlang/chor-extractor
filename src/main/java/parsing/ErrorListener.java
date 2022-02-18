@@ -38,12 +38,27 @@ class ErrorListener extends BaseErrorListener {
     public void reportAmbiguity(org.antlr.v4.runtime.Parser recognizer, DFA dfa,
                                 int startIndex, int stopIndex, boolean exact, BitSet ambigAlts,
                                 ATNConfigSet configs) throws ParseCancellationException{
-        int line = 0;
-        while (inputLines[line].length() < stopIndex){
-            stopIndex -= inputLines[line].length();
-            line++;
+        int stopLine = 0;
+        while (inputLines[stopLine].length() < stopIndex){
+            stopIndex -= inputLines[stopLine].length();
+            stopLine++;
         }
-        String errorPosition = "Ambiguity at line %d, position %d: %n\t%s%n\t%s^".formatted(line+1, stopIndex, inputLines[line], " ".repeat(stopIndex-1));
+        int startline = 0;
+        while (inputLines[startline].length() < startIndex){
+            startIndex -= inputLines[startline].length();
+            startline++;
+        }
+        String errorPosition;
+        if (stopLine == startline)
+            errorPosition= "Ambiguity at line %d, starting at position %d, ending at %d: %n\t%s%n\t%s^%s".formatted(stopLine+1, startIndex, stopIndex, inputLines[stopLine], " ".repeat(startIndex-1), " ".repeat(stopIndex-startIndex-2));
+        else {
+            errorPosition = "Ambiguity from line %d, position %d to line %d position %d:%n".formatted(startline + 1, startIndex, stopLine+1, stopIndex);
+            errorPosition += "\t%s%n\t%s^%n".formatted(inputLines[startline], " ".repeat(startIndex-1));
+            for (int i = startline+1; i < stopLine; i++){
+                errorPosition += "\t%s%n".formatted(inputLines[i]);
+            }
+            errorPosition += "\t%s%n\t%s^%n".formatted(inputLines[stopLine], " ".repeat(stopIndex-1));
+        }
 
         //I'm assuming here that any ambiguities related to conditionals are due to nested conditionals
         //that has too few continue/endif tokens.

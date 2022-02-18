@@ -9,6 +9,7 @@ import extraction.network.Network;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 public class Parser {
@@ -51,6 +52,7 @@ public class Parser {
         //Add custom error listener, that makes the parser throw an error if it fails for parse the input
         parser.removeErrorListeners();                      //remove default listener
         parser.addErrorListener(new ErrorListener(programDescription));
+        //parser.addErrorListener(new DiagnosticErrorListener());
 
         try{
             //Parse, get the root of the parse tree, then convert it to internal representation.

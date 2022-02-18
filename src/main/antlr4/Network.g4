@@ -30,7 +30,9 @@ behaviour : sending
     |   nothing
     ;
 
-nothing:;
+nothing:
+    |   '»'
+    ;
 
 //Send a message
 sending: process '!<' expression '>;' behaviour;
