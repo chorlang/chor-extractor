@@ -11,9 +11,24 @@ public class Merging {
         }
     }
 
-    static Behaviour merge(Behaviour left, Behaviour right){
+    private final Behaviour continuation;
+    private Merging(Behaviour continuation){
+        this.continuation = continuation;
+    }
+
+    public static Behaviour merge(Behaviour thenBehaviour, Behaviour elseBehaviour, Behaviour continuation){
+        return new Merging(continuation).merge(thenBehaviour, elseBehaviour);
+    }
+
+    private Behaviour merge(Behaviour left, Behaviour right){
+        if (left == Behaviour.BreakBehaviour.instance)
+            left = continuation;
+        if (right == Behaviour.BreakBehaviour.instance)
+            right = continuation;
+
         if (!left.getClass().equals(right.getClass()))
             throw new MergingException("Can't merge " + left + " with " + right);
+
         return switch (left) {
             case Send s -> merge((Send) left, (Send) right);
             case Receive r -> merge((Receive) left, (Receive) right);
@@ -29,28 +44,28 @@ public class Merging {
 
     }
 
-    private static Behaviour merge(Send left, Send right){
+    private Behaviour merge(Send left, Send right){
         if (!left.receiver.equals(right.receiver) || !left.expression.equals(right.expression))
             throw new MergingException("Cant merge "+ left.receiver + " and " + right.receiver);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Send(left.receiver, left.expression, m);
     }
 
-    private static Behaviour merge(Receive left, Receive right){
+    private Behaviour merge(Receive left, Receive right){
         if (!left.sender.equals(right.sender))
             throw new MergingException("Can't merge " + left.sender + " and " + right.sender);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Receive(left.sender, m);
     }
 
-    private static Behaviour merge(Selection left, Selection right){
+    private Behaviour merge(Selection left, Selection right){
         if (!left.receiver.equals(right.receiver) || !left.label.equals(right.label))
             throw new MergingException("Can't merge " + left.receiver+"+"+left.label+" and "+right.receiver+"+"+right.label);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Selection(left.receiver, left.label, m);
     }
 
-    private static Behaviour merge(Offering left, Offering right){
+    private Behaviour merge(Offering left, Offering right){
         if (!left.sender.equals(right.sender))
             throw new MergingException("Can't merge "+left.sender+" and "+right.sender);
 
@@ -80,17 +95,19 @@ public class Merging {
         return new Offering(left.sender, labels);
     }
 
-    private static Behaviour merge(Condition left, Condition right){
+    private Behaviour merge(Condition left, Condition right){
+        if (!left.expression.equals(right.expression))
+            throw new MergingException("Can't merge conditions "+left+" and "+right);
         Behaviour leftCondition = merge(left.thenBehaviour, right.thenBehaviour);
         Behaviour rightCondition = merge(left.elseBehaviour, right.elseBehaviour);
         Behaviour continuation = merge(left.continuation, right.continuation);
 
-        if (!left.expression.equals(right.expression))
-            throw new MergingException("Can't merge conditions "+leftCondition+" and "+rightCondition);
         return new Condition(left.expression, leftCondition, rightCondition, continuation);
     }
 
-    private static Behaviour merge(ProcedureInvocation left, ProcedureInvocation right){
+    private Behaviour merge(ProcedureInvocation left, ProcedureInvocation right){
+        if (left.continuation != Behaviour.NoneBehaviour.instance || right.continuation != Behaviour.NoneBehaviour.instance)
+            throw new UnsupportedOperationException("Merging procedure invocations with continuations has not been implemented yet");
         if (left.procedure.equals(right.procedure) && left.getParameters().equals(right.getParameters()))
             return new ProcedureInvocation(left.procedure, left.getParameters(), merge(left.continuation, right.continuation));
         else

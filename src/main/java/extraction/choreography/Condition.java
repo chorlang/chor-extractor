@@ -23,6 +23,6 @@ public class Condition extends ChoreographyBody {
     @Override
     public String toString() {
         return String.format("if %s.%s then %s else %s%s%s", process, expression, thenChoreography.toString(),
-                elseChoreography.toString(), continuation instanceof NoneBody ? "" : "continue ", continuation.toString());
+                elseChoreography.toString(), continuation instanceof NoneBody ? "" : " continue ", continuation.toString());
     }
 }

@@ -1,9 +1,7 @@
 package utility.choreographyStatistics;
 
-import extraction.choreography.Choreography;
-import extraction.choreography.ChoreographyASTNode;
-import extraction.choreography.ChoreographyBody;
-import extraction.choreography.Condition;
+import extraction.Label;
+import extraction.choreography.*;
 import extraction.network.utils.TreeVisitor;
 
 import java.util.HashMap;
@@ -17,19 +15,46 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
         switch (hostNode.getType()){
             case CONDITION: {
                 Condition host = (Condition) hostNode;
-                Set<String> freeProcesses = host.thenChoreography.accept(this);
-                freeProcesses.addAll(host.elseChoreography.accept(this));
-                freeProcesses.add(host.process);
-                return freeProcesses;
+                Set<String> mentionedProcesses = host.thenChoreography.accept(this);
+                mentionedProcesses.addAll(host.elseChoreography.accept(this));
+                mentionedProcesses.addAll(host.continuation.accept(this));
+                mentionedProcesses.add(host.process);
+                return mentionedProcesses;
+            }
+            case MULTICOM:{
+                Multicom host = (Multicom) hostNode;
+                Set<String> mentionedProcesses = host.getContinuation().accept(this);
+                host.communications.forEach(interaction -> {
+                    mentionedProcesses.add(interaction.sender);
+                    mentionedProcesses.add(interaction.receiver);
+                    if (interaction instanceof Label.IntroductionLabel)
+                        mentionedProcesses.add(interaction.expression);
+                });
+                return mentionedProcesses;
+            }
+            case SPAWN:{
+                Spawn host = (Spawn) hostNode;
+                var mentionedProcesses = host.getContinuation().accept(this);
+                mentionedProcesses.add(host.spawner);
+                //I'm assuming the spawned process should not be included
+                return mentionedProcesses;
+            }
+            case INTRODUCTION:{
+                Introduction host = (Introduction) hostNode;
+                Set<String> mentionedProcesses = host.continuation.accept(this);
+                mentionedProcesses.add(host.process1); mentionedProcesses.add(host.process2);
+                mentionedProcesses.add(host.introducer);
+                return mentionedProcesses;
             }
             case COMMUNICATION:
             case SELECTION: {
                 var host = (ChoreographyBody.Interaction) hostNode;
-                Set<String> freeProcesses = host.getContinuation().accept(this);
-                freeProcesses.add(host.getSender());
-                freeProcesses.add(host.getReceiver());
-                return freeProcesses;
+                Set<String> mentionedProcesses = host.getContinuation().accept(this);
+                mentionedProcesses.add(host.getSender());
+                mentionedProcesses.add(host.getReceiver());
+                return mentionedProcesses;
             }
+            case NONE:
             case TERMINATION:
             case PROCEDURE_INVOCATION:
                 return new HashSet<>();
@@ -38,7 +63,7 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
             case CHOREOGRAPHY:
             case PROGRAM:
             default:
-                throw new UnsupportedOperationException("Invalid choreography AST");
+                throw new UnsupportedOperationException("Unsupported choreography AST node of type "+hostNode.getType());
         }
     }
 
@@ -48,40 +73,44 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
      * @param node The ChoreographyBody to analyse.
      * @return A set of all process names explicitly mentioned.
      */
-    private static Set<String> freeProcessesNames(ChoreographyASTNode node){
+    private static Set<String> mentionedProcesses(ChoreographyASTNode node){
         return node.accept(new UsedProcesses());
     }
 
     /**
      * Goes through the procedures of a choreography, and finds out which processes are used in each procedure.
      * If a procedure invokes another procedure, then the processes in the second procedure is considered to
-     * be in the first procedure as well.
+     * be used in the first procedure as well.
      * @param choreography The choreography whose procedures should be checked.
      * @return A mapping from the name of each procedure, to a set if the names of processes used in that procedure.
      */
     public static Map<String, Set<String>> usedProcesses(Choreography choreography){
         //Find which procedures call other procedures.
         var calls = new HashMap<String, Set<String>>();
-        choreography.procedures.forEach(procedure ->
-                calls.put(procedure.name, UsedProcedures.usedProcedures(procedure.body)));
+        choreography.procedures.forEach(procedure ->{
+            calls.put(procedure.name, UsedProcedures.usedProcedures(procedure.body));
+        });
 
         //Find out which processes are explicitly mentioned in a procedure definition
-        var oldUsedProcesses = new HashMap<String, Set<String>>();
-        var newUsedProcesses = new HashMap<String, Set<String>>();
+        var allUsedProcesses = new HashMap<String, Set<String>>();
+        var directlyUsedProcesses = new HashMap<String, Set<String>>();
         choreography.procedures.forEach(procedure -> {
-            newUsedProcesses.put(procedure.name, freeProcessesNames(procedure.body));
+            if (procedure.name.equals("S"))
+                System.out.println("here");
+            var processes = mentionedProcesses(procedure.body);
+            directlyUsedProcesses.put(procedure.name, processes);
         });
 
         //I think this adds processes used by an invoked procedure, to a procedures list of processes.
-        while (!oldUsedProcesses.equals(newUsedProcesses)){
+        while (!allUsedProcesses.equals(directlyUsedProcesses)){
             choreography.procedures.forEach(procedure ->
-                    oldUsedProcesses.put(procedure.name, newUsedProcesses.get(procedure.name)));
+                    allUsedProcesses.put(procedure.name, new HashSet<>(directlyUsedProcesses.get(procedure.name))));
             choreography.procedures.forEach(procedure ->{
-                calls.get(procedure.name).forEach(call ->{
-                        newUsedProcesses.get(procedure.name).addAll(oldUsedProcesses.get(call));
+                calls.get(procedure.name).forEach(calledProcedure ->{
+                        directlyUsedProcesses.get(procedure.name).addAll(allUsedProcesses.get(calledProcedure));
                 });
             });
         }
-        return oldUsedProcesses;
+        return allUsedProcesses;
     }
 }

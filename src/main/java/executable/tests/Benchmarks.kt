@@ -225,7 +225,7 @@ fun extractionSoundnessC41() {
                         )
                     } )
                 val choreographyProcedures = program.choreographies.map { it!!.procedures.size }.fold( 0, Int::plus )
-                val lengthOfProcedures = program.choreographies.flatMap { LengthOfProcedures().getLength(it!!) }
+                val lengthOfProcedures = program.choreographies.flatMap { LengthOfProcedures.getLength(it!!) }
                 val numberOfActions = program.choreographies.map { NumberOfActions.compute(it!!) }.fold( 0, Int::plus )
 
                 out.println("$id$SEP" +

@@ -1,7 +1,7 @@
 package extraction.choreography;
 
 public class Spawn extends ChoreographyBody{
-    final String spawner, spawned;
+    public final String spawner, spawned;
     final ChoreographyBody continuation;
     public Spawn(String spawner, String spawned, ChoreographyBody continuation){
         this.spawner = spawner;
@@ -13,6 +13,8 @@ public class Spawn extends ChoreographyBody{
     public Type getType() {
         return Type.SPAWN;
     }
+
+    public ChoreographyBody getContinuation() { return continuation; }
 
     @Override
     public String toString() {

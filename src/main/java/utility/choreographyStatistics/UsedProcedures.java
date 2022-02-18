@@ -1,9 +1,6 @@
 package utility.choreographyStatistics;
 
-import extraction.choreography.ChoreographyASTNode;
-import extraction.choreography.ChoreographyBody;
-import extraction.choreography.Condition;
-import extraction.choreography.ProcedureInvocation;
+import extraction.choreography.*;
 import extraction.network.utils.TreeVisitor;
 
 import java.util.HashSet;
@@ -15,16 +12,27 @@ public class UsedProcedures implements TreeVisitor<Set<String>, ChoreographyASTN
         switch (hostNode.getType()){
             case CONDITION: {
                 Condition host = (Condition) hostNode;
-                Set<String> freeProcesses = host.thenChoreography.accept(this);
-                freeProcesses.addAll(host.elseChoreography.accept(this));
-                return freeProcesses;
+                Set<String> mentionedProcedures = host.thenChoreography.accept(this);
+                mentionedProcedures.addAll(host.elseChoreography.accept(this));
+                mentionedProcedures.addAll(host.continuation.accept(this));
+                return mentionedProcedures;
             }
+            case MULTICOM: {
+                Multicom host = (Multicom) hostNode;
+                return host.getContinuation().accept(this);
+            }
+            case SPAWN:{
+                Spawn host = (Spawn) hostNode;
+                return host.getContinuation().accept(this);
+            }
+            case INTRODUCTION:
             case COMMUNICATION:
             case SELECTION: {
                 var host = (ChoreographyBody.Interaction) hostNode;
                 return host.getContinuation().accept(this);
             }
             case TERMINATION:
+            case NONE:
                 return new HashSet<>();
             case PROCEDURE_INVOCATION:
                 return new HashSet<>(){{add(((ProcedureInvocation)hostNode).procedure);}};
@@ -33,7 +41,7 @@ public class UsedProcedures implements TreeVisitor<Set<String>, ChoreographyASTN
             case CHOREOGRAPHY:
             case PROGRAM:
             default:
-                throw new UnsupportedOperationException("Invalid choreography AST");
+                throw new UnsupportedOperationException("Unexpected choreography AST node type "+hostNode.getType());
         }
     }
 

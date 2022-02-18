@@ -34,9 +34,10 @@ public class LengthOfProcedures implements TreeVisitor<Integer, ChoreographyASTN
         }
     }
 
-    public ArrayList<Integer> getLength(Choreography chorRoot){
+    public static ArrayList<Integer> getLength(Choreography chorRoot) {
         var stat = new ArrayList<Integer>();
-        chorRoot.procedures.forEach(procedure -> stat.add(procedure.accept(this)));
+        var lengthCounter = new LengthOfProcedures();
+        chorRoot.procedures.forEach(procedure -> stat.add(procedure.accept(lengthCounter)));
         return stat;
     }
 }

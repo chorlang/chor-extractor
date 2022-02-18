@@ -1,5 +1,8 @@
-package endpointprojection;
+package executable.tests;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+import endpointprojection.EndPointProjection;
+import extraction.Extraction;
 import extraction.Strategy;
 import extraction.choreography.Choreography;
 import extraction.choreography.Program;
@@ -7,6 +10,8 @@ import extraction.network.Network;
 import parsing.Parser;
 import utility.Pair;
 import utility.choreographyStatistics.ChoreographyStatistics;
+import utility.choreographyStatistics.LengthOfProcedures;
+import utility.choreographyStatistics.NumberOfActions;
 import utility.networkStatistics.NetworkStatistics;
 
 import java.io.*;
@@ -34,6 +39,9 @@ public class Benchmarking {
     private static final String PROJECTION_STATISTICS_HEADER =
             Stream.of("testId","numberOfActions","numberOfProcesses","numberOfProcedures","numberOfConditionals", "minLengthOfProcesses","maxLengthOfProcesses","avgLengthOfProcesses", "minNumberOfProceduresInProcesses","maxNumberOfProceduresInProcesses","avgNumberOfProceduresInProcesses", "minNumberOfConditionalsInProcesses","maxNumberOfConditionalsInProcesses","avgNumberOfConditionalsInProcesses","numberOfProcessesWithConditionals", "minProcedureLengthInProcesses","maxProcedureLengthInProcesses","avgProcedureLengthInProcesses").
                     reduce((lstring, rstring)->lstring+SEPARATOR+rstring).get();
+    private static final String EXtrACTION_STATISTICS_HEADER =
+            Stream.of("testId","strategy","time(msec)","nodes","badLoops","mainLength","numOfProcedures","minProcedureLength","maxProcedureLength","avgProcedureLength")
+                    .reduce((lstring,rstring)->lstring+SEPARATOR+rstring).get();
 
     /**
      * Find all choreography files in the test directory,
@@ -50,6 +58,8 @@ public class Benchmarking {
                 var projectionMap = new HashMap<String, Pair<Program, Network>>();
                 chorMap.forEach((chorID, choreography)->{
                     System.out.printf("Projecting %s from %s%s%n",chorID,CHOREOGRAPHY_PREFIX,fileID);
+                    if (chorID.equals("C7680"))
+                        System.out.println("here");
                     Program program = Parser.stringToProgram(choreography);
                     if (program == null)
                         throw new RuntimeException("Could not parse choreography: \n"+choreography);
@@ -183,8 +193,79 @@ public class Benchmarking {
         //Get a map from filenames to a map of network names to network string definitions
         var networkFiles = readNetworkFiles(TEST_DIR);
 
-        //TODO: Do the rest
+        networkFiles.forEach((fileID, networkMap)->{
+            if (Files.notExists(Paths.get(OUTPUT_DIR+EXTRACTION_PREFIX+strategy.name()+"-"+fileID))){
+                var extractionMap = new HashMap<String, Pair<Program, Long>>();
+                networkMap.forEach((networkID, network) ->{
+                    System.out.printf("Extracting %s from %s%s with strategy %s%n",networkID,PROJECTION_PREFIX,fileID,strategy.name());
+                    Long start = System.currentTimeMillis();
+                    var result = Extraction.newExtractor()
+                            .setStrategy(strategy).extract(network);
+                    Long executionTime = System.currentTimeMillis() - start;
 
+                    if (result == null)
+                        throw new RuntimeException("Error extracting the network "+network);
+                    else if (result.program.choreographies.contains(null))
+                        System.err.printf("There is an unextractable network in %s from %s%s with strategy %s%n",networkID,PROJECTION_PREFIX,fileID,strategy.name());
+                    extractionMap.put(networkID, new Pair<>(result.program, executionTime));
+                });
+                writeExtractionsToFile(extractionMap, "%s%s-%s".formatted(EXTRACTION_PREFIX,strategy.name(),fileID),strategy.name());
+                writeExtractionStatisticsToFile(extractionMap, "%s%s-%s".formatted(EXTRACTION_STATISTICS_PREFIX,strategy.name(),fileID), strategy.name());
+            }
+        });
+    }
+
+    private static void writeExtractionsToFile(Map<String, Pair<Program, Long>> extractionMap, String filename, String strategyname){
+        try (PrintWriter writer = new PrintWriter(OUTPUT_DIR+filename)){
+            writer.println("testID"+SEPARATOR+"strategy"+SEPARATOR+"choreography");
+            extractionMap.forEach((id, pair)->
+                    writer.printf("%s%s%s%s%s%n",id,SEPARATOR,strategyname,SEPARATOR,pair.first));
+        }catch (FileNotFoundException e){
+            System.err.println("Unable to open or create file "+OUTPUT_DIR+filename);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void writeExtractionStatisticsToFile(Map<String, Pair<Program, Long>> extractionMap, String filename, String strategyname){
+        try (PrintWriter writer = new PrintWriter(OUTPUT_DIR+filename)){
+            writer.println(EXtrACTION_STATISTICS_HEADER);
+            extractionMap.forEach((id, pair)-> {
+                Program program = pair.first;
+                //Sum nodecounts and baddloopcounts across all choreographies
+                var statistics = program.statistics.stream()
+                        .reduce(new Program.GraphData(0,0),
+                                (left,right) -> new Program.GraphData(
+                                        left.nodeCount+ right.nodeCount,
+                                        left.badLoopCount+right.badLoopCount));
+                //The total number of procedures across all choreographies
+                int numOfProcedures = program.choreographies.stream()
+                        .map(chor -> chor.procedures.size())
+                        .reduce(0, Integer::sum);
+                //A list of procedure lengths for procedures in all choreographies.
+                List<Integer> lengthOfProcedures = program.choreographies.stream()
+                        .map(LengthOfProcedures::getLength)
+                        .reduce(new ArrayList<>(), (left,right)->{left.addAll(right);return left;});
+                //The total number of actions across all choreographies
+                int numberOfActions = program.choreographies.stream()
+                        .map(NumberOfActions::compute).reduce(0,Integer::sum);
+                writer.printf("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%n",
+                        id,SEPARATOR,
+                        strategyname,SEPARATOR,
+                        pair.second,SEPARATOR,
+                        statistics.nodeCount,SEPARATOR,
+                        statistics.badLoopCount,SEPARATOR,
+                        numberOfActions,SEPARATOR,
+                        numOfProcedures,SEPARATOR,
+                        Collections.min(lengthOfProcedures),SEPARATOR,
+                        Collections.max(lengthOfProcedures),SEPARATOR,
+                        lengthOfProcedures.isEmpty() ? 0 :
+                                lengthOfProcedures.stream().reduce(0,Integer::sum) / lengthOfProcedures.size());
+
+            });
+        }catch (FileNotFoundException e){
+            System.err.println("Unable to open or create file "+OUTPUT_DIR+filename);
+            throw new RuntimeException(e);
+        }
     }
 
     /**
