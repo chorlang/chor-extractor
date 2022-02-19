@@ -92,7 +92,7 @@ public class Merging {
                 labels.put(rightKey, rightBranches.get(rightKey));
         }
 
-        return new Offering(left.sender, labels);
+        return new Offering(left.sender, labels, continuation);
     }
 
     private Behaviour merge(Condition left, Condition right){

@@ -105,7 +105,7 @@ public abstract class Behaviour extends NetworkASTNode {
 
         @Override
         Behaviour realValues(HashMap<String, String> substitutions) {
-            throw new IllegalCallerException("This is a stand-in Behaviour object, and is supposed to be replaced before usage.");
+            throw new IllegalCallerException("This is a stand-in Behaviour object, and is supposed to be handled as a special case. Never as a regular behaviour");
         }
 
         @Override
@@ -121,7 +121,7 @@ public abstract class Behaviour extends NetworkASTNode {
         @Override
         boolean compareData(Behaviour other){
             throw new UnsupportedOperationException("Internal error: Called compareData() on a BreakBehaviour, " +
-                    "which is a stand-in Behaviour meant to be replaced before being used.");
+                    "which is a stand-in Behaviour meant as a special case");
         }
 
         @Override

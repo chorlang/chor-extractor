@@ -52,7 +52,6 @@ public class Parser {
         //Add custom error listener, that makes the parser throw an error if it fails for parse the input
         parser.removeErrorListeners();                      //remove default listener
         parser.addErrorListener(new ErrorListener(programDescription));
-        //parser.addErrorListener(new DiagnosticErrorListener());
 
         try{
             //Parse, get the root of the parse tree, then convert it to internal representation.

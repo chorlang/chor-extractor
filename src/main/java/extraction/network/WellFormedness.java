@@ -210,7 +210,7 @@ public class WellFormedness{
             return WONT;
         }
         /**
-         * Checks if the continue status of the branch(es) and the continuation are compatible.
+         * Checks if the continue-status of the branch(es) and the continuation are compatible.
          * This is used with behaviours that branch (Conditionals, ProcedureInvocations, Offerings)
          * with an optional continuation.
          * Throws IllegalStateException if the branch(es) cannot have a continuation, but there is one.
@@ -259,7 +259,7 @@ public class WellFormedness{
                 var checker = new ReachableCodeChecker(process.procedures);
                 //Check if there are any unsatisfied continuations
                 if (checker.Visit(process.rawMain()) == MUST){
-                    throw new IncompleteBehaviourException("A branch in process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.".formatted(entry.getKey()));
+                    throw new IncompleteBehaviourException("A branch in process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.%nThe problematic process is defined as %s%n".formatted(entry.getKey(), entry.getValue()));
                 }
             }
         }
