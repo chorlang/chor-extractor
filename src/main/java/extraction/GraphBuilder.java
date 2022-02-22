@@ -22,7 +22,7 @@ public class GraphBuilder {
         this.services = services;
     }
 
-    public static record SEGContainer (DirectedPseudograph<Node, Label> graph, ConcreteNode rootNode,
+    public record SEGContainer (DirectedPseudograph<Node, Label> graph, ConcreteNode rootNode,
                                        BuildGraphResult buildGraphResult, int badLoopCounter) {}
 
     /**
@@ -439,7 +439,7 @@ public class GraphBuilder {
      * Calculates a hashcode of a network's process terms along with that process' marking.
      * If there are multiple identical terms, only one is used for the hash. The rest are skipped.
      */
-    private Integer hashMarkedNetwork(Network n, HashMap<String, Boolean> marking){
+    private static Integer hashMarkedNetwork(Network n, HashMap<String, Boolean> marking){
         var unique = new HashSet<ProcessTerm>(n.processes.size());
         final int[] hash = {0};     //lambdas do not allow direct modifications of ints.
         n.processes.forEach((key, term) -> {

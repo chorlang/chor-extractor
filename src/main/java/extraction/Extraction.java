@@ -5,7 +5,7 @@ import extraction.choreography.Program;
 import extraction.network.Network;
 import extraction.network.utils.NetworkPurger;
 import extraction.network.utils.Splitter;
-import extraction.network.WellFormedness;
+import extraction.network.NetAnalyser;
 import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DirectedPseudograph;
@@ -94,7 +94,7 @@ public class Extraction {
     public ExtractionResult extract(@NotNull Network network, @NotNull Set<String> services){
         if (purge)
             NetworkPurger.purgeNetwork(network);
-        if (!WellFormedness.isWellFormed(network)){
+        if (!NetAnalyser.isSafe(network)){
             System.err.println("Network is not well formed. Aborting extraction.");
             return null;
         }
@@ -122,7 +122,7 @@ public class Extraction {
                      DirectedPseudograph<Node,Label> unrolled, int badLoops,
                      BuildGraphResult result, Node rootNode){}
 
-    public static record Data(DirectedPseudograph<Node,Label> symbolicExecutionGraph,
+    public record Data(DirectedPseudograph<Node,Label> symbolicExecutionGraph,
                               DirectedPseudograph<Node,Label> unrolledGraph,
                               int badLoopCount, int nodeCount,
                               BuildGraphResult result, Node rootNode){}
@@ -205,7 +205,7 @@ public class Extraction {
         Network network = Parser.stringToNetwork(networkDescription);
         NetworkPurger.purgeNetwork(network);
 
-        if (!WellFormedness.isWellFormed(network)){
+        if (!NetAnalyser.isSafe(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }
@@ -243,7 +243,7 @@ public class Extraction {
         Network network = Parser.stringToNetwork(networkDescription);
         NetworkPurger.purgeNetwork(network);
 
-        if (!WellFormedness.isWellFormed(network)){
+        if (!NetAnalyser.isSafe(network)){
             System.out.println("Network is not well-formed, and can therefore not be extracted");
             return new Program(List.of(), List.of());
         }

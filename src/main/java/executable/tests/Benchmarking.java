@@ -73,9 +73,8 @@ public class Benchmarking {
     private static void writeNetworksProjectionsToFile(Map<String, Pair<Program, Network>> projectionMap, String filename){
         try (PrintWriter writer = new PrintWriter(OUTPUT_DIR+filename)){
             writer.println("testID"+SEPARATOR+"network");
-            projectionMap.forEach((chorID, pair)->{
-                writer.printf("%s%s%s%n", chorID, SEPARATOR, pair.second);
-            });
+            projectionMap.forEach((chorID, pair) ->
+                    writer.printf("%s%s%s%n", chorID, SEPARATOR, pair.second));
         }catch (FileNotFoundException e){
             System.err.println("Unable to open or create file "+OUTPUT_DIR+filename);
             throw new RuntimeException(e);
@@ -196,10 +195,10 @@ public class Benchmarking {
                 var extractionMap = new HashMap<String, Pair<Program, Long>>();
                 networkMap.forEach((networkID, network) ->{
                     System.out.printf("Extracting %s from %s%s with strategy %s%n",networkID,PROJECTION_PREFIX,fileID,strategy.name());
-                    Long start = System.currentTimeMillis();
+                    long start = System.currentTimeMillis();
                     var result = Extraction.newExtractor()
                             .setStrategy(strategy).extract(network);
-                    Long executionTime = System.currentTimeMillis() - start;
+                    long executionTime = System.currentTimeMillis() - start;
 
                     if (result == null)
                         throw new RuntimeException("Error extracting the network "+network);
@@ -254,8 +253,8 @@ public class Benchmarking {
                         statistics.badLoopCount,SEPARATOR,
                         numberOfActions,SEPARATOR,
                         numOfProcedures,SEPARATOR,
-                        Collections.min(lengthOfProcedures),SEPARATOR,
-                        Collections.max(lengthOfProcedures),SEPARATOR,
+                        lengthOfProcedures.isEmpty() ? 0 : Collections.min(lengthOfProcedures),SEPARATOR,
+                        lengthOfProcedures.isEmpty() ? 0 : Collections.max(lengthOfProcedures),SEPARATOR,
                         lengthOfProcedures.isEmpty() ? 0 :
                                 lengthOfProcedures.stream().reduce(0,Integer::sum) / lengthOfProcedures.size());
 
@@ -311,6 +310,7 @@ public class Benchmarking {
         }
         //Remove the tsv header
         networks.remove("testID");
+        networks.remove("testId");
         return networks;
     }
 

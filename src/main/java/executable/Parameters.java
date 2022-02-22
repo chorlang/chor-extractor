@@ -5,6 +5,8 @@ import extraction.Strategy;
 import java.util.ArrayList;
 import java.util.List;
 
+//Docs at http://jcommander.org/
+
 public class Parameters {
     @Parameter(names = {"-i", "--input", "--input-file"}, description = "Specify a file containing the input network. If not set, input will be read from stdin", order = 0)
     public String inputFile = null;

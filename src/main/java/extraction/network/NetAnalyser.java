@@ -6,25 +6,31 @@ import extraction.network.utils.TreeVisitor;
 import javax.naming.OperationNotSupportedException;
 import java.util.*;
 
-import static extraction.network.WellFormedness.ContinueStatus.*;
+import static extraction.network.NetAnalyser.ContinueStatus.*;
 
-public class WellFormedness{
+/**
+ * Analyses network structures recursively to check for certain conditions,
+ * such as self-communication and unreachable code.
+ */
+public class NetAnalyser {
     /**
-     * Returns true if the Network is both well-formed and guarded.
-     * Well-formed means a process does not communicate with itself, or a process not in the network,
-     * and that no process invokes a procedure that is not defined for that process.
-     * Guarded means all loops (of procedures) perform useful work, e.i. contains a term other than ProcedureInvocation.
+     * Returns true if the Network is safe to use in extraction. This includes;<br>
+     *  - Well-formedness: No processes communicates with itself, or a process not in the network.
+     *  Furthermore, a processes only invokes procedures defined for that process, and only using
+     *  parameters defined at the time of invocation.<br>
+     *  - Guarded: All recursive procedures perform useful work, i.e. contains a term other than ProcedureInvocation.<br>
+     *  - Reachable: All behaviour terms are reachable. Conditionals, offerings, and procedure invocations can
+     *  have a "continuation" behaviour which is effectively appended to the end of any non-terminating branch
+     *  of execution. This checks that the continuation is used for at least one of those branches. It also
+     *  checks that any branch that needs a continuation has one.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isWellFormed(Network network){
+    public static boolean isSafe(Network network){
+        if (!isWellFormed(network))
+            return false;
         for (var process : network.processes.entrySet()){
             String name = process.getKey();
             ProcessTerm term = process.getValue();
-            var processes = new HashSet<>(network.processes.keySet());
-            if (!new WellFormedChecker(processes, term, name).Visit(term.rawMain())) {
-                System.err.println("The following process is not well-formed: " + name + " " + term);
-                return false;
-            }
             for (var procedure : term.procedures.entrySet()) {
                 if (!isGuarded(Set.of(procedure.getKey()), procedure.getValue(), term.procedures)){
                     System.err.println("The procedure " + procedure.getKey() + " in process " + name + " is not well guarded.");
@@ -54,7 +60,7 @@ public class WellFormedness{
      * @param procedures A list of procedures in the extraction.network, so this function can recursively check the guardedness.
      * @return true if the procedure do meaningful work. false if it only calls procedures in a loop.
      */
-    private static Boolean isGuarded(Set<String> procedureNames, Behaviour behaviour, Map<String, Behaviour> procedures){
+    private static boolean isGuarded(Set<String> procedureNames, Behaviour behaviour, Map<String, Behaviour> procedures){
         if (!(behaviour instanceof ProcedureInvocation invocation))
             return true;
         var newProcedureNames = new HashSet<>(procedureNames);
@@ -62,12 +68,50 @@ public class WellFormedness{
         return !procedureNames.contains(invocation.procedure) && isGuarded(newProcedureNames, procedures.get(invocation.procedure), procedures);
     }
 
+    private static boolean isWellFormed(Network network){
+        var processNames = new HashSet<>(network.processes.keySet());
+        String processName = null;
+        ProcessTerm term = null;
+        try {
+            for (var entry : network.processes.entrySet()) {
+                processName = entry.getKey();
+                term = entry.getValue();
+                new WellFormedChecker(processNames, term, processName).Visit(term.rawMain());
+            }
+        } catch (UndefinedProcedureException | SelfCommunicationException | NoSuchProcessException e){
+            System.err.printf("Process %s is not well formed. The well-formedness check resulted in the following error: %s%nThe process is defined as %s%n",
+                    processName, e.getMessage(), term);
+        }
+        return true;
+    }
+
+    /**
+     * Thrown to indicate a process in a Network tries to invoke a procedure that is not defined for that process.
+     */
+    private static class UndefinedProcedureException extends RuntimeException{
+        UndefinedProcedureException(String message) { super(message); }
+    }
+    /**
+     * Thrown to indicate a process in a Network tries to perform an interaction with itself.
+     */
+    private static class SelfCommunicationException extends RuntimeException{
+        SelfCommunicationException(String message) { super(message); }
+        SelfCommunicationException(Behaviour term) {
+            this("Term "+term+" is a self-communication.");
+        }
+    }
+    /**
+     * Thrown to indicate a process in a Network tries to communicate with a process that is not defined for that Network.
+     */
+    private static class NoSuchProcessException extends RuntimeException{
+        NoSuchProcessException(String message) { super(message); }
+    }
 
     /**
      * Class used to traverse a Behaviour tree to check for self communications, communications outside the network,
-     * and
+     * and that all invoked procedures are defined.
      */
-    private static class WellFormedChecker implements TreeVisitor<Boolean, NetworkASTNode> {
+    private static class WellFormedChecker implements TreeVisitor<Void, NetworkASTNode> {
         private final SnitchSet otherProcesses;   //Known process names
         private final HashSet<String> checkedProcedures;//Procedure definitions that have already been checked
         private final ProcessTerm checkTerm;              //The term of the process currently being checked
@@ -114,63 +158,85 @@ public class WellFormedness{
          * Child processes are checked, with the information inherited form its parent.
          */
         @Override
-        public Boolean Visit(NetworkASTNode hostNode){
+        public Void Visit(NetworkASTNode hostNode){
+            if (!(hostNode instanceof Behaviour))
+                throw new IllegalStateException("Attempted to perform well-formedness check on a Network AST node which is not a Behaviour. This suggest either incorrect usage, or a degenerate Network tree.");
             switch (hostNode){
                 case ProcedureInvocation procedureInvocation:
                     String procedure = procedureInvocation.procedure;
-                    if (!checkTerm.procedures.containsKey(procedure))
-                        return false;   //Procedure does not exist
-                    if (!otherProcesses.containsAll(procedureInvocation.parameters))
-                        return false;   //If the parameter values are unknown: fail.
-                    if (checkedProcedures.contains(procedure))
-                        return true;    //If it has already been checked in this branch.
-                    else {
+                    if (!checkTerm.procedures.containsKey(procedure))   //Procedure does not exist
+                        throw new UndefinedProcedureException("Attempted to invoke procedure \""+procedure+"\" which is not defined for this process.");
+                    if (!otherProcesses.containsAll(procedureInvocation.parameters)){   //Parameters are not defined
+                        var unknown = new HashSet<String>();
+                        procedureInvocation.parameters.stream().filter(otherProcesses::contains).forEach(unknown::add);
+                        throw new UndefinedProcedureException("Attempted to invoke \"%s(%s)\", but parameters %s are either not processes in the network, or variables undefined by the process at the time of invocation.".formatted(procedure,
+                                procedureInvocation.parameters.toString().replace('[', '(').replace(']', ')'),
+                                unknown.toString().replace('[', '{').replace(']', '}')));
+                    }
+                    if (!checkedProcedures.contains(procedure)) {
                         //This procedure will now be checked, so add it to the set of checked procedures
                         checkedProcedures.add(procedure);
                         //Add the parameters to list of known other processes.
                         otherProcesses.addAll(checkTerm.parameters.get(procedure));
-                        return checkTerm.procedures.get(procedure).accept(this)
-                                && procedureInvocation.continuation.accept(this);
+                        checkTerm.procedures.get(procedure).accept(this);
+                        procedureInvocation.continuation.accept(this);
                     }
+                    return null;    //Process have been checked
                 case Termination t:
-                    return true;
+                    return null;
                 case BreakBehaviour b:
-                    return true;
+                    return null;
                 case Introduce introducer:
-                    return !checkName.equals(introducer.leftReceiver) && !checkName.equals(introducer.rightReceiver) &&
-                            otherProcesses.contains(introducer.leftReceiver) && otherProcesses.contains(introducer.rightReceiver)
-                            && introducer.continuation.accept(this);
+                    if (checkName.equals(introducer.leftReceiver) || checkName.equals(introducer.rightReceiver)) //Check for self communications
+                        throw new SelfCommunicationException(introducer);
+                    if (!otherProcesses.contains(introducer.leftReceiver) || !otherProcesses.contains(introducer.rightReceiver))   //Check that the processes it introduces are defined
+                        throw new NoSuchProcessException("Process(es)"+
+                                (!otherProcesses.contains(introducer.leftReceiver) ? " "+introducer.leftReceiver : "")+
+                                (!otherProcesses.contains(introducer.rightReceiver) ? " "+introducer.rightReceiver : "")+
+                                " are not in the network, or are undefined variables when invoking "+introducer+".");
+                    return introducer.continuation.accept(this);
                 case Sender sender:
-                    return !checkName.equals(sender.receiver) && otherProcesses.contains(sender.receiver) && sender.continuation.accept(this);
+                    if (checkName.equals(sender.receiver))
+                        throw new SelfCommunicationException(sender);
+                    if (!otherProcesses.contains(sender.receiver))
+                        throw new NoSuchProcessException("Process "+sender.receiver+" is not in the network, or are an undefined variable when executing term "+sender);
+                    return sender.continuation.accept(this);
                 case Offering offer:
-                    if (checkName.equals(offer.sender) || !otherProcesses.contains(offer.sender))
-                        return false;
+                    if (checkName.equals(offer.sender))
+                        throw new SelfCommunicationException(offer);
+                    if (!otherProcesses.contains(offer.sender))
+                        throw new NoSuchProcessException("Process "+offer.sender+" is not in the network, or are an undefined variable when executing term "+offer);
                     for (Behaviour procedureBehaviour : offer.branches.values())
-                        if (!procedureBehaviour.accept(this))
-                            return false;
+                        procedureBehaviour.accept(this);
                     return offer.continuation.accept(this);
                 case Receiver receiver:
                     if (receiver instanceof Introductee introductee){
                         //Check it's not self communication, in case it introduces itself to itself. The SnitchSet could get fooled otherwise
                         if (checkName.equals(introductee.sender))
-                            return false;
+                            throw new SelfCommunicationException(introductee);
                         otherProcesses.add(introductee.processID);  //Introduced process is now known
                     }
-                    return !checkName.equals(receiver.sender) && otherProcesses.contains(receiver.sender) && receiver.continuation.accept(this);
+                    if (checkName.equals(receiver.sender))
+                        throw new SelfCommunicationException(receiver);
+                    if (!otherProcesses.contains(receiver.sender))
+                        throw new NoSuchProcessException("Process "+receiver.sender+" is not in the network, or are an undefined variable when executing term "+receiver);
+                    return receiver.continuation.accept(this);
                 case Spawn spawner:
                     otherProcesses.add(spawner.variable);
-                    return this.copy(spawner.variable).Visit(spawner.processBehaviour) && spawner.continuation.accept(this);
-
+                    copy(spawner.variable).Visit(spawner.processBehaviour); //Check for spawned process
+                    return spawner.continuation.accept(this);
                 case Condition conditional:
+                    //Check both branches individually, using separate data
                     WellFormedChecker thenBranch = copy();
                     WellFormedChecker elseBranch = copy();
-                            //Check both branches individually, using separate data
-                    return thenBranch.Visit(conditional.thenBehaviour) && elseBranch.Visit(conditional.elseBehaviour)
-                            //Check the continuation, using the data from both branches.
-                            && thenBranch.Visit(conditional.continuation) && elseBranch.Visit(conditional.continuation);
-
+                    thenBranch.Visit(conditional.thenBehaviour);
+                    elseBranch.Visit(conditional.elseBehaviour);
+                    //Check the continuation, using the data from both branches.
+                    thenBranch.Visit(conditional.continuation);
+                    elseBranch.Visit(conditional.continuation);
+                    return null;
                 default:
-                    throw new RuntimeException(new OperationNotSupportedException("While checking for well-formedness in the extraction.network AST, an object of type " + hostNode.getClass().getName() + " was visited which suggest a degenerate tree."));
+                    throw new RuntimeException(new OperationNotSupportedException("Unexpected Behaviour encountered while checking for well-formedness. The Behaviour is of the type " + hostNode.getClass().getName()));
             }
         }
     }
@@ -266,8 +332,6 @@ public class WellFormedness{
 
 
         /**
-         * Only for internal use. use checkReachability() instead.
-         * <br><br>
          * Explores a Behaviour tree to check for unreachable code, and finding branching behaviours that expect
          * a continuation from their ancestor branching behaviour where there is none.
          * @param hostNode The next node to check
@@ -275,6 +339,8 @@ public class WellFormedness{
          */
         @Override
         public ContinueStatus Visit(NetworkASTNode hostNode) throws UnreachableBehaviourException{
+            if (!(hostNode instanceof Behaviour))
+                throw new IllegalStateException("Attempted to  check for code reachability on a Network AST node which is not a Behaviour. This suggest either incorrect usage, or a degenerate Network tree.");
             switch (hostNode){
                 case NoneBehaviour n: return CAN;
                 case BreakBehaviour bb: return MUST;
@@ -314,7 +380,7 @@ public class WellFormedness{
                 case Behaviour b:
                     return b.continuation.accept(this);
                 default:
-                    throw new IllegalStateException("Unexpected node type when checking code-completeness: " + hostNode + ". Not a Behaviour");
+                    throw new IllegalStateException("Unexpected node type when checking code-completeness: " + hostNode + "");
             }
 
 
