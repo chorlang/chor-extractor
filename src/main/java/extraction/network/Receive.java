@@ -8,7 +8,7 @@ import java.util.HashMap;
  * Note that the "process" variable from the kotlin implementation is "sender"
  */
 public class Receive extends Behaviour.Receiver {
-    private int hash;
+    private final int hash;
     /**
      * Constructs a Behavior for receiving messages
      * @param sender Name of the process to receive from
@@ -40,7 +40,7 @@ public class Receive extends Behaviour.Receiver {
 
     @Override
     boolean compareData(Behaviour other){
-        return other instanceof Receive rec && sender.equals(((Receive) other).sender);
+        return other instanceof Receive rec && sender.equals(rec.sender);
     }
 
     @Override

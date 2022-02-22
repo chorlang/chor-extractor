@@ -10,6 +10,7 @@ public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
     final HashMap<String, List<String>> parameters;         //Map from procedure names to their parameter variable names
                                                             //Is assumed to be readonly when extracting.
+    private HashMap<String, Boolean> procedureContinues = new HashMap<>();//Map from procedure names, to whether they return to a continuation or not.
     private final int proceduresHash;
     /**
      * The current main Behaviour of this process, with variable names.
@@ -35,7 +36,7 @@ public class ProcessTerm extends NetworkASTNode {
     }
     ValueMap substitutions = new ValueMap();
     private static class ContinuationStack{
-        private static record Continuation(Behaviour behaviour, int depth){}
+        private record Continuation(Behaviour behaviour, int depth){}
         private final LinkedList<Continuation> stack;
         private int accumulatedHash = 0;
         public ContinuationStack(){
@@ -109,10 +110,12 @@ public class ProcessTerm extends NetworkASTNode {
      * @param main The main Behaviour for this procedure
      */
     public ProcessTerm(HashMap<String, Behaviour> procedures, Behaviour main){
-        this(procedures, new HashMap<>(), main);
+        this(procedures, new HashMap<>(){{procedures.keySet().forEach(key->put(key, List.of()));}}, main);
     }
     public ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, Behaviour main){
         super(Action.PROCESS_TERM);
+        if(!procedures.keySet().equals(parameters.keySet()))
+            throw new IllegalArgumentException("Could not instantiate ProcessTerm, because the provided procedures and procedure parameters does not match.");
         this.procedures = procedures;
         this.parameters = parameters;
         this.main = main;
@@ -120,13 +123,14 @@ public class ProcessTerm extends NetworkASTNode {
         currentDepth = depth(main);
     }
     //Instantiate a new object with the same fields, but where substitutions is a copy. (Its entries are copy-by-reference)
-    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, Behaviour main){
+    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String,List<String>> parameters, HashMap<String, Boolean> procedureContinues, ValueMap substitutions, Behaviour main){
         this(procedures, parameters, main);
         this.substitutions = new ValueMap(substitutions);
+        this.procedureContinues = procedureContinues;   //Cache can safely be shared across copies.
     }
     //Instantiate a new object with the same fields, but where substitutions and continuationStack is a copy. (Their entries are copy-by-reference)
-    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, ValueMap substitutions, ContinuationStack stack, Behaviour main){
-        this(procedures, parameters, substitutions, main);
+    private ProcessTerm(HashMap<String, Behaviour> procedures, HashMap<String, List<String>> parameters, HashMap<String, Boolean> procedureContinues,ValueMap substitutions, ContinuationStack stack, Behaviour main){
+        this(procedures, parameters, procedureContinues, substitutions, main);
         this.continuationStack = new ContinuationStack(stack);
     }
 
@@ -149,7 +153,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return The created ProcessTerm
      */
     ProcessTerm spawnNew(Behaviour mainBehaviour){
-        return new ProcessTerm(procedures, parameters, new ValueMap(substitutions), mainBehaviour);
+        return new ProcessTerm(procedures, parameters, procedureContinues, new ValueMap(substitutions), mainBehaviour);
     }
 
     /**
@@ -289,7 +293,7 @@ public class ProcessTerm extends NetworkASTNode {
         builder.append("{");
         procedures.forEach((key, value) ->
                 builder.append(String.format("def %s%s{%s} ", key, parametersToString(parameters.get(key)), value)));
-        builder.append(String.format("main {%s%s}}", main, continuationStack));
+        builder.append(String.format("main {%s %s}}", main, continuationStack));
 
         return builder.toString();
     }
@@ -307,7 +311,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        return new ProcessTerm(procedures, parameters, substitutions, continuationStack, main);
+        return new ProcessTerm(procedures, parameters, procedureContinues,substitutions, continuationStack, main);
     }
 
     /**
@@ -350,10 +354,10 @@ public class ProcessTerm extends NetworkASTNode {
     private boolean compareBehaviours(Behaviour A, ContinuationStack AS,
                                       Behaviour B, ContinuationStack BS){
         if (A instanceof BreakBehaviour)
-            A = AS.pop().continuation;
+            A = AS.pop();
         if (B instanceof BreakBehaviour)
-            B = BS.pop().continuation;
-        if (!A.compareData(B))
+            B = BS.pop();
+        if (!A.compareData(B))  //Returns true if the behaviours are of the same type and their fields are equal
             return false;
         switch (A){
             case Condition CA:{
@@ -373,14 +377,11 @@ public class ProcessTerm extends NetworkASTNode {
                 //Add the Offerings continuations to the stacks
                 AS.push(OA.continuation);
                 BS.push(OB.continuation);
-                //Return true only if the following lambda function returns true for all branches
-                return OA.branches.entrySet().stream().allMatch(entry ->{
-                    //Ensure both offerings have a behaviour with the same label
-                    String label = entry.getKey();
+                //Return true if all labeled Behaviours are equal
+                return OA.branches.keySet().stream().allMatch(label ->{
+                    //compareData() ensures both offerings have the same labels
                     Behaviour BBranch = OB.branches.get(label);
-                    if (BBranch == null)
-                        return false;
-                    Behaviour ABranch = entry.getValue();
+                    Behaviour ABranch = OA.branches.get(label);
 
                     //Copy the stacks
                     var ASBranch = new ContinuationStack(AS);
@@ -390,23 +391,52 @@ public class ProcessTerm extends NetworkASTNode {
                     return compareBehaviours(ABranch, ASBranch, BBranch, BSBranch);
                 });
             }
-            /* About spawning:
-             * The call to compareData checks the child behaviours are equivalent using equals().
-             * This is technically not correct, as they could be equivalent, but using continuations
-             * differently. If you decide to change that, remember to change compareData()
-             * in Spawn.java as well.*/
             case ProcedureInvocation pi:{
-                //Do not check the continuation
-                return true;
+                if (endsInBreakBehaviour(pi))   //Check if the invoked procedure uses a continuation.
+                    return compareBehaviours(pi.continuation, AS, B.continuation, BS);
+                else
+                    return true;//compareData() already checked they invoke the same procedure
             }
             case Termination t:{
-                //Do not check the continuation
                 return true;
             }
-            default:{
+            case Interaction inter:{
                 //Check the next behaviour
                 return compareBehaviours(A.continuation, AS, B.continuation, BS);
             }
+            default:
+                throw new IllegalStateException("Unexpected type when comparing Behaviours. The unexpected type is "+A.getClass().getName());
+        }
+    }
+
+    /**
+     * Returns true if the provided Behaviour needs a continuation to return to,
+     * or returns false if the provided Behaviour will never make use of a continuation
+     * not defined within the Behaviours subtree.
+     */
+    private boolean endsInBreakBehaviour(Behaviour b){
+        switch (b){
+            case BreakBehaviour br: //Break or None behaviour
+                return true;
+            case Termination t:
+                return false;
+            case Condition cond:    //Return true of either branch and the continuation needs a continuation
+                return (endsInBreakBehaviour(cond.thenBehaviour) ||
+                        endsInBreakBehaviour(cond.elseBehaviour)) &&
+                        endsInBreakBehaviour(cond.continuation);
+            case Offering offer:    //Returns true if any branch and the continuation needs a continuation
+                return offer.branches.values().stream().anyMatch(this::endsInBreakBehaviour) && endsInBreakBehaviour(offer.continuation);
+            case ProcedureInvocation inv && procedureContinues.containsKey(inv.procedure):  //Returns cached need for continuation, and if the continuation needs a continuation
+                return procedureContinues.get(inv.procedure) && endsInBreakBehaviour(inv.continuation);
+            case ProcedureInvocation inv:       //Calculates if the procedure needs a continuation, and returns if it does
+                procedureContinues.put(inv.procedure, false);       //In case of recursion
+                boolean doesReturn = endsInBreakBehaviour(procedures.get(inv.procedure));
+                procedureContinues.put(inv.procedure, doesReturn);  //Store result in cache
+                return doesReturn && endsInBreakBehaviour(inv.continuation);
+            case Interaction inter:             //For interactions, just check their continuation
+                return endsInBreakBehaviour(inter.continuation);
+            default:                            //In case new types are added
+                throw new IllegalStateException("Unexpected type when checking if a Behaviour returns to a continuation or not. The unexpected type is "+b.getClass().getName());
         }
     }
 
@@ -423,7 +453,11 @@ public class ProcessTerm extends NetworkASTNode {
      * @return the hash value considering all behaviours
      */
     public int hashCode(){
-        return proceduresHash + (main.hashCode() ^ Integer.rotateRight(continuationStack.hashCode(), currentDepth));
+        return proceduresHash +
+                (endsInBreakBehaviour(main) ?
+                        main.hashCode() ^ Integer.rotateRight(continuationStack.hashCode(), currentDepth)
+                    :
+                        main.hashCode());
     }
     private int proceduresHashValue(){
         return procedures.hashCode();

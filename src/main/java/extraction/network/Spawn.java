@@ -46,13 +46,7 @@ public class Spawn extends Behaviour.Interaction {
 
     @Override
     boolean compareData(Behaviour other){
-        return other instanceof Spawn spawn && variable.equals(spawn.variable) &&
-                processBehaviour.equals(spawn.processBehaviour);
-        /*  While this function normally just compares non-behaviour data, I decided the children's behaviours
-            should be compared the traditional way. It seems unlikely two spawn terms are equivalent, but
-            uses continuations differently. This makes it much easier to verify the terms spawn the same
-            process, even if it is based on an assumption that isn't true.
-         */
+        return other instanceof Spawn spawn && variable.equals(spawn.variable);
     }
 
     @Override

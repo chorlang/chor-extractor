@@ -73,7 +73,9 @@ public class Offering extends Behaviour.Receiver {
 
     @Override
     boolean compareData(Behaviour other){
-        return other instanceof Offering off && sender.equals(off.sender);
+
+        return other instanceof Offering off && sender.equals(off.sender) &&
+                branches.keySet().equals(off.branches.keySet());
     }
 
     @Override
