@@ -2,6 +2,7 @@ package extraction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import executable.Main;
 import extraction.network.Network;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -135,6 +136,23 @@ public class GeneralContinuationTest {
         String actual = Extraction.newExtractor().extract(test).program.toString();
         assertEquals(expected, actual);
     }
+
+
+
+    /*Test a projection of this. It may cause an infinite loop
+     * def V {
+     *     if d.c5 then
+     *         d -> n[L]; d -> j[L]; d -> h[L]; d -> x[L]; d -> v[L]; d -> s[L]; d -> c[L]; d -> q[L]; d -> p[L];
+     *         if c.c6 then  else  continue
+     *         V
+     *     else
+     *         d -> n[R]; d -> j[R]; d -> h[R]; d -> x[R]; d -> v[R]; d -> s[R]; d -> c[R]; d -> q[R]; d -> p[R];
+     *     continue
+     *
+     *     s -> p[l3]; stop
+     * }
+     * main { V }
+     */
 
 
 }

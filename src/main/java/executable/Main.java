@@ -1,34 +1,31 @@
 package executable;
 
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
-import com.mxgraph.layout.mxCircleLayout;
-import com.mxgraph.layout.mxCompactTreeLayout;
 import com.mxgraph.layout.mxGraphLayout;
-import com.mxgraph.layout.mxOrganicLayout;
 import com.mxgraph.util.mxCellRenderer;
 import endpointprojection.EndPointProjection;
+import executable.tests.Benchmarking;
 import extraction.*;
 import extraction.Label;
-import extraction.choreography.Choreography;
 import extraction.choreography.Program;
-import extraction.choreography.Purger;
-import extraction.network.*;
+import extraction.network.NetAnalyser;
+import extraction.network.Network;
 import org.jgrapht.Graph;
-import org.jgrapht.Graphs;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
-import org.jgrapht.graph.DirectedPseudograph;
 import parsing.Parser;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.event.HierarchyBoundsAdapter;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.List.of;
 
@@ -189,9 +186,66 @@ public class Main {
             "b{ main{ a?; stop } } ";
 
     static String osci = "a{ def osci(p){ p?; p!<resp>; osci(p) } main { spawn b with osci(a) continue b!<start>; osci(b) } }";
+    public static String np = """
+p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L; » else n + R; j + R; h + R; x + R; v + R; d + R; s + R; c + R; q + R; stop continue V} def V{d&{R: », L: x!<m5>; W}; h&{R: V, L: »}; d!<m4>; stop} def W{h&{l5: A}} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | q{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: if c11 then n + L; j + L; x + L; h + L; v + L; d + L; s + L; c + L; p + L; » else n + R; j + R; x + R; h + R; v + R; d + R; s + R; c + R; p + R; stop endif, L: »}; h&{R: M, L: V}} main {M}} | s{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | c{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: if c6 then » else » continue W}; h&{R: V, L: »}; stop} def W{n + l4; A} def M{h&{R: q&{R: stop, L: »}; d&{l8: »}, L: »}; h&{R: M, L: V}} main {M}} | d{def A{p&{R: stop, L: »}; j + l2; V} def V{if c5 then n + L; j + L; h + L; x + L; v + L; s + L; c + L; q + L; p + L; W else n + R; j + R; h + R; x + R; v + R; s + R; c + R; q + R; p + R; » continue h&{R: V, L: »}; p?; stop} def W{A} def M{h&{R: q&{R: stop, L: »}; c + l8; », L: »}; h&{R: M, L: V}} main {M}} | v{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | h{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: W}; if c4 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; » else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; V continue stop} def W{p + l5; A} def M{if c10 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; » else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; q&{R: stop, L: »} continue if c9 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; V else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; M endif} main {M}} | x{def A{p&{R: stop, L: »}; V} def V{d&{R: », L: p?; W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | j{def A{n + l1; p&{R: stop, L: »}; d&{l2: V}} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | n{def A{j&{l1: p&{R: stop, L: »}; V}} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{c&{l4: A}} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}}""";
+    public static String problem = """
+    p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L; » else n + R; j + R; h + R; x + R; v + R; d + R; s + R; c + R; q + R; M continue V} def R{T} def B{s&{l3: Y}} def S{d&{R: C, L: R}} def C{S} def T{if c3 then j + L; h + L; v + L; d + L; s + L; c + L; » else j + R; h + R; v + R; d + R; s + R; c + R; S continue C} def V{d&{R: », L: x!<m5>; W}; h&{R: V, L: »}; d!<m4>; B} def W{h&{l5: A}} def G{h?; c&{R: G, L: T}} def Y{G} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | q{def A{p&{R: M, L: »}; V} def V{d&{R: », L: W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: if c11 then n + L; j + L; x + L; h + L; v + L; d + L; s + L; c + L; p + L; » else n + R; j + R; x + R; h + R; v + R; d + R; s + R; c + R; p + R; stop endif, L: »}; h&{R: M, L: V}} main {M}} | s{def A{p&{R: M, L: »}; V} def R{v?; T} def B{p + l3; Y} def S{d&{R: C, L: R}} def C{S} def T{p&{R: S, L: »}; C} def V{d&{R: », L: W}; h&{R: V, L: »}; B} def W{A} def G{c&{R: h + l6; G, L: T}} def Y{c + l7; G} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | c{def A{p&{R: M, L: »}; V} def R{T} def B{Y} def S{d&{R: C, L: R}} def C{S} def T{p&{R: S, L: »}; j?; C} def V{d&{R: », L: if c6 then » else » continue W}; h&{R: V, L: »}; B} def W{n + l4; A} def G{if c7 then j + L; h + L; v + L; d + L; s + L; p + L; T else j + R; h + R; v + R; d + R; s + R; p + R; G endif} def Y{j?; s&{l7: G}} def M{h&{R: q&{R: stop, L: »}; d&{l8: »}, L: »}; h&{R: M, L: V}} main {M}} | d{def A{p&{R: M, L: »}; j + l2; V} def R{T} def B{Y} def S{if c2 then j + L; h + L; v + L; c + L; s + L; p + L; R else j + R; h + R; v + R; c + R; s + R; p + R; C endif} def C{S} def T{p&{R: S, L: »}; C} def V{if c5 then n + L; j + L; h + L; x + L; v + L; s + L; c + L; q + L; p + L; W else n + R; j + R; h + R; x + R; v + R; s + R; c + R; q + R; p + R; » continue h&{R: V, L: »}; p?; B} def W{A} def G{c&{R: G, L: T}} def Y{G} def M{h&{R: q&{R: stop, L: »}; c + l8; », L: »}; h&{R: M, L: V}} main {M}} | v{def A{p&{R: M, L: »}; V} def R{s!<m1>; T} def B{Y} def S{d&{R: C, L: R}} def C{S} def T{p&{R: S, L: »}; C} def V{d&{R: », L: W}; h&{R: V, L: »}; B} def W{A} def G{c&{R: G, L: T}} def Y{G} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | h{def A{p&{R: M, L: »}; V} def R{T} def B{Y} def S{d&{R: C, L: R}} def C{j!<m2>; S} def T{p&{R: S, L: »}; C} def V{d&{R: », L: W}; if c4 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; » else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; V continue B} def W{p + l5; A} def G{p!<m6>; c&{R: s&{l6: G}, L: T}} def Y{G} def M{if c10 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; » else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; q&{R: stop, L: »} continue if c9 then n + L; j + L; x + L; v + L; d + L; s + L; c + L; q + L; p + L; V else n + R; j + R; x + R; v + R; d + R; s + R; c + R; q + R; p + R; M endif} main {M}} | x{def A{p&{R: M, L: »}; V} def V{d&{R: », L: p?; W}; h&{R: V, L: »}; stop} def W{A} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | j{def A{n + l1; p&{R: M, L: »}; d&{l2: V}} def R{T} def B{Y} def S{d&{R: C, L: R}} def C{h?; S} def T{p&{R: S, L: »}; c!<m3>; C} def V{d&{R: », L: W}; h&{R: V, L: »}; B} def W{A} def G{c&{R: G, L: T}} def Y{c!<m7>; G} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}} | n{def A{j&{l1: p&{R: M, L: »}; V}} def B{Y} def V{d&{R: », L: W}; h&{R: V, L: »}; B} def W{c&{l4: A}} def Y{if c8 then » else » continue stop} def M{h&{R: q&{R: stop, L: »}, L: »}; h&{R: M, L: V}} main {M}}
+""";
+
+    static String p2 = """
+            d{ def V{ if c5 then p+L; j+L; A else p+R; j+R; continue p?; stop } def A{ p&{R: stop, L: }; j+l2; V } main{V} } |
+            p{ def V{ d&{R: , L: A}; d!<m>; stop } def A{ if c1 then d+L; j+L; else d+R; j+R; stop continue V } main {V}} |
+            j{ def V{ d&{R: , L: A}; stop } def A{ p&{R: stop, L:}; d&{l2: V} } main{V}}""";
+    static String p3 = """
+            p{ def X{if e then else continue Y} def Y{q?; q!<m>; X} main{X}} |
+            q{ def X{p!<m>; p?; X} main{X}}
+            """;
+
 
     public static void main(String []args){
         System.out.println("Hello World");
+
+        /*var chors = Benchmarking.readChoreographyFile("test/choreography-20-5-8-1");
+        var chor = chors.get("C4");
+        var net = EndPointProjection.project(chor);
+        NetAnalyser.isSafe(net);*/
+
+        /*
+        String networksString = p2;
+        //System.out.println(networksString);
+        Network network = Parser.stringToNetwork(networksString);
+        System.out.println(network.toString());
+        var result = Extraction.newExtractor().extract(networksString, Set.of("retailer"));
+        //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
+        String chor = result.program.toString();
+        var seg = result.extractionInfo.get(0).symbolicExecutionGraph();
+        System.out.println(chor);
+        //generateImage(result.extractionInfo.get(0).symbolicExecutionGraph(), "p2.png");
+        //*/
+
+
+        /*
+        String chorstring;
+        try{
+            chorstring = Files.readString(Paths.get("chortest.txt"));
+            Program p = Parser.stringToProgram(chorstring);
+            Network n = EndPointProjection.project(p);
+            System.out.println(n);
+            System.out.println("=====");
+            var result = Extraction.newExtractor().extract(n, Set.of());
+            System.out.println(result.program);
+            //generateImage(result.extractionInfo.get(0).symbolicExecutionGraph(), "simple1.png");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }//*/
+
+
+
+        //Benchmarking.EndpointProjection();
+        //Benchmarking.extractionBenchmarks();
+
         /*
         String chorString = chorLoop;
         Program chor = Parser.stringToProgram(chorString);
@@ -199,18 +253,12 @@ public class Main {
         var projection = EndPointProjection.project(chorString);
         System.out.println(EndPointProjection.project(chorString));
         //*/
-        //*
-        String networksString = osci;
-        System.out.println(networksString);
-        Network network = Parser.stringToNetwork(networksString);
-        System.out.println(network.toString());
-        WellFormedness.isWellFormed(network);
-        var result = Extraction.newExtractor().extract(networksString, Set.of("retailer"));
-        //var purgedChor = Purger.purgeIsolated(choreography.choreographies.get(0));
-        String chor = result.program.toString();
-        System.out.println(chor);
+    //*
 
-        GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
+        //generateImage(result.extractionInfo.get(0).symbolicExecutionGraph(), "graph2.png");
+        //GraphBuilder.SEGContainer container = GraphBuilder.buildSEG(network, Set.of("retailer"), Strategy.Default);
+
+
 
 
         //System.out.println(purgedChor);
@@ -247,13 +295,13 @@ public class Main {
         long stop = System.currentTimeMillis();
         System.out.println(stop-start);//*/
     }
-    static void generateImage(Graph<Node, Label> graph, String imgPath){
+    public static void generateImage(Graph<Node, Label> graph, String imgPath){
         JGraphXAdapter<Node, Label> graphXAdapter = new JGraphXAdapter<>(graph);
 
         mxGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);
         layout.execute(graphXAdapter.getDefaultParent());
 
-        BufferedImage image = mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
+        BufferedImage image = mxCellRenderer.createBufferedImage(graphXAdapter, null, 1, Color.WHITE, false, null);
         File imgFile = new File(imgPath);
         try {
             ImageIO.write(image, "PNG", imgFile);

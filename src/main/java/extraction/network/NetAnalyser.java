@@ -289,7 +289,7 @@ public class NetAnalyser {
             boolean hasContinuation = !(continuation instanceof Behaviour.BreakBehaviour);
             //If the conditional has a (reducible) continuation, but no branches can continue, the continuation will never be executed.
             if (branchStatus == WONT && hasContinuation)
-                throw new UnreachableBehaviourException("A branching Behaviour had no branches that could continue, but had a continuation anyway.");
+                throw new UnreachableBehaviourException("This error will be caught, and its message replaced");
             //If a continuation is guaranteed, the branches are automatically satisfied.
             if (hasContinuation)
                 return continuationStatus;
@@ -321,11 +321,15 @@ public class NetAnalyser {
         public static void checkReachability(Network network) throws UnreachableBehaviourException, IncompleteBehaviourException{
             for (Map.Entry<String, ProcessTerm> entry : network.processes.entrySet()){
                 ProcessTerm process = entry.getValue();
-                //Construct a checker with this process' procedures
-                var checker = new ReachableCodeChecker(process.procedures);
-                //Check if there are any unsatisfied continuations
-                if (checker.Visit(process.rawMain()) == MUST){
-                    throw new IncompleteBehaviourException("A branch in process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.%nThe problematic process is defined as %s%n".formatted(entry.getKey(), entry.getValue()));
+                try {
+                    //Construct a checker with this process' procedures
+                    var checker = new ReachableCodeChecker(process.procedures);
+                    //Check if there are any unsatisfied continuations
+                    if (checker.Visit(process.rawMain()) == MUST) {
+                        throw new IncompleteBehaviourException("A branch in process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.%nThe problematic process is defined as %s%n".formatted(entry.getKey(), entry.getValue()));
+                    }
+                } catch (UnreachableBehaviourException e){
+                    throw new UnreachableBehaviourException("A branching Behaviour in process %s had no branches that could continue, but had a continuation anyway.".formatted(entry.getKey()));
                 }
             }
         }

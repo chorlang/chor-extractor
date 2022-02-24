@@ -14,7 +14,7 @@ public class GraphBuilder {
     private final HashMap<String, ArrayList<ConcreteNode>> choicePaths = new HashMap<>();
     private final HashMap<Integer, ArrayList<ConcreteNode>> nodeHashes = new HashMap<>();
     private final Set<String> services;
-    private int badLoopCounter = 0;
+    private int badLoopCounter = 0;//Currently broken, since I'm unsure what counts at attempting to form a loop anymore.
     private int nextNodeID = 0;
 
     private GraphBuilder(Strategy extractionStrategy, Set<String> services){
