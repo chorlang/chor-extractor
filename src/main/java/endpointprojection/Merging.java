@@ -1,6 +1,8 @@
 package endpointprojection;
 
 import extraction.network.*;
+import extraction.network.Behaviour.BreakBehaviour;
+import extraction.network.Behaviour.NoneBehaviour;
 
 import java.util.HashMap;
 
@@ -12,20 +14,25 @@ public class Merging {
     }
 
     private final Behaviour continuation;
+    public boolean consumedContinuation;
+    //If the provided continuation has been appended. It must only be appended once
     private Merging(Behaviour continuation){
         this.continuation = continuation;
+        consumedContinuation = continuation instanceof NoneBehaviour;
+        //If the continuation is none, it doesn't matter if it gets appended or not.
     }
 
     public static Behaviour merge(Behaviour thenBehaviour, Behaviour elseBehaviour, Behaviour continuation){
-        return new Merging(continuation).merge(thenBehaviour, elseBehaviour);
+        var merger =  new Merging(continuation);
+        Behaviour result = merger.merge(thenBehaviour, elseBehaviour);
+        if (!merger.consumedContinuation)
+            throw new IllegalArgumentException("Unable to append a continuation to merged Behaviours." +
+                    "Check your input.%nUnapendable continuation: %s%nThen Behaviour: %s%nElse Behaviour: %s%n"
+                            .formatted(continuation, thenBehaviour, elseBehaviour));
+        return result;
     }
 
     private Behaviour merge(Behaviour left, Behaviour right){
-        /*if (left == Behaviour.BreakBehaviour.instance)
-            left = continuation;
-        if (right == Behaviour.BreakBehaviour.instance)
-            right = continuation;*/
-
         if (!left.getClass().equals(right.getClass()))
             throw new MergingException("Can't merge " + left + " with " + right);
 
@@ -37,12 +44,30 @@ public class Merging {
             case Offering o -> merge((Offering) left, (Offering) right);
             case Condition c -> merge((Condition) left, (Condition) right);
             case ProcedureInvocation pi -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
-            case Behaviour.NoneBehaviour nb -> Behaviour.NoneBehaviour.instance;
-            case Behaviour.BreakBehaviour bb -> continuation;//Behaviour.BreakBehaviour.instance;
+            case NoneBehaviour nb -> {
+                if (consumedContinuation)
+                    yield NoneBehaviour.instance;
+                else {
+                    consumedContinuation = true;
+                    yield continuation;
+                }
+            }
+            case BreakBehaviour bb -> {
+                if (consumedContinuation)
+                    yield BreakBehaviour.instance;
+                else {
+                    consumedContinuation = true;
+                    yield continuation;
+                }
+            }
             default -> throw new IllegalArgumentException("Behaviours of type " + left.getClass().getName() + " are not supported for merging");
         };
 
     }
+    /*
+    When adding new branching behaviour, make sure to hande the continuation first.
+    The order in which the continuation variable is handled is important for correctness.
+     */
 
     private Behaviour merge(Send left, Send right){
         if (!left.receiver.equals(right.receiver) || !left.expression.equals(right.expression))
@@ -69,6 +94,22 @@ public class Merging {
         if (!left.sender.equals(right.sender))
             throw new MergingException("Can't merge "+left.sender+" and "+right.sender);
 
+        Behaviour thisContinuation;
+        //If this is the first offering or conditional, append the continuation to it.
+        //Otherwise, merge the continuations
+        if (consumedContinuation)
+            thisContinuation = merge(left.continuation, right.continuation);
+        else {
+            Merging continuationMerger = new Merging(continuation);
+            thisContinuation = continuationMerger.merge(left.continuation, right.continuation);
+            if (!continuationMerger.consumedContinuation){
+                throw new IllegalArgumentException("Unable to append a continuation to merged Behaviours." +
+                        "Check your input.%nUnapendable continuation: %s%nLeft Behaviour: %s%nRight Behaviour: %s%n"
+                                .formatted(continuation, left, right));
+            }
+            consumedContinuation = true;
+        }
+
         var leftBranches = left.branches;
         var rightBranches = right.branches;
         var labels = new HashMap<String, Behaviour>();
@@ -92,20 +133,37 @@ public class Merging {
                 labels.put(rightKey, rightBranches.get(rightKey));
         }
 
-        return new Offering(left.sender, labels, continuation);
+
+        return new Offering(left.sender, labels, thisContinuation);
     }
 
     private Behaviour merge(Condition left, Condition right){
         if (!left.expression.equals(right.expression))
             throw new MergingException("Can't merge conditions "+left+" and "+right);
+
+        Behaviour thisContinuation;
+        if (consumedContinuation)
+            thisContinuation = merge(left.continuation, right.continuation);
+        else {
+            Merging continuationMerger = new Merging(continuation);
+            thisContinuation = continuationMerger.merge(left.continuation, right.continuation);
+            if (!continuationMerger.consumedContinuation){
+                throw new IllegalArgumentException("Unable to append a continuation to merged Behaviours." +
+                        "Check your input.%nUnapendable continuation: %s%nLeft Behaviour: %s%nRight Behaviour: %s%n"
+                                .formatted(continuation, left, right));
+            }
+            consumedContinuation = true;
+        }
+
         Behaviour leftCondition = merge(left.thenBehaviour, right.thenBehaviour);
         Behaviour rightCondition = merge(left.elseBehaviour, right.elseBehaviour);
-        Behaviour continuation = merge(left.continuation, right.continuation);
 
-        return new Condition(left.expression, leftCondition, rightCondition, continuation);
+        return new Condition(left.expression, leftCondition, rightCondition, thisContinuation);
     }
 
     private Behaviour merge(ProcedureInvocation left, ProcedureInvocation right){
+        if (!(consumedContinuation || continuation instanceof NoneBehaviour))
+            throw new UnsupportedOperationException("Appending continuations to procedure invocations have not been implemented yet");
         if (left.continuation != Behaviour.NoneBehaviour.instance || right.continuation != Behaviour.NoneBehaviour.instance)
             throw new UnsupportedOperationException("Merging procedure invocations with continuations has not been implemented yet");
         if (left.procedure.equals(right.procedure) && left.getParameters().equals(right.getParameters()))

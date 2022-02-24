@@ -151,37 +151,39 @@ public class TestGenerator {
 
         niceWrite(logFile, "STARTING GENERATION...");
         logFile.newLine();
-
+/*
 //        niceWrite(logFile, "Test 1: communications only, increasing lengths");
-//        for (int i = 50; i <= 5000; i += 50)
-//            makeALotOfTestsWithSeed(0L, i, 6, 0, 0, logFile);
+        for (int i = 50; i <= 2100; i += 50)
+            makeALotOfTestsWithSeed(0L, i, 6, 0, 0, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 2: communications and ifs, fixed length, increasing number of ifs");
-//        for (int i = 10; i <= 40; i += 10)
-//            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, logFile);
+        for (int i = 10; i <= 40; i += 10)
+            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 3: inserting recursion; two varying parameters - #ifs and #procs");
-//        for (int i = 0; i <= 5; i++)
-//            for (int j = 0; j <= 15; j += 5)
-//                makeALotOfTestsWithSeed(0L, 200, 5, i, j, logFile);
+        for (int i = 0; i <= 5; i++)
+            for (int j = 0; j <= 15; j += 5)
+                makeALotOfTestsWithSeed(0L, 200, 5, i, j, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 4: communications only, fixed length, increasing number of processesInChoreography");
-//        for (int i = 5; i <= 100; i += 5)
-//            makeALotOfTestsWithSeed(0L, 500, i, 0, 0, logFile);
+        for (int i = 5; i <= 100; i += 5)
+            makeALotOfTestsWithSeed(0L, 500, i, 0, 0, logFile);
 //        logFile.newLine();
 //
+*/
+
 //        niceWrite(logFile, "Test 5: inserting recursion; one varying parameter - #ifs");
 //        for (int i = 1; i <= 10; i++)
 //            makeALotOfTestsWithSeed(0L, 100, 50, i, 5, logFile);
 //        logFile.newLine();
 
-        niceWrite(logFile, "Test 6: 10 ifs, increasing procedures");
-        for (int i = 1; i <= 15; i++)
-            makeALotOfTestsWithSeed(0L, 20, 10, 10, i, logFile);
-        logFile.newLine();
+//        niceWrite(logFile, "Test 6: 10 ifs, increasing procedures");
+        for (int i = 1; i <= 3; i++)
+            makeALotOfTestsWithSeed(0L, 20, 5, 8, i, logFile);
+//        logFile.newLine();
 
         niceWrite(logFile, "Generated " + generatedTests + " tests, of which " + badTests + " contain dead code.");
         logFile.close();

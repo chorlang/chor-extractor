@@ -5,7 +5,7 @@ package utility.ChorGen;
  */
 public class FatSemi implements CNVisitor {
 
-    private ChoreographyNode continuation, result;
+    private ChoreographyNode result;
 
     public FatSemi(ChoreographyNode continuation) {
         this.result = continuation;
@@ -15,9 +15,11 @@ public class FatSemi implements CNVisitor {
      * The attribute contains the body we want to return, so in the base cases nothing happens.
      * For the remaining eta types, we either recur or combine the results of the recursive calls.
      */
-    public void visit(TerminationNode n) {}
+    public void visit(TerminationNode n) {} //Termination needs to be replaced, so nothing happens here
 
-    public void visit(NothingNode n) {}
+    public void visit(NothingNode n) {      //Nothing should be left alone, so it can return to a continuation
+        result = new NothingNode();
+    }
 
     public void visit(CommunicationNode n) {
         n.getNextAction().accept(this);
@@ -30,22 +32,23 @@ public class FatSemi implements CNVisitor {
     }
 
     public void visit(ConditionalNode n) {
-        //*
-        ChoreographyNode continuation = result;
-        n.getThenAction().accept(this);
+        ChoreographyNode toAppend = result;    //Save result at this point in time.
+        n.getThenAction().accept(this);     //Append result to the then branch.
         ChoreographyNode realThen = result;
-        result = continuation;
-        n.getElseAction().accept(this);
+        result = toAppend;                     //Restore the result
+        n.getElseAction().accept(this);     //Append to the else branch
         ChoreographyNode realElse = result;
-        result = new ConditionalNode(n.getDecider(), n.getCondition(), n.getPreAction(), realThen, realElse);//*/
-        //n.getContinuation().accept(this);
-        //result = new ConditionalNode(n.getDecider(), n.getCondition(), n.getPreAction(), n.getThenAction(), n.getElseAction(), result);
+        result = toAppend;                     //Restore the result
+        n.getContinuation().accept(this);   //Append to the continuation
+        ChoreographyNode realContinuation = result;
+        result = new ConditionalNode(n.getDecider(), n.getCondition(), n.getPreAction(), realThen, realElse, realContinuation);
     }
 
     public void visit(CallNode n) {}
 
-    /*
-     * Method for running the algorithm.
+    /**
+     * Returns a new ChoreographyNode where every TerminationNode of the first
+     * parameter is substituted by the second.
      */
     public static ChoreographyNode run(ChoreographyNode first, ChoreographyNode second) {
         FatSemi runObject = new FatSemi(second);

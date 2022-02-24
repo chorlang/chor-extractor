@@ -192,30 +192,33 @@ public class ChoreographyGenerator {
         else if (generator.nextDouble()*size < numIfs) {
             //Array of which branch is allowed to resume
             boolean[] resumes = new boolean[2];//Initializes to false
-            ChoreographyNode continuation = new NothingNode();
+            int[] ifs;
+            int[] sizes;
+            ChoreographyNode continuation;
             if (generator.nextBoolean()) {
-                //Set of 1/4 (at least 1) of the remaining nodes to the continuation
-                int continueSize = (int) Math.ceil(size*0.25);
-                size -= continueSize;
-                continuation = generateBody(continueSize, numIfs - 1, doResume);
+                //Distribute the remaining number of terms and conditionals between the pre-action,
+                //the then and else branches, and the continuation.
+                ifs = randomArray(4, numIfs-1);
+                sizes = randomArray(4, size-numIfs);
+                continuation = generateBody(sizes[3], ifs[3], doResume);
                 setOneOrMore(resumes);//Ensures at least one branch resumes to the continuation
             }
-            else if (doResume){//If an ancestor conditional has a continuation to return to.
-                setOneOrMore(resumes);
+            else {
+                if (doResume)//If an ancestor conditional has a continuation to return to.
+                    setOneOrMore(resumes);
+                //Distribute the remaining number of terms and conditionals between
+                //the pre-action and the branches.
+                ifs = randomArray(3, numIfs-1);
+                sizes = randomArray(3, size-numIfs);
+                continuation = new NothingNode();
             }
-            // ifs contains the number of ifs in each branch, sizes the number of other actions
-            int[] ifs = randomArray(2,numIfs-1);
-            int[] sizes = randomArray(2,size-numIfs);
             String decider = processNames[generator.nextInt(NUM_PROCESSES)];
             String condition = "c" + (++ifCounter);
-            // System.out.println("Splitting "+numIfs+" into "+ifsThen+" (then) and "+(numIfs-ifsThen-1)+" (else).");
 
             return new ConditionalNode(decider, condition,
-                                       //The preAction gives me trouble with continuations of conditionals.
-                                       //Always setting it to termination seems to work.
-                                       new TerminationNode(),//generateBody(sizes[0]+ifs[0],ifs[0],false),//Not a branch, so never resume
-                                       generateBody(sizes[0]+ifs[0],ifs[0],resumes[0]),
-                                       generateBody(sizes[1]+ifs[1],ifs[1],resumes[1]),
+                                       generateBody(sizes[0]+ifs[0],ifs[0],false),
+                                       generateBody(sizes[1]+ifs[1],ifs[1],resumes[0]),
+                                       generateBody(sizes[2]+ifs[2],ifs[2],resumes[1]),
                                        continuation);
         }
         else {

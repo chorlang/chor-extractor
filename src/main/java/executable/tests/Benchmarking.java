@@ -141,7 +141,7 @@ public class Benchmarking {
      * @return A mapping from the names of each choreography in
      * the file, to their string representation.
      */
-    private static HashMap<String, String> readChoreographyFile(String filePath){
+    public static HashMap<String, String> readChoreographyFile(String filePath){
         var choreographies = new HashMap<String,String>();
 
         try{

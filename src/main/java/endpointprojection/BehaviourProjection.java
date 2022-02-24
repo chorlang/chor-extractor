@@ -41,8 +41,9 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
                 if (processName.equals(host.process)) {
                     return new extraction.network.Condition(host.expression, thenBehaviour, elseBehaviour, continuation);
                 }
-                else
+                else {
                     return Merging.merge(thenBehaviour, elseBehaviour, continuation);
+                }
             }
             case TERMINATION:
                 return extraction.network.Termination.instance;
