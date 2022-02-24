@@ -25,14 +25,14 @@ class ThesisTest {
                 "server{" +
                         "def TCP{client?; if createSocketSuccess " +
                         "then client + synRcv; client!<syn>; client!<ack>; client?; Established " +
-                        "else client + rst; stop} " +
+                        "else client + rst; stop endif} " +
                         "def Established{client&{transmission: Established, fin: client!<fin>; client!<ack>; client?; stop}} " +
                         "main {TCP}} " +
                         "| client{" +
                         "def TCP{server!<syn>; server&{rst: stop, synRcv: server?; server?; server!<ack>; Established}} " +
                         "def Established{if transmissionInProgress " +
                         "then server + transmission; Established " +
-                        "else server + fin; server?; server?; server!<ack>; stop} " +
+                        "else server + fin; server?; server?; server!<ack>; stop endif} " +
                         "main {TCP}}";
 
         assertEquals(expected, actual);

@@ -78,7 +78,7 @@ class EndpointProjectionTests {
         var test = "main {if p.e then p.e->q;stop else p.e->q; stop}";
 
         var actual = EndPointProjection.project(test).toString();
-        var expected = "p{main {if e then q!<e>; stop else q!<e>; stop}} | q{main {p?; stop}}";
+        var expected = "p{main {if e then q!<e>; stop else q!<e>; stop endif}} | q{main {p?; stop}}";
 
         assertEquals(expected, actual);
     }
@@ -88,7 +88,7 @@ class EndpointProjectionTests {
         var test = "main {if p.e then if q.e2 then p.e1 -> q; stop else p.e1 -> q; stop else if q.e2 then p.e3 -> q; stop else p.e3 -> q; stop}";
 
         var actual = EndPointProjection.project(test).toString();
-        var expected = "p{main {if e then q!<e1>; stop else q!<e3>; stop}} | q{main {if e2 then p?; stop else p?; stop}}";
+        var expected = "p{main {if e then q!<e1>; stop else q!<e3>; stop endif}} | q{main {if e2 then p?; stop else p?; stop endif}}";
 
         assertEquals(expected, actual);
     }
@@ -99,7 +99,7 @@ class EndpointProjectionTests {
                 "else p -> q[R]; q.y -> r; r.z -> q; q.u -> p; stop}";
 
         var actual = EndPointProjection.project(test).toString();
-        var expected = "p{main {if e then q + L; q!<e>; stop else q + R; q?; stop}} | " +
+        var expected = "p{main {if e then q + L; q!<e>; stop else q + R; q?; stop endif}} | " +
                 "q{main {p&{R: r!<y>; r?; p!<u>; stop, L: p?; r!<x>; r?; stop}}} | " +
                 "r{main {q?; q!<z>; stop}}";
 
@@ -109,10 +109,10 @@ class EndpointProjectionTests {
     @Test
     public void tst9(){
         var test = "main {if p.e then p -> q[L]; p.e -> q; q -> r[L1]; r.z1 -> q; stop " +
-                "else p -> q[R]; q -> r[R1]; r.z2 -> q; q.u -> p; stop}";
+                "else p -> q[R]; q -> r[R1]; r.z2 -> q; q.u -> p; stop endif}";
 
         var actual = EndPointProjection.project(test).toString();
-        var expected = "p{main {if e then q + L; q!<e>; stop else q + R; q?; stop}} | " +
+        var expected = "p{main {if e then q + L; q!<e>; stop else q + R; q?; stop endif}} | " +
                 "q{main {p&{R: r + R1; r?; p!<u>; stop, L: p?; r + L1; r?; stop}}} | " +
                 "r{main {q&{L1: q!<z1>; stop, R1: q!<z2>; stop}}}";
 
@@ -121,13 +121,13 @@ class EndpointProjectionTests {
 
     @Test
     public void tst10(){
-        var test = "def X {q.e->p; if p.e then p->q[ok]; q->r[ok]; X else p->q[ko]; q->r[ko]; Y } " +
-                "def Y {q.e->r; if r.e then r->q[ok]; r->p[ok]; q.e->r; stop else r->q[ko]; r->p[ko]; Y}" +
+        var test = "def X {q.e->p; if p.e then p->q[ok]; q->r[ok]; X else p->q[ko]; q->r[ko]; Y endif} " +
+                "def Y {q.e->r; if r.e then r->q[ok]; r->p[ok]; q.e->r; stop else r->q[ko]; r->p[ko]; Y endif}" +
                 "main {p.e->q;X}";
 
         var actual = EndPointProjection.project(test).toString();
         var expected = "p{" +
-                "def X{q?; if e then q + ok; X else q + ko; Y} " +
+                "def X{q?; if e then q + ok; X else q + ko; Y endif} " +
                 "def Y{r&{ko: Y, ok: stop}} " +
                 "main {q!<e>; X}} | " +
                 "q{" +
@@ -136,7 +136,7 @@ class EndpointProjectionTests {
                 "main {p?; X}} | " +
                 "r{" +
                 "def X{q&{ko: Y, ok: X}} " +
-                "def Y{q?; if e then q + ok; p + ok; q?; stop else q + ko; p + ko; Y} " +
+                "def Y{q?; if e then q + ok; p + ok; q?; stop else q + ko; p + ko; Y endif} " +
                 "main {X}}";
 
         assertEquals(expected, actual);
@@ -157,17 +157,17 @@ class EndpointProjectionTests {
 
         var actual = EndPointProjection.project(test).toString();
         var expected = "p{" +
-                "def X{if e then q + ok; r + ok; q?; r&{ko: Y, ok: q!<e>; X} else q + ko; r + ko; q&{ko: Z, ok: q!<e>; X}} " +
+                "def X{if e then q + ok; r + ok; q?; r&{ko: Y, ok: q!<e>; X} else q + ko; r + ko; q&{ko: Z, ok: q!<e>; X} endif} " +
                 "def Y{q!<e>; X} " +
                 "def Z{q!<e>; Y} " +
                 "main {q!<e>; X}} | " +
                 "q{" +
-                "def X{p&{ko: if e then p + ok; r + ok; p?; X else p + ko; r + ko; Z, ok: p!<e>; r&{ko: r?; Y, ok: p?; X}}} " +
+                "def X{p&{ko: if e then p + ok; r + ok; p?; X else p + ko; r + ko; Z endif, ok: p!<e>; r&{ko: r?; Y, ok: p?; X}}} " +
                 "def Y{p?; X} " +
                 "def Z{p?; Y} " +
                 "main {r!<i>; p?; X}} | " +
                 "r{" +
-                "def X{p&{ko: q&{ko: Z, ok: X}, ok: if e then p + ok; q + ok; X else p + ko; q + ko; q!<u>; Y}} " +
+                "def X{p&{ko: q&{ko: Z, ok: X}, ok: if e then p + ok; q + ok; X else p + ko; q + ko; q!<u>; Y endif}} " +
                 "def Y{X} " +
                 "def Z{Y} main {q?; X}}";
 

@@ -293,7 +293,7 @@ public class ProcessTerm extends NetworkASTNode {
         builder.append("{");
         procedures.forEach((key, value) ->
                 builder.append(String.format("def %s%s{%s} ", key, parametersToString(parameters.get(key)), value)));
-        builder.append(String.format("main {%s %s}}", main, continuationStack));
+        builder.append(String.format("main {%s%s}}", main, continuationStack.stack.size() == 0 ? "" : " " + continuationStack));
 
         return builder.toString();
     }

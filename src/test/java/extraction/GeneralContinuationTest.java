@@ -40,9 +40,9 @@ public class GeneralContinuationTest {
         String test =
                 "a{ def X{ if e then b+repeat; X else if e2 then b+send; b?; else b+receive; b!<msg>; continue b!<final>; b?; stop endif } main{ b!<start>; X } } | \n" +
                 "b{ def X{ a&{repeat: X, send: a!<msg>;, receive: a?;}; a?; a!<akn>; stop } main{ a?; X } }";
-        String expected = //Clearly main could just have been a.start->b; X1. Investigate
+        String expected =
                 "def X1 { if a.e then a->b[repeat]; X1 else if a.e2 then a->b[send]; b.msg->a; a.final->b; b.akn->a; stop else a->b[receive]; a.msg->b; a.final->b; b.akn->a; stop } " +
-                "main {a.start->b; if a.e then a->b[repeat]; X1 else if a.e2 then a->b[send]; b.msg->a; a.final->b; b.akn->a; stop else a->b[receive]; a.msg->b; a.final->b; b.akn->a; stop}";
+                "main {a.start->b; X1}";
         String actual = Extraction.newExtractor().extract(test).program.toString();
         assertEquals(expected, actual);
     }
