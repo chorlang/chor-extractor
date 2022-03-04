@@ -72,7 +72,7 @@ public class Prospector {
     private class NetworkAdvancer{
         private final ConcreteNode currentNode;
         private final Network network;
-        private final HashMap<String, ProcessTerm> unfoldedProcesses;
+        private final HashMap<String, ProcessTerm> foldedProcesses;
         private final LinkedHashMap<String, ProcessTerm> orderedProcesses;
 
         /**
@@ -83,7 +83,7 @@ public class Prospector {
         NetworkAdvancer(ConcreteNode currentNode){
             this.currentNode = currentNode;                     //Keep for when expanding the SEG
             network = currentNode.network.copy();               //Work on copy
-            unfoldedProcesses = network.unfold();               //Unfold procedures
+            foldedProcesses = network.unfold();                 //Unfold procedures
             ConcreteNode unfoldedNode = currentNode.copy();     //Create temp copy with unfolded network
             unfoldedNode.network = network;
             orderedProcesses = copyAndSortProcesses(unfoldedNode);  //Sort based on strategy
@@ -106,7 +106,7 @@ public class Prospector {
                     continue;
 
                 //Fold back procedure invocations of unused processes.
-                foldBackProcesses(advancement, unfoldedProcesses);
+                foldBackProcesses(advancement, foldedProcesses);
 
                 //Build out the graph using the progress of the network
                 BuildGraphResult result = builder.buildGraph(advancement, currentNode);
@@ -114,7 +114,7 @@ public class Prospector {
                 //In case of bad loops, the graph remains unchanged.
                 // Reset changes to the Network, and try the next process
                 if (result == BuildGraphResult.BAD_LOOP) {
-                    network.restoreProcesses(orderedProcesses, unfoldedProcesses.keySet()); //Unfold again
+                    network.restoreProcesses(orderedProcesses, foldedProcesses.keySet()); //Unfold again
                     network.restoreProcesses(orderedProcesses, advancement.actors());       //Restore modified processes
                     continue;
                 }

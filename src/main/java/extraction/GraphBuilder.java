@@ -141,6 +141,7 @@ public class GraphBuilder {
 
         //Iterate though the nodes with the same hash, and see if they have equivalent behaviour.
         viableIterator: for (ConcreteNode otherNode : viableNodes){
+
             if (flipCounter > otherNode.flipCounter && detectResourceLeak(network, otherNode.network)) {
                 System.err.println("Resource leak detected. Extraction not possible");
                 return new extensionResult(null, BuildGraphResult.FAIL);   //Fail on resource leak.
@@ -152,14 +153,18 @@ public class GraphBuilder {
             if (parameters == null)
                 continue;
 
+            if (otherNode.marking.keySet().stream().anyMatch(
+                    pname -> !marking.get(pname) &&//If current marking is false, but the other nodes marking is true, then the process will not reduce in a loop.
+                            otherNode.marking.get(pname)))
+                continue;   //Markings are incompatible, try the next viable node
             //Check that the marking corresponds as well
-            for (String processName : marking.keySet()){
+            /*for (String processName : marking.keySet()){
                 String otherName = parameters.getOrDefault(processName, processName);
                 if (    !network.processes.get(processName).isTerminated() &&
                         marking.get(processName) != otherNode.marking.get(otherName)){
                     continue viableIterator;
                 }
-            }
+            }*/
 
             //The current network and state is equivalent to a previous node, so a loop can be formed, maybe.
             //Store the mapping to generate parameters for the choreography invocation
@@ -444,7 +449,7 @@ public class GraphBuilder {
         final int[] hash = {0};     //lambdas do not allow direct modifications of ints.
         n.processes.forEach((key, term) -> {
             if (unique.add(term) && !term.isTerminated())  //Returns false if the element is already in the set
-                hash[0] += term.hashCode() * 31 + marking.get(key).hashCode();
+                hash[0] += term.hashCode() * 31 ;//+ marking.get(key).hashCode();
         });
         return hash[0];
         //return n.hashCode() + 31 * marking.hashCode();

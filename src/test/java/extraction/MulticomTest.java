@@ -47,8 +47,8 @@ public class MulticomTest {
                 "a { main { b<->c; b?; stop}} |" +
                 "b { main { a!<msg>; a?c; c!<hello>; stop}} |" +
                 "c {main { a?b; b?; stop}}";
-        var expected = "main {(b.msg->a, a.b<->c); b.hello->c; stop}";
-        var actual = Extraction.extractChoreography(test).toString();
+        var expected = "main {(a.b<->c, b.msg->a); b.hello->c; stop}";
+        var actual = Extraction.extractChoreography(test).toString();//TODO Check the order when you are done messing around
 
         Assertions.assertEquals(expected, actual);
     }

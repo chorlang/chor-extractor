@@ -59,7 +59,7 @@ class PaperTest {
                 "q { def W {p?; W} main {W}} | " +
                 "r { def T {p?; T} main {T}}";
         var actual = Extraction.extractChoreography(test).toString();
-        var expected = "def X1 { p.e->r; p.e->q; p.e->q; X1 } main {p.e->q; X1}";
+        var expected = "def X1 { p.e->q; p.e->r; p.e->q; X1 } main {X1}";
 
         assertEquals(expected, actual);
     }
@@ -122,7 +122,7 @@ class PaperTest {
 
         var actual = Extraction.extractChoreography(test, TestUtils.parseStrategy(strategy)).toString();
         var expected =
-                "def X1 { buyer1.book->seller; seller.quote->buyer1; X2 } def X2 { seller.quote->buyer2; buyer1.quote->buyer2; if buyer2.ok then buyer2->seller[accept]; buyer2.address->seller; seller.date->buyer2; buyer1.book->seller; seller.quote->buyer1; X2 else buyer2->seller[decline]; X1 } main {X1}";
+                "def X1 { buyer1.book->seller; seller.quote->buyer1; seller.quote->buyer2; buyer1.quote->buyer2; if buyer2.ok then buyer2->seller[accept]; buyer2.address->seller; seller.date->buyer2; X1 else buyer2->seller[decline]; X1 } main {X1}";
         assertEquals(expected, actual);
     }
 

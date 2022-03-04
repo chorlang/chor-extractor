@@ -218,7 +218,7 @@ class BenchmarkTest {
 
         var strategy = TestUtils.parseStrategy( strategyName );
         var actual = Extraction.extractChoreography( test, strategy, Set.of("as", "t", "es") ).toString();
-        var expected = "def X1 { p.sendData->hs; X2 } def X2 { hs.subscribed->ss; if ss.ok then ss->hs[ok]; hs->p[subscribed]; hs.account->as; as.logCreated->hs; hs.fwd->t; t.fwdOk->hs; t.helpReq->es; es.provideService->p; p.sendData->hs; X2 else ss->hs[nok]; hs->p[notSubscribed]; X1 } main {X1}";
+        var expected = "def X1 { p.sendData->hs; hs.subscribed->ss; if ss.ok then ss->hs[ok]; hs->p[subscribed]; hs.account->as; as.logCreated->hs; hs.fwd->t; t.fwdOk->hs; t.helpReq->es; es.provideService->p; X1 else ss->hs[nok]; hs->p[notSubscribed]; X1 } main {X1}";
 
         assertEquals(expected, actual);
     }
@@ -504,7 +504,7 @@ class BenchmarkTest {
         var strategy = TestUtils.parseStrategy( strategyName );
         var actual = Extraction.extractChoreography( test, strategy, Set.of("coop", "bank") ).toString();
         var expected =
-                "def X1 { citizen.request->sanagency; X2 } def X2 { sanagency.askInfo->citizen; citizen.provInf->sanagency; if sanagency.infoProved then sanagency->citizen[acceptance]; sanagency.req->coop; if coop.fine then coop.provT->citizen; coop->bank[recMoneyPossT]; bank.paymentT->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; citizen.request->sanagency; X2 else coop.provM->citizen; coop->bank[recMoneyPossM]; bank.paymentM->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; citizen.request->sanagency; X2 else sanagency->citizen[refusal]; X1 } main {X1}";
+                "def X1 { citizen.request->sanagency; sanagency.askInfo->citizen; citizen.provInf->sanagency; if sanagency.infoProved then sanagency->citizen[acceptance]; sanagency.req->coop; if coop.fine then coop.provT->citizen; coop->bank[recMoneyPossT]; bank.paymentT->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; X1 else coop.provM->citizen; coop->bank[recMoneyPossM]; bank.paymentM->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; X1 else sanagency->citizen[refusal]; X1 } main {X1}";
 
         assertEquals(expected, actual);
     }
