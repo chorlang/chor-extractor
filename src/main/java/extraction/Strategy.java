@@ -28,10 +28,11 @@ public enum Strategy {
             LinkedHashMap<String, ProcessTerm> sortedNetwork = new LinkedHashMap<>(network.size());
 
             network.forEach((String processName, ProcessTerm process) -> {
-                if (process.runtimeMain() instanceof Send
+                /*if (process.runtimeMain() instanceof Send
                 || process.runtimeMain() instanceof Receive
                 || process.runtimeMain() instanceof Selection
-                || process.runtimeMain() instanceof Offering){
+                || process.runtimeMain() instanceof Offering){*/
+                if (process.rawMain() instanceof Behaviour.Sender){
                     sortedNetwork.put(processName, process.copy());
                 }
             });

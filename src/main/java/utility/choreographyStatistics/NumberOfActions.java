@@ -20,6 +20,7 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
                 return host.getContinuation().accept(this) + 1;
 
             case NONE:
+                return 0;
             case TERMINATION:
             case PROCEDURE_INVOCATION:
                 return 1;

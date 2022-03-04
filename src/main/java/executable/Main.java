@@ -4,16 +4,20 @@ import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.layout.mxGraphLayout;
 import com.mxgraph.util.mxCellRenderer;
 import endpointprojection.EndPointProjection;
+import executable.tests.AccumulateData;
 import executable.tests.Benchmarking;
+import executable.tests.Benchmarks;
 import extraction.*;
 import extraction.Label;
 import extraction.choreography.Program;
 import extraction.network.NetAnalyser;
 import extraction.network.Network;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
+import org.jgrapht.graph.DirectedPseudograph;
 import parsing.Parser;
 
 import javax.imageio.ImageIO;
@@ -24,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -205,10 +210,26 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
     public static void main(String []args){
         System.out.println("Hello World");
 
-        /*var chors = Benchmarking.readChoreographyFile("test/choreography-20-5-8-1");
-        var chor = chors.get("C4");
-        var net = EndPointProjection.project(chor);
-        NetAnalyser.isSafe(net);*/
+        /*for (Strategy strategy : Strategy.values()){
+            if (strategy != Strategy.Default)
+                AccumulateData.accumulate(strategy);
+        }*/
+
+        //Benchmarking.benchmarkStrategy(Strategy.InteractionsFirst);
+        Benchmarks.INSTANCE.extraction(Strategy.InteractionsFirst);
+        AccumulateData.accumulate(Strategy.InteractionsFirst);
+
+        /*var nets = Benchmarking.readNetworkFile("test/projection-50-6-30-0");
+        var net = nets.get("C1026");
+        long start = System.currentTimeMillis();
+        var res = Extraction.newExtractor().extract(net);
+        long time = System.currentTimeMillis() - start;
+        System.out.println("Extraction time: "+time);
+        start = System.currentTimeMillis();
+        var clone = new DirectedPseudograph<>(Label.class);
+        Graphs.addGraph(clone, res.extractionInfo.get(0).symbolicExecutionGraph());
+        time = System.currentTimeMillis() - start;
+        System.out.println("Clone time: "+time);*/
 
         /*
         String networksString = p2;

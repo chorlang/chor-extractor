@@ -4,7 +4,6 @@ import edu.emory.mathcs.backport.java.util.Collections;
 import endpointprojection.EndPointProjection;
 import extraction.Extraction;
 import extraction.Strategy;
-import extraction.choreography.Choreography;
 import extraction.choreography.Program;
 import extraction.network.Network;
 import parsing.Parser;
@@ -24,22 +23,21 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class Benchmarking {
-    private static final String TEST_DIR = "test/";
+    static final String TEST_DIR = "test/";
     private static final String OUTPUT_DIR = TEST_DIR;
     private static final String CHOREOGRAPHY_PREFIX = "choreography-";
     private static final String PROJECTION_PREFIX = "projection-";
     private static final String EXTRACTION_PREFIX = "extraction-";
     private static final String PROJECTION_STATISTICS_PREFIX = "stats-projection-";
-    private static final String EXTRACTION_STATISTICS_PREFIX = "stats-extraction-";
-    private static final String COMBINED_STATISTICS_PREFIX = "stats-";
-    private static final String SEPARATOR = "\t";
-    private static final String FORMAT = ".tsv";
+    static final String EXTRACTION_STATISTICS_PREFIX = "stats-extraction-";
+    static final String SEPARATOR = "\t";
+    static final String FORMAT = ".tsv";
 
     //Create header string form a list of column names concatenated with SEPARATOR in between.
     private static final String PROJECTION_STATISTICS_HEADER =
             Stream.of("testId","numberOfActions","numberOfProcesses","numberOfProcedures","numberOfConditionals", "minLengthOfProcesses","maxLengthOfProcesses","avgLengthOfProcesses", "minNumberOfProceduresInProcesses","maxNumberOfProceduresInProcesses","avgNumberOfProceduresInProcesses", "minNumberOfConditionalsInProcesses","maxNumberOfConditionalsInProcesses","avgNumberOfConditionalsInProcesses","numberOfProcessesWithConditionals", "minProcedureLengthInProcesses","maxProcedureLengthInProcesses","avgProcedureLengthInProcesses").
                     reduce((lstring, rstring)->lstring+SEPARATOR+rstring).get();
-    private static final String EXtrACTION_STATISTICS_HEADER =
+    static final String EXTRACTION_STATISTICS_HEADER =
             Stream.of("testId","strategy","time(msec)","nodes","badLoops","mainLength","numOfProcedures","minProcedureLength","maxProcedureLength","avgProcedureLength")
                     .reduce((lstring,rstring)->lstring+SEPARATOR+rstring).get();
 
@@ -225,7 +223,7 @@ public class Benchmarking {
 
     private static void writeExtractionStatisticsToFile(Map<String, Pair<Program, Long>> extractionMap, String filename, String strategyname){
         try (PrintWriter writer = new PrintWriter(OUTPUT_DIR+filename)){
-            writer.println(EXtrACTION_STATISTICS_HEADER);
+            writer.println(EXTRACTION_STATISTICS_HEADER);
             extractionMap.forEach((id, pair)-> {
                 Program program = pair.first;
                 //Sum nodecounts and baddloopcounts across all choreographies
@@ -292,7 +290,7 @@ public class Benchmarking {
      * @return A mapping from the name of each network in the file, to
      * the networks string representation.
      */
-    private static HashMap<String, String> readNetworkFile(String filePath){
+    public static HashMap<String, String> readNetworkFile(String filePath){
         var networks = new HashMap<String,String>();
 
         try{
