@@ -13,6 +13,7 @@ public class GraphBuilder {
     private final DirectedPseudograph<Node, Label> graph = new DirectedPseudograph<>(Label.class);
     private final HashMap<String, ArrayList<ConcreteNode>> choicePaths = new HashMap<>();
     private final HashMap<Integer, ArrayList<ConcreteNode>> nodeHashes = new HashMap<>();
+    private final HashMap<String, ConcreteNode> conditionalAncestry = new HashMap<>();
     private final Set<String> services;
     private int badLoopCounter = 0;//Currently broken, since I'm unsure what counts at attempting to form a loop anymore.
     private int nextNodeID = 0;
@@ -88,6 +89,10 @@ public class GraphBuilder {
         if (advancement.elseLabel() == null)
             return BuildGraphResult.OK;
 
+        //currentNode is a conditional node, and should be added to the map from choice paths
+        //to the conditional unique to that path.
+        conditionalAncestry.put(currentNode.choicePath, currentNode);
+
         //If there is an else branch, the above code build the then branch. Now to build the else branch.
         Label elseLabel = advancement.elseLabel();
         Network elseNetwork = advancement.elseNetwork();
@@ -136,13 +141,16 @@ public class GraphBuilder {
         int flipCounter = currentNode.flipCounter + (label.flipped ? 1 : 0);
 
         //Get a list of nodes with the same network and marking hash, and the same choicePath.
-        List<ConcreteNode> viableNodes = nodeHashes.getOrDefault(hashMarkedNetwork(network, marking), new ArrayList<>())
-                .stream().filter(node -> currentNode.choicePath.startsWith(node.choicePath)).toList();
+        List<ConcreteNode> viableNodes = nodeHashes.getOrDefault(hashMarkedNetwork(network, marking), new ArrayList<>());
+
+        //We do not want to add an edge to a terminated node. It created ugly choreographies.
+        if (network.allTerminated())
+            viableNodes = List.of();
 
         //Iterate though the nodes with the same hash, and see if they have equivalent behaviour.
-        viableIterator: for (ConcreteNode otherNode : viableNodes){
+        for (ConcreteNode otherNode : viableNodes){
 
-            if (flipCounter > otherNode.flipCounter && detectResourceLeak(network, otherNode.network)) {
+            if (currentNode.choicePath.startsWith(otherNode.choicePath) && flipCounter > otherNode.flipCounter && detectResourceLeak(network, otherNode.network)) {
                 System.err.println("Resource leak detected. Extraction not possible");
                 return new extensionResult(null, BuildGraphResult.FAIL);   //Fail on resource leak.
             }
@@ -157,14 +165,6 @@ public class GraphBuilder {
                     pname -> !marking.get(pname) &&//If current marking is false, but the other nodes marking is true, then the process will not reduce in a loop.
                             otherNode.marking.get(pname)))
                 continue;   //Markings are incompatible, try the next viable node
-            //Check that the marking corresponds as well
-            /*for (String processName : marking.keySet()){
-                String otherName = parameters.getOrDefault(processName, processName);
-                if (    !network.processes.get(processName).isTerminated() &&
-                        marking.get(processName) != otherNode.marking.get(otherName)){
-                    continue viableIterator;
-                }
-            }*/
 
             //The current network and state is equivalent to a previous node, so a loop can be formed, maybe.
             //Store the mapping to generate parameters for the choreography invocation
@@ -173,6 +173,8 @@ public class GraphBuilder {
             //Return BAD_LOOP if not every process reduced in the loop.
             if (addEdgeToGraph(currentNode, otherNode, label))
                 return new extensionResult(otherNode, BuildGraphResult.OK);
+            else if (!currentNode.choicePath.startsWith(otherNode.choicePath))
+                break;//If otherNode is of a different branch, then this is not a bad loop
             else
                 return new extensionResult(otherNode, BuildGraphResult.BAD_LOOP);
         }
@@ -415,11 +417,33 @@ public class GraphBuilder {
      * @return true, if the label is flipped, or the target.flipCounter < source.flipCounter
      */
     private boolean checkLoop(ConcreteNode source, ConcreteNode target, Label label){
-        if (label.flipped)
+        if (label.flipped) {
             return true;
-        if (target == source)
+        }
+        if (target == source) {
             return false;
-        return source.flipCounter > target.flipCounter;
+        }
+        ConcreteNode choiceAncestor = getLowestCommonChoiceAncestor(source, target);
+        return source.flipCounter > choiceAncestor.flipCounter;
+    }
+
+    /**
+     * Finds and returns the lowest common choice ancestor node in the graph, of the two nodes provided.
+     * It is assumed lower is NOT a build-ancestor of higher (Meaning higher must have been
+     * added to the graph first).
+     * If higher is a build-ancestor of lower, then higher is returned. Otherwise, the lowest
+     * conditional node that is a build ancestor of both nodes is returned.
+     */
+    private ConcreteNode getLowestCommonChoiceAncestor(ConcreteNode lower, ConcreteNode higher){
+        if (lower.choicePath.startsWith(higher.choicePath))
+            return higher;
+        int shortest = Math.min(lower.choicePath.length(), higher.choicePath.length());
+        int i = 0;
+        for (; i < shortest; i++){
+            if (lower.choicePath.charAt(i) != higher.choicePath.charAt(i))
+                break;
+        }//All choice-paths start with "-", so i should be at least 1.
+        return conditionalAncestry.get(lower.choicePath.substring(0, i));
     }
 
     /**
@@ -469,7 +493,7 @@ public class GraphBuilder {
                 break;
             }
         }
-        nodeHashes.remove(hashMarkedNetwork(node.network, node.marking));
+        //nodeHashes.remove(hashMarkedNetwork(node.network, node.marking));
     }
 
     private void removeFromChoicePathsMap(ConcreteNode node){

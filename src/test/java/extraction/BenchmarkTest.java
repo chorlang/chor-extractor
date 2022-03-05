@@ -329,12 +329,7 @@ class BenchmarkTest {
         var strategy = TestUtils.parseStrategy( strategyName );
         var actual = Extraction.extractChoreography( test, strategy, Set.of("retailer") ).toString();
         var expected =
-                "def X1 { supplier->shipper[item]; shipper.DeliveryItem->supplier; " +
-                        "if supplier.needToShip then X1 else supplier->shipper[done]; supplier.UpdatePOandDeliverySchedule->retailer; " +
-                        "retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; " +
-                        "supplier.FinalizedPOandDeliverySchedule->retailer; stop } main {" +
-                        "supplier.PlannedOrderVariations->retailer; retailer.OrderDeliveryVariations->supplier; retailer.DeliverCheckPointRequest->supplier; " +
-                        "if supplier.needToShip then X1 else supplier->shipper[done]; supplier.UpdatePOandDeliverySchedule->retailer; retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; supplier.FinalizedPOandDeliverySchedule->retailer; stop}";
+                "def X1 { supplier->shipper[item]; shipper.DeliveryItem->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; X2 } def X2 { supplier.UpdatePOandDeliverySchedule->retailer; retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; supplier.FinalizedPOandDeliverySchedule->retailer; stop } main {supplier.PlannedOrderVariations->retailer; retailer.OrderDeliveryVariations->supplier; retailer.DeliverCheckPointRequest->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; X2}";
 
         assertEquals(expected, actual);
     }
@@ -405,7 +400,7 @@ class BenchmarkTest {
         var strategy = TestUtils.parseStrategy( strategyName );
         var actual = Extraction.extractChoreography(test, strategy, Set.of("retailer")).toString();
         var expected =
-                "def X1 { supplier->shipper[item]; supplier->consignee[item]; shipper.DeliveryItem->supplier; consignee.DeliveryItem->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; supplier->consignee[done]; supplier.UpdatePOandDeliverySchedule->retailer; retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; supplier.FinalizedPOandDeliverySchedule->retailer; stop } main {supplier.PlannedOrderVariations->retailer; retailer.OrderDeliveryVariations->supplier; retailer.DeliverCheckPointRequest->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; supplier->consignee[done]; supplier.UpdatePOandDeliverySchedule->retailer; retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; supplier.FinalizedPOandDeliverySchedule->retailer; stop}";
+                "def X1 { supplier->shipper[item]; supplier->consignee[item]; shipper.DeliveryItem->supplier; consignee.DeliveryItem->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; supplier->consignee[done]; X2 } def X2 { supplier.UpdatePOandDeliverySchedule->retailer; retailer.POandDeliveryScheduleMods->supplier; retailer.ConfirmationofDeliverySchedule->shipper; retailer.AcceptPOandDeliverySchedule->supplier; supplier.FinalizedPOandDeliverySchedule->retailer; stop } main {supplier.PlannedOrderVariations->retailer; retailer.OrderDeliveryVariations->supplier; retailer.DeliverCheckPointRequest->supplier; if supplier.needToShip then X1 else supplier->shipper[done]; supplier->consignee[done]; X2}";
 
         assertEquals(expected, actual);
     }
@@ -429,9 +424,11 @@ class BenchmarkTest {
                 "main {X}}";
 
         var strategy = TestUtils.parseStrategy( strategyName );
-        var actual = Extraction.extractChoreography( test, strategy, Set.of("db", "int") ).toString();
+        //var actual = Extraction.extractChoreography( test, strategy, Set.of("db", "int") ).toString();
+        var result = Extraction.newExtractor().setStrategy(strategy).extract(test, Set.of("db","int"));
+        var actual = result.program.toString();
         var expected =
-                "def X1 { cl.connect->int; int.setup->appli; int.syncAccess->cl; if cl.access then X2 else cl.logout->int; cl->appli[syncLogout]; appli.log->db; appli.syncLog->cl; X1 } def X2 { cl->appli[awaitcl]; cl.access->appli; if cl.access then X2 else cl.logout->int; cl->appli[syncLogout]; appli.log->db; appli.syncLog->cl; X1 } main {X1}";
+                "def X1 { cl.connect->int; int.setup->appli; int.syncAccess->cl; if cl.access then X2 else cl.logout->int; cl->appli[syncLogout]; X3 } def X2 { cl->appli[awaitcl]; cl.access->appli; if cl.access then X2 else cl.logout->int; cl->appli[syncLogout]; X3 } def X3 { appli.log->db; appli.syncLog->cl; X1 } main {X1}";
 
         assertEquals(expected, actual);
     }
@@ -504,7 +501,7 @@ class BenchmarkTest {
         var strategy = TestUtils.parseStrategy( strategyName );
         var actual = Extraction.extractChoreography( test, strategy, Set.of("coop", "bank") ).toString();
         var expected =
-                "def X1 { citizen.request->sanagency; sanagency.askInfo->citizen; citizen.provInf->sanagency; if sanagency.infoProved then sanagency->citizen[acceptance]; sanagency.req->coop; if coop.fine then coop.provT->citizen; coop->bank[recMoneyPossT]; bank.paymentT->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; X1 else coop.provM->citizen; coop->bank[recMoneyPossM]; bank.paymentM->coop; citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; X1 else sanagency->citizen[refusal]; X1 } main {X1}";
+                "def X1 { citizen.request->sanagency; sanagency.askInfo->citizen; citizen.provInf->sanagency; if sanagency.infoProved then sanagency->citizen[acceptance]; sanagency.req->coop; if coop.fine then coop.provT->citizen; coop->bank[recMoneyPossT]; bank.paymentT->coop; X2 else coop.provM->citizen; coop->bank[recMoneyPossM]; bank.paymentM->coop; X2 else sanagency->citizen[refusal]; X1 } def X2 { citizen.paymentPrivateFee->bank; sanagency.paymentPublicFee->bank; bank.done->sanagency; X1 } main {X1}";
 
         assertEquals(expected, actual);
     }
