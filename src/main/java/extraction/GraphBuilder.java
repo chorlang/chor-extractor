@@ -141,7 +141,7 @@ public class GraphBuilder {
         int flipCounter = currentNode.flipCounter + (label.flipped ? 1 : 0);
 
         //Get a list of nodes with the same network and marking hash, and the same choicePath.
-        List<ConcreteNode> viableNodes = nodeHashes.getOrDefault(hashMarkedNetwork(network, marking), new ArrayList<>());
+        List<ConcreteNode> viableNodes = nodeHashes.getOrDefault(hashMarkedNetwork(network, marking), new ArrayList<>());//TODO remove marking
 
         //We do not want to add an edge to a terminated node. It created ugly choreographies.
         if (network.allTerminated())
@@ -173,18 +173,20 @@ public class GraphBuilder {
             //Return BAD_LOOP if not every process reduced in the loop.
             if (addEdgeToGraph(currentNode, otherNode, label))
                 return new extensionResult(otherNode, BuildGraphResult.OK);
-            else if (!currentNode.choicePath.startsWith(otherNode.choicePath))
-                break;//If otherNode is of a different branch, then this is not a bad loop
-            else
+            //if otherNode is a build-ancestor, this is a bad loop
+            else if (currentNode.choicePath.startsWith(otherNode.choicePath)) {
                 return new extensionResult(otherNode, BuildGraphResult.BAD_LOOP);
+            }
+            //If otherNode is of a different branch, then this is not a bad loop
         }
 
         //**A loop cannot be formed. Create a new node for the graph.**
         ConcreteNode newNode = createNode(network, label, currentNode, marking);
+        label.becomes = Map.of();//Reset in case it was set before a failed edge creation.
         addNodeAndEdgeToGraph(currentNode, newNode, label);
         //Try to expand the graph from the new node
         BuildGraphResult result = prospector.prospect(newNode);
-        if (result != BuildGraphResult.OK)
+        if (result != BuildGraphResult.OK)//TODO Probably just need to be equal to BAD_LOOP
             removeNodeFromGraph(newNode);
 
         return new extensionResult(newNode, result, true);
@@ -264,7 +266,8 @@ public class GraphBuilder {
      * Returns true if for every process in currentNetwork, a process with identical behaviour is in previousNetwork,
      * and currentNetwork has more processes than previousNetwork, ignoring terminated processes.
      */
-    //I'm assuming here that the variables do not need to be checked.
+    //I'm assuming here that the variables do not need to be checked. Honestly they probably do :(
+    //Maybe merge it with findBijectiveMapping?
     private boolean detectResourceLeak(Network currentNetwork, Network previousNetwork){
         var currentNonTerminated = currentNetwork.processes.values().stream().filter(term -> !term.isTerminated()).toList();
         var previousNonTerminated = previousNetwork.processes.values().stream().filter(term -> !term.isTerminated()).toList();
@@ -275,7 +278,7 @@ public class GraphBuilder {
             if (!previousBehaviours.contains(term))
                 return false;
         }
-        return true;
+        return true;//Should all processes of prevNetwork be in currentNetwork also?
     }
 
     /**

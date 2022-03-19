@@ -48,7 +48,7 @@ public class Prospector {
         if (result != null)
             return result;
 
-        //Try advancing with multicom interactions (if enables)
+        //Try advancing with multicom interactions (if enabled)
         //Assumes no single communications are possible
         if (!disableMulticom) {
             result = advancer.advanceNetwork(network::multicomAdvance);
@@ -122,6 +122,7 @@ public class Prospector {
                 //Return the result of building the graph.
                 //Will either be OK on success, or FAIL if the network is not extractable
                 return result;
+                
             }
             //The tryAdvancement function could not advance the Network.
             return null;
@@ -129,14 +130,14 @@ public class Prospector {
         /**
          * Folds back the main Behaviour of all Networks in an Advancement, if they did not reduce.
          * @param advancement Container for the Network(s) to fold back.
-         * @param unfoldedProcesses Copy of the ProcessTerm that was unfolded.
+         * @param foldedProcesses Copy of the ProcessTerm that was unfolded.
          */
         private void foldBackProcesses(Advancement advancement,
-                                       HashMap<String, ProcessTerm> unfoldedProcesses){
+                                       HashMap<String, ProcessTerm> foldedProcesses){
             HashSet<String> involvedProcesses = advancement.actors();
-            advancement.network().restoreExcept(unfoldedProcesses, involvedProcesses);
+            advancement.network().restoreExcept(foldedProcesses, involvedProcesses);
             if (advancement.elseNetwork() != null)
-                advancement.elseNetwork().restoreExcept(unfoldedProcesses, involvedProcesses);
+                advancement.elseNetwork().restoreExcept(foldedProcesses, involvedProcesses);
         }
     }
 

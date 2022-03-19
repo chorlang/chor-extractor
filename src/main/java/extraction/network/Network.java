@@ -83,7 +83,7 @@ public class Network extends NetworkASTNode {
      * the other fields.
      * The field actors is a set of all processes that reduced during the advancement.
      */
-    public static record Advancement(Label label, Network network,
+    public record Advancement(Label label, Network network,
                                      Network elseNetwork, Label.ConditionLabel.ElseLabel elseLabel,
                                      HashSet<String> actors){
         public Advancement(Label label, Network network, HashSet<String> actors){
