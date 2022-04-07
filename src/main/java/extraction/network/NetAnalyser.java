@@ -381,6 +381,14 @@ public class NetAnalyser {
                     //Check branch and continuation compatibility
                     return checkBranchAndContinue(branchStatus, offering.continuation);
                 }
+                case Spawn spawn: {
+                    var checker = new ReachableCodeChecker(procedures);
+                    //TODO: Check spawned process, and avoid stack overflow due to recursive spawning
+                    /*if (checker.Visit(spawn.processBehaviour) == MUST) {
+                        throw new IncompleteBehaviourException("A branch in spawned process %s wants to continue to an ancestor Behaviours continuation, but not such ancestor exists.%nThe problematic process is defined as %s%n".formatted(spawn.variable, spawn.variable));
+                    }*/
+                    return spawn.continuation.accept(this);
+                }
                 case Behaviour b:
                     return b.continuation.accept(this);
                 default:

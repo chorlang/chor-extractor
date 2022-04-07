@@ -18,6 +18,8 @@ public class GraphBuilder {
     private int badLoopCounter = 0;//Currently broken, since I'm unsure what counts at attempting to form a loop anymore.
     private int nextNodeID = 0;
 
+    int debugcounter = 0;
+
     private GraphBuilder(Strategy extractionStrategy, Set<String> services){
         prospector = new Prospector(extractionStrategy, this);
         this.services = services;
@@ -67,6 +69,8 @@ public class GraphBuilder {
      * the network is not extractable.
      */
     BuildGraphResult buildGraph(Network.Advancement advancement, ConcreteNode currentNode) {
+        if (++debugcounter > 25)
+            System.out.println("Of no");
 
         var targetMarking = new HashMap<>(currentNode.marking);
         var label = advancement.label();

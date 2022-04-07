@@ -311,7 +311,7 @@ public class ProcessTerm extends NetworkASTNode {
      * @return copy of this object instance
      */
     public ProcessTerm copy(){
-        return new ProcessTerm(procedures, parameters, procedureContinues,substitutions, continuationStack, main);
+        return new ProcessTerm(procedures, parameters, procedureContinues, substitutions, continuationStack, main);
     }
 
     /**

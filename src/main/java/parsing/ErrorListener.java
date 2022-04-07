@@ -26,7 +26,11 @@ class ErrorListener extends BaseErrorListener {
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
                             int line, int charPositionInLine, String msg,
                             RecognitionException e) throws ParseCancellationException {
-        String errMessage = ("Syntax error at line %d, position %d: %s%n" +
+        String errMessage;
+        if (line > inputLines.length)//Special case if error is at the end
+            errMessage = "Syntax error: " + msg;
+        else
+            errMessage = ("Syntax error at line %d, position %d: %s%n" +
                 "\t%s%n" +
                 "\t%s^").formatted(line, charPositionInLine, msg, inputLines[line-1], " ".repeat(charPositionInLine));
         throw new ParseCancellationException(errMessage);

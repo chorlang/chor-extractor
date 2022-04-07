@@ -44,25 +44,25 @@ public class Prospector {
         Network network = advancer.network;
 
         //Try advancing with interactions or conditionals
-        BuildGraphResult result = advancer.advanceNetwork(network::CommunicationConditionalAdvance);
+        BuildGraphResult result = advancer.advanceNetwork(advancer.network::CommunicationConditionalAdvance);
         if (result != null)
             return result;
 
         //Try advancing with multicom interactions (if enabled)
         //Assumes no single communications are possible
         if (!disableMulticom) {
-            result = advancer.advanceNetwork(network::multicomAdvance);
+            result = advancer.advanceNetwork(advancer.network::multicomAdvance);
             if (result != null)
                 return result;
         }
 
         //Try advancing by spawning a new process
         //Must be last, to prevent generating infinite SEGs under certain strategies.
-        result = advancer.advanceNetwork(network::spawnAdvance);
+        result = advancer.advanceNetwork(advancer.network::spawnAdvance);
         if (result != null)
             return result;
 
-        if (network.allTerminated())
+        if (advancer.network.allTerminated())
             return BuildGraphResult.OK;
 
         return BuildGraphResult.FAIL;

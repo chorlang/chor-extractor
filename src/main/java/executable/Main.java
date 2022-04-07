@@ -95,8 +95,11 @@ public class Main {
                     "b { main {a!<pre>; a!<msg2>; c!<msg3>; a?; stop} } |" +
                     "c { main {b?; stop} }";
     static String alt2bit =
-            "a { def X {b?; b!<0>; b?; b!<1>; X} main {b!<0>; b!<1>; X} } |" +
-                    "b { def Y {a?; a!<ack0>; a?; a!<ack1>; Y} main {Y} }";
+            "a { def X {b!<1>; b?; b!<0>; b?; X} main {b!<0>; X} } |" +
+                    "b { def X {a?; a!<ack0>; a?; a!<ack1>; X} main {X} }";
+    static String syncAlt2bit =
+            "a { def X{b!<0>; b?; b!<1>; b?; X} main{X} } |" +
+                    "b { def X{a?; a!<ack0>; a?; a!<ack1>; X} main{X} }";
     static String multicomUnfolding =
             "a{def X {b?; stop} main {b!<msg>; X}} |"+
                     "b { main {a!<msg2>; a?; stop}}";
@@ -164,9 +167,7 @@ public class Main {
                 " main { spawn s with msgSort(sorter, s) continue s!<list>; s?; stop } }";
     static String terminationLoop =
             "a { def loop{ spawn p with a?; a!<hello>; stop continue p!<hi>; p?; loop } main { spawn p with a?; a!<hello>; stop continue b?; p!<hi>; p?; loop } } | b { main { a!<start>; stop } }";
-    static String serverless =
-            "handler { def listen{ client?; spawn worker with handler?client; handler?; client!<resp>; stop continue client<->worker; worker!<req>; listen } main { listen } } |" +
-                    "client { def request{ handler!<req>; handler?instance; instance?; request } main { request } }";
+
     static String hierarchy =
             "CEO { def w(man){ man?; man!<solution>; stop } " +
                     "def m(dir, this){ dir?; spawn worker1 with w(this) continue spawn worker2 with w(this) continue worker1!<problem>; worker2!<problem>; worker1?; worker2?; dir!<solutions>; stop } " +
@@ -205,9 +206,50 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
             p{ def X{if e then else continue Y} def Y{q?; q!<m>; X} main{X}} |
             q{ def X{p!<m>; p?; X} main{X}}
             """;
+    static String quicksort1 = """
+            s{ def QS(parent, self){ parent?; if baseCase then parent!<list>; stop else spawn a with QS(self, a) continue a!<smaller>; spawn b with QS(self, b) continue b!<bigger>; a?; b?; parent!<merge>; stop } main{ spawn p with QS(s, p) continue p!<list>; p?; stop } }
+            """;
+    static String quicksort = """
+            s{ def QS{if basecase then stop else spawn a with QS continue spawn b with QS continue stop} main{QS}}
+            """;
+    static String renamingTest = """
+            s{def A{s!<m>; B} def B{s?; C} def C{s+cont; A} def X(a,b,c){c&{cont: a?;}; b!<m>; X(c,a,b)}
+            main{spawn a with A continue spawn b with B continue spawn c with C continue X(a,b,c)} }
+            """;
+    static String recursiveSpawn = """
+            p {def X(parent){if e then spawn q with parent?; X(q); parent!<res>; stop continue q!<mes>; q?; else} main{spawn q with X(q); stop continue stop}}
+            """;
+    static String recChor = """
+            def X(t){ if t.cont then t spawns q; X(q); q.m->t; else } main{X(p); stop}
+            """;
+    static String recChor2 = """
+            def X(t){ if t.cont then t spawns q; X(q); q.m->t; else } main{X(p); stop}
+            """;
+    static String recNet = """
+            p{def X(t){ if cont then spawn q with X(q); t!<m>; stop continue else } main{X(p); stop} }
+            """;
+    static String recNet2 = """
+            s{def X(p,t){ if cont then spawn q with X(t,q) continue q?; p!<m>; stop else p!<m>; stop} main{X(p,s)} } |
+            p{s?; stop}
+            """;
+
+    static String shopping = """
+            customer{ def browse{ store!<item>; if checkout then store+buy; purchase else store+more; browse } def purchase{ store!<payment>; store&{accept: stop, reject: purchase} } main{ browse } } |
+            store{ def offer{ customer?; customer&{buy: payment, more: offer} } def payment{ customer?; if accepted then customer+accept; stop else customer+reject; payment } main{ offer } }
+            """;
+
+    static String serverless = """
+            internet{
+                def task{ internet?entrypoint; entrypoint?server; server!<request>; server&{bad: stop, OK: server?; stop} }
+                def X{ spawn client with task continue client<->entrypoint; X } main{ X } } |
+            entrypoint{
+                def service{ entrypoint?client; client?; if validReq then client+OK; client!<response>; stop else client+bad; stop }
+                def handle{ internet?client; spawn worker with service continue worker<->client; handle }
+                main{ handle } }
+            """;
 
 
-    public static void main(String []args){
+    public static void main(String []args) {
         System.out.println("Hello World");
 
         /*for (Strategy strategy : Strategy.values()){
@@ -216,8 +258,8 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
         }*/
 
         //Benchmarking.benchmarkStrategy(Strategy.InteractionsFirst);
-        Benchmarks.INSTANCE.extraction(Strategy.InteractionsFirst);
-        AccumulateData.accumulate(Strategy.InteractionsFirst);
+        //Benchmarks.INSTANCE.extraction(Strategy.InteractionsFirst);
+        //AccumulateData.accumulate(Strategy.InteractionsFirst);
 
         /*var nets = Benchmarking.readNetworkFile("test/projection-50-6-30-0");
         var net = nets.get("C1026");
@@ -231,8 +273,8 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
         time = System.currentTimeMillis() - start;
         System.out.println("Clone time: "+time);*/
 
-        /*
-        String networksString = p2;
+        //*
+        String networksString = serverless;
         //System.out.println(networksString);
         Network network = Parser.stringToNetwork(networksString);
         System.out.println(network.toString());
