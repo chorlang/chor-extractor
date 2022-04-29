@@ -30,7 +30,7 @@ public class GeneralContinuationTest {
         String test =
                 "a{ main{ b!<start>; if e then b+true; b?; b!<ok>; else b+false; b!<ok>; continue b?; b!<end>; stop } } | " +
                 "b{ main { a?; a&{true: a!<ok>; a?; a!<final>; a?; stop, false: a?; a!<final>; a?; stop} } }";
-        String expected = "main {a.start->b; if a.e then a->b[true]; b.ok->a; a.ok->b; b.final->a; a.end->b; stop else a->b[false]; a.ok->b; b.final->a; a.end->b; stop}";
+        String expected = "def X1 { a.ok->b; b.final->a; a.end->b; stop } main {a.start->b; if a.e then a->b[true]; b.ok->a; X1 else a->b[false]; X1}";
         String actual = Extraction.newExtractor().extract(test).program.toString();
         assertEquals(expected, actual);
     }
@@ -41,7 +41,8 @@ public class GeneralContinuationTest {
                 "a{ def X{ if e then b+repeat; X else if e2 then b+send; b?; else b+receive; b!<msg>; continue b!<final>; b?; stop endif } main{ b!<start>; X } } | \n" +
                 "b{ def X{ a&{repeat: X, send: a!<msg>;, receive: a?;}; a?; a!<akn>; stop } main{ a?; X } }";
         String expected =
-                "def X1 { if a.e then a->b[repeat]; X1 else if a.e2 then a->b[send]; b.msg->a; a.final->b; b.akn->a; stop else a->b[receive]; a.msg->b; a.final->b; b.akn->a; stop } " +
+                "def X1 { if a.e then a->b[repeat]; X1 else if a.e2 then a->b[send]; b.msg->a; X2 else a->b[receive]; a.msg->b; X2 } " +
+                "def X2 { a.final->b; b.akn->a; stop } " +
                 "main {a.start->b; X1}";
         String actual = Extraction.newExtractor().extract(test).program.toString();
         assertEquals(expected, actual);

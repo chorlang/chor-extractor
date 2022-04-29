@@ -247,6 +247,30 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
                 def handle{ internet?client; spawn worker with service continue worker<->client; handle }
                 main{ handle } }
             """;
+    static String serverless2 = """
+            client{
+                def X(s){
+                    s?w; w?; if more then
+                        w+next; X(w)
+                    else
+                        w+end; stop
+                }
+                main{entry!<req>; X(entry)}
+            } |
+            entry{
+                def X(this){
+                    spawn worker with
+                        this?client; client!<res>; client&{
+                            next: X(worker),
+                            end: stop
+                        }
+                    continue worker<->client; stop
+                }
+                main{ client?; X(entry) }
+            }
+            """;
+    static String workerSpawn = """
+            p{ def X(q){ q?; spawn w with p!<result>; stop continue X(w) } main{spawn w with p!<result>; stop continue X(w)} }""";
 
 
     public static void main(String []args) {
