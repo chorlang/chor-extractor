@@ -33,7 +33,7 @@ public class TestGenerator {
     private static final String LOG_FILE = "summary.log";
     private static final String TEST_DIR = "GeneratedTests/";
 
-    private static void makeALotOfTests(int length, int numProcesses, int numIfs, int numProcedures, BufferedWriter logFile)
+    private static void makeALotOfTests(int length, int numProcesses, int numIfs, int numProcedures, int numSpawns, BufferedWriter logFile)
             throws IOException, GeneratorException {
 
         // standard filename
@@ -42,7 +42,7 @@ public class TestGenerator {
         logFile.newLine();
 
         // seed info
-        ChoreographyGenerator tester = new ChoreographyGenerator(length, numProcesses, numIfs, numProcedures);
+        ChoreographyGenerator tester = new ChoreographyGenerator(length, numProcesses, numIfs, numProcedures, numSpawns);
         logFile.write("Seed (for reproducibility): " + tester.getSeed());
         logFile.newLine();
 
@@ -67,16 +67,16 @@ public class TestGenerator {
     /*
      * This will be refactored at a later stage.
      */
-    private static void makeALotOfTestsWithSeed(long seed, int length, int numProcesses, int numIfs, int numProcedures, BufferedWriter logFile)
+    private static void makeALotOfTestsWithSeed(long seed, int length, int numProcesses, int numIfs, int numProcedures, int numSpawns, BufferedWriter logFile)
             throws IOException, GeneratorException {
 
         // standard filename
-        String testFileName = "choreography-" + length + "-" + numProcesses + "-" + numIfs + "-" + numProcedures;
+        String testFileName = "choreography-" + length + "-" + numProcesses + "-" + numIfs + "-" + numProcedures + "-" + numSpawns;
         logFile.write("Generating file " + testFileName);
         logFile.newLine();
 
         // seed info
-        ChoreographyGenerator tester = new ChoreographyGenerator(seed, length, numProcesses, numIfs, numProcedures);
+        ChoreographyGenerator tester = new ChoreographyGenerator(seed, length, numProcesses, numIfs, numProcedures, numSpawns);
         logFile.write("Seed (for reproducibility): " + tester.getSeed());
         logFile.newLine();
 
@@ -182,7 +182,7 @@ public class TestGenerator {
 
 //        niceWrite(logFile, "Test 6: 10 ifs, increasing procedures");
         for (int i = 1; i <= 3; i++)
-            makeALotOfTestsWithSeed(0L, 20, 5, 8, i, logFile);
+            makeALotOfTestsWithSeed(0L, 20, 5, 8, i, 2, logFile);
 //        logFile.newLine();
 
         niceWrite(logFile, "Generated " + generatedTests + " tests, of which " + badTests + " contain dead code.");
@@ -213,9 +213,9 @@ public class TestGenerator {
                     for (int k = 0; k <= cond; k ++)
                         for (int l = 0; l <= proc; l++)
                             //int length, int numProcesses, int numIfs, int numProcedures
-                            makeALotOfTestsWithSeed(0L, i, j, k, l, logFile);
+                            makeALotOfTestsWithSeed(0L, i, j, k, l, 0, logFile);
 
         } else
-            makeALotOfTestsWithSeed(0L, len, pr, cond, proc, logFile);
+            makeALotOfTestsWithSeed(0L, len, pr, cond, proc, 0, logFile);
     }
 }

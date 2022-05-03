@@ -32,6 +32,19 @@ public class UsedProcesses implements CNVisitor {
         n.getNextAction().accept(this);
     }
 
+    public void visit(IntroductionNode n) {
+        processes.add(n.getIntroducer());
+        processes.add(n.getLeftProcess());
+        processes.add(n.getRightProcess());
+        n.getNextAction().accept(this);
+    }
+
+    public void visit(SpawnNode n) {
+        processes.add(n.getParent());
+        processes.add(n.getChild());
+        n.getNextAction().accept(this);
+    }
+
     public void visit(ConditionalNode n) {
         processes.add(n.getDecider());
 	n.getPreAction().accept(this);

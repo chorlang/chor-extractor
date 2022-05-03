@@ -28,6 +28,9 @@ public class UsedProcedures implements CNVisitor {
         n.getNextAction().accept(this);
     }
 
+    public void visit(IntroductionNode n) { n.getNextAction().accept(this);}
+    public void visit(SpawnNode n) { n.getNextAction().accept(this);}
+
     public void visit(ConditionalNode n) {
         n.getThenAction().accept(this);
         n.getElseAction().accept(this);

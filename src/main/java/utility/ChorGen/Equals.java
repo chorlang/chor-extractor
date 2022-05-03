@@ -1,5 +1,7 @@
 package utility.ChorGen;
 
+import extraction.choreography.Introduction;
+
 /*
  * Class for deciding whether two nodes represent the same body, using the visitor pattern.
  */
@@ -35,10 +37,10 @@ public class Equals implements CNVisitor {
             equals = false;
         if (!n.getMessage().equals(testing.getMessage()))
             equals = false;
-	if (equals) {
-	    other = testing.getNextAction();
-	    n.getNextAction().accept(this);
-	}
+        if (equals) {
+            other = testing.getNextAction();
+            n.getNextAction().accept(this);
+        }
     }
 
     public void visit(SelectionNode n) {
@@ -53,10 +55,41 @@ public class Equals implements CNVisitor {
             equals = false;
         if (!n.getLabel().equals(testing.getLabel()))
             equals = false;
-	if (equals) {
-	    other = testing.getNextAction();
-	    n.getNextAction().accept(this);
-	}
+        if (equals) {
+            other = testing.getNextAction();
+            n.getNextAction().accept(this);
+        }
+    }
+
+    public void visit(IntroductionNode n) {
+        if (!(other instanceof IntroductionNode testing)){
+            equals = false;
+            return;
+        }
+        if (!n.getIntroducer().equals(testing.getIntroducer()) ||
+            !n.getLeftProcess().equals(testing.getLeftProcess()) ||
+            !n.getRightProcess().equals(testing.getRightProcess())){
+            equals = false;
+        }
+        if (equals){
+            other = testing.getNextAction();
+            n.getNextAction().accept(this);
+        }
+    }
+
+    public void visit(SpawnNode n) {
+        if (!(other instanceof SpawnNode testing)){
+            equals = false;
+            return;
+        }
+        if (!n.getParent().equals(testing.getParent()) ||
+            !n.getChild().equals(testing.getChild())){
+            equals = false;
+        }
+        if (equals){
+            other = testing.getNextAction();
+            n.getNextAction().accept(this);
+        }
     }
 
     public void visit(ConditionalNode n) {

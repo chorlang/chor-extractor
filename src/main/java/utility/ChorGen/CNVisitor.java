@@ -17,4 +17,7 @@ public interface CNVisitor {
 
     void visit(NothingNode n);
 
+    void visit(SpawnNode n);
+
+    void visit(IntroductionNode n);
 }

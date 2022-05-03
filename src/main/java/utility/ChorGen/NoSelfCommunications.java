@@ -1,5 +1,7 @@
 package utility.ChorGen;
 
+import extraction.choreography.Spawn;
+
 /*
  * Class for checking that there are no self-communications in a body, using the visitor pattern.
  */
@@ -28,6 +30,22 @@ public class NoSelfCommunications implements CNVisitor {
 
     public void visit(SelectionNode n) {
         if (n.getSender().equals(n.getReceiver())) {
+            hasSelfies = true;
+            return;
+        }
+        n.getNextAction().accept(this);
+    }
+
+    public void visit(IntroductionNode n){
+        if (n.getIntroducer().equals(n.getLeftProcess()) || n.getIntroducer().equals(n.getRightProcess())){
+            hasSelfies = true;
+            return;
+        }
+        n.getNextAction().accept(this);
+    }
+
+    public void visit(SpawnNode n){
+        if (n.getParent().equals(n.getChild())){
             hasSelfies = true;
             return;
         }

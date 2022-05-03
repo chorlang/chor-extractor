@@ -1,6 +1,7 @@
 package utility.ChorGen;
 
 import java.util.HashSet;
+import java.util.concurrent.LinkedTransferQueue;
 
 /*
  * Class for amending a (partial) body from a eta, given the list of relevant processes.
@@ -38,6 +39,11 @@ public class AmendNode implements CNVisitor {
         amended = new SelectionNode(n.getSender(), n.getReceiver(), n.getLabel(), amended);
     }
 
+    public void visit(IntroductionNode n) {
+        n.getNextAction().accept(this);
+        amended = new IntroductionNode(n.getIntroducer(), n.getLeftProcess(), n.getRightProcess(), amended);
+    }
+
     public void visit(ConditionalNode n) {
         n.getContinuation().accept(this);
         ChoreographyNode continuation = amended;
@@ -56,11 +62,20 @@ public class AmendNode implements CNVisitor {
                     thenNode = new SelectionNode(n.getDecider(),process,"L",thenNode);
                     elseNode = new SelectionNode(n.getDecider(),process,"R",elseNode);
                 }
-        amended = new ConditionalNode(n.getDecider(),n.getCondition(),preAction,thenNode,elseNode, continuation);
+        amended = new ConditionalNode(n.getDecider(),n.getCondition(),preAction,thenNode,elseNode,continuation);
     }
 
     public void visit(CallNode n) {
         amended = new CallNode(n.getProcedure());
+    }
+
+    public void visit(SpawnNode n){
+        n.getNextAction().accept(this);
+        for (String process : processes){
+            if (!process.equals(n.getParent()) && !process.equals(n.getChild()))
+                amended = new IntroductionNode(n.getParent(), n.getChild(), process, amended);
+        }
+        amended = new SpawnNode(n.getParent(), n.getChild(), amended);
     }
 
     /*

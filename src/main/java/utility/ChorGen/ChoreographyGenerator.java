@@ -1,16 +1,13 @@
 package utility.ChorGen;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /*
  * Class for generating random choreographies, based on some parameters.
  */
 public class ChoreographyGenerator {
 
-    private final int LENGTH, NUM_PROCESSES, NUM_IFS, NUM_PROCEDURES;
+    private final int LENGTH, NUM_PROCESSES, NUM_IFS, NUM_PROCEDURES, NUM_SPAWNED;
     private final long SEED;
     private int messageCounter, labelCounter, ifCounter;
     private String[] processNames, procedureNames;
@@ -29,6 +26,7 @@ public class ChoreographyGenerator {
         this.NUM_IFS = 0;
         this.NUM_PROCEDURES = 0;
         this.procedureNames = new String[]{};
+        NUM_SPAWNED=0;
         reset();
     }
 
@@ -43,9 +41,9 @@ public class ChoreographyGenerator {
      * This constructor also initializes a set of process and name names that are
      * shared among all generated choreographies.
      */
-    public ChoreographyGenerator(long seed, int length, int numProcesses, int numIfs, int numProcedures)
+    public ChoreographyGenerator(long seed, int length, int numProcesses, int numIfs, int numProcedures, int numSpawned)
         throws GeneratorException {
-        if (numProcedures >= length)
+        if (numProcedures >= length || numSpawned >= numProcesses)
             throw new GeneratorException("Total size of the body must be at least the number of procedures.");
         this.SEED = seed;
         this.generator = new Random(seed);
@@ -53,15 +51,16 @@ public class ChoreographyGenerator {
         this.NUM_PROCESSES = numProcesses;
         this.NUM_IFS = numIfs;
         this.NUM_PROCEDURES = numProcedures;
+        this.NUM_SPAWNED = numSpawned;
         init();
     }
 
     /*
      * The same, but without the seed.
      */
-    public ChoreographyGenerator(int length, int numProcesses, int numIfs, int numProcedures)
+    public ChoreographyGenerator(int length, int numProcesses, int numIfs, int numProcedures, int numSpawned)
         throws GeneratorException {
-        if (numProcedures >= length)
+        if (numProcedures >= length || numSpawned >= numProcesses)
             throw new GeneratorException("Total size of the body must be at least the number of procedures.");
         this.generator = new Random();
         SEED = generator.nextLong();
@@ -70,6 +69,7 @@ public class ChoreographyGenerator {
         this.NUM_PROCESSES = numProcesses;
         this.NUM_IFS = numIfs;
         this.NUM_PROCEDURES = numProcedures;
+        this.NUM_SPAWNED = numSpawned;
         init();
     }
 
@@ -158,11 +158,14 @@ public class ChoreographyGenerator {
         for (int i=1; i<=NUM_PROCEDURES; i++)
             procedureSizes[i]++;
 
-        c.addProcedure("main",generateBody(procedureSizes[0],ifArray[0],false));
+        // distribute number of spawns
+        int[] spawnSizes = randomArray(NUM_PROCEDURES+1, NUM_SPAWNED);
+
+        c.addProcedure("main",generateBody(procedureSizes[0],ifArray[0],spawnSizes[0],false));
 
         int index = 1;
         for (String name:procedureNames) {
-            c.addProcedure(name,generateBody(procedureSizes[index],ifArray[index],false));
+            c.addProcedure(name,generateBody(procedureSizes[index],ifArray[index],spawnSizes[index],false));
             index++;
         }
         return c;
@@ -179,7 +182,7 @@ public class ChoreographyGenerator {
      * Because of the use of random numbers, it is possible that there are less if statements
      * than allowed. The likelihood decreases as size/numIfs increases.
      */
-    private ChoreographyNode generateBody(int size, int numIfs, boolean doResume) {
+    private ChoreographyNode generateBody(int size, int numIfs, int numSpawns, boolean doResume) {
         if (size == 0) {
             if (doResume)//No more branching can be done, so thins branch must resume
                 return new NothingNode();
@@ -188,6 +191,13 @@ public class ChoreographyGenerator {
                 return new TerminationNode();
             else
                 return new CallNode(procedureNames[endType]);
+        }
+        else if (generator.nextDouble()*size < numSpawns){
+            String parent = processNames[generator.nextInt(NUM_PROCESSES)];
+            String child = processNames[generator.nextInt(NUM_PROCESSES)];
+            while (parent.equals(child))
+                child = processNames[generator.nextInt(NUM_PROCESSES)];
+            return new SpawnNode(parent, child, generateBody(size-1, numIfs, numSpawns-1, doResume));
         }
         else if (generator.nextDouble()*size < numIfs) {
             //Array of which branch is allowed to resume
@@ -200,7 +210,7 @@ public class ChoreographyGenerator {
                 //the then and else branches, and the continuation.
                 ifs = randomArray(4, numIfs-1);
                 sizes = randomArray(4, size-numIfs);
-                continuation = generateBody(sizes[3], ifs[3], doResume);
+                continuation = generateBody(sizes[3], ifs[3], numSpawns, doResume);
                 setOneOrMore(resumes);//Ensures at least one branch resumes to the continuation
             }
             else {
@@ -216,9 +226,9 @@ public class ChoreographyGenerator {
             String condition = "c" + (++ifCounter);
 
             return new ConditionalNode(decider, condition,
-                                       generateBody(sizes[0]+ifs[0],ifs[0],false),
-                                       generateBody(sizes[1]+ifs[1],ifs[1],resumes[0]),
-                                       generateBody(sizes[2]+ifs[2],ifs[2],resumes[1]),
+                                       generateBody(sizes[0]+ifs[0],ifs[0],numSpawns, false),
+                                       generateBody(sizes[1]+ifs[1],ifs[1],numSpawns,resumes[0]),
+                                       generateBody(sizes[2]+ifs[2],ifs[2],numSpawns,resumes[1]),
                                        continuation);
         }
         else {
@@ -228,11 +238,11 @@ public class ChoreographyGenerator {
                 receiver = processNames[generator.nextInt(NUM_PROCESSES)];
             if (generator.nextBoolean()) {
                 String message = "m" + (++messageCounter);
-                return new CommunicationNode(sender, receiver, message, generateBody(size-1,numIfs,doResume));
+                return new CommunicationNode(sender, receiver, message, generateBody(size-1,numIfs,numSpawns,doResume));
             }
             else {
                 String label = "l" + (++labelCounter);
-                return new SelectionNode(sender, receiver, label, generateBody(size-1,numIfs,doResume));
+                return new SelectionNode(sender, receiver, label, generateBody(size-1,numIfs,numSpawns,doResume));
             }
         }
 

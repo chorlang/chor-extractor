@@ -31,6 +31,16 @@ public class FatSemi implements CNVisitor {
         result = new SelectionNode(n.getSender(), n.getReceiver(), n.getLabel(), result);
     }
 
+    public void visit(IntroductionNode n) {
+        n.getNextAction().accept(this);
+        result = new IntroductionNode(n.getIntroducer(), n.getLeftProcess(), n.getRightProcess(), result);
+    }
+
+    public void visit(SpawnNode n) {
+        n.getNextAction().accept(this);
+        result = new SpawnNode(n.getParent(), n.getChild(), result);
+    }
+
     public void visit(ConditionalNode n) {
         ChoreographyNode toAppend = result;    //Save result at this point in time.
         n.getThenAction().accept(this);     //Append result to the then branch.
