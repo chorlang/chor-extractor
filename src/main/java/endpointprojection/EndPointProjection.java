@@ -2,6 +2,7 @@ package endpointprojection;
 
 import extraction.choreography.Choreography;
 import extraction.choreography.Program;
+import extraction.network.Behaviour;
 import extraction.network.Network;
 import extraction.network.ProcessTerm;
 import parsing.Parser;
@@ -44,6 +45,29 @@ public class EndPointProjection {
                 }
             }
         }
-        return new Network(networkMap);
+        //Post-processing needed to fix spawning.
+        //This step adds the spawned processes' procedures to their parents, and changes procedure invocations
+        //of spawned processes to use the correct procedures. (Parent and child procedures may use the same
+        //names, hence this fix)
+
+        //Map to store processes, for which spawnin is fixed
+        var fixedMap = new HashMap<String, ProcessTerm>();
+        networkMap.forEach((processName, term) -> {
+            var repairer = new SpawnRepair(processName, networkMap);
+            var procedures = new HashMap<String, Behaviour>();
+            var parameters = new HashMap<>(term.parameters);//Copy parameters
+            //Fix the procedures
+            term.procedures.forEach((procedure, behaviour) -> {
+                procedures.put(procedure, repairer.Visit(behaviour));
+            });
+            //Fix the main behaviour
+            Behaviour mainBehaviour = repairer.Visit(term.rawMain());
+            //repairer accumulates procedures that the spawned processes use. Add those to the parent's procedures
+            procedures.putAll(repairer.spawnedProcedures);
+            parameters.putAll(repairer.spawnedProcedureParameters);
+            fixedMap.put(processName, new ProcessTerm(procedures, parameters, mainBehaviour));
+        });
+
+        return new Network(fixedMap);
     }
 }

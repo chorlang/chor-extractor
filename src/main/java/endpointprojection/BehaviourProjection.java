@@ -2,6 +2,8 @@ package endpointprojection;
 
 import extraction.choreography.*;
 import extraction.network.Behaviour;
+import extraction.network.Introduce;
+import extraction.network.Introductee;
 import extraction.network.ProcessTerm;
 import extraction.network.utils.TreeVisitor;
 import utility.choreographyStatistics.UsedProcesses;
@@ -59,6 +61,31 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
             }
             case NONE:
                 return Behaviour.BreakBehaviour.instance;
+            case SPAWN: {
+                Spawn spawn = (Spawn) hostNode;
+                //If a process of the same name in the choreography is about to be spawned then the existing process with that name should terminate.
+                if (spawn.spawned.equals(processName))
+                    return extraction.network.Termination.instance;
+                Behaviour continuation = spawn.continuation.accept(this);
+                if (spawn.spawner.equals(processName)){
+                    //Projects the main/initial behaviour of the spawned process, ignoring procedures.
+                    //Procedures and spawned processes are fixed as a post-projection step.
+                    return new extraction.network.Spawn(spawn.spawned, project(spawn.continuation, spawn.spawned, usedProcesses), continuation);
+                }
+                return continuation;
+            }
+            case INTRODUCTION: {
+                Introduction intro = (Introduction) hostNode;
+                Behaviour continuation = intro.continuation.accept(this);
+                if (intro.introducer.equals(processName))
+                    return new Introduce(intro.process1, intro.process2, continuation);
+                else if (intro.process1.equals(processName))
+                    return new Introductee(intro.introducer, intro.process2, continuation);
+                else if (intro.process2.equals(processName))
+                    return new Introductee(intro.introducer, intro.process1, continuation);
+                else
+                    return continuation;
+            }
             case PROCEDURE_DEFINITION:
             case CHOREOGRAPHY:
             case PROGRAM:
@@ -104,8 +131,6 @@ public class BehaviourProjection implements TreeVisitor<Behaviour, ChoreographyA
                 if (usedProcesses.get(procedure.name).contains(processName))
                     procedureProjections.put(procedure.name, project(procedure.body, processName, usedProcesses));
             }
-            //The java version of Merge differs from the kotlin version, in that merge() may throw IllegalArgumentException
-            //instead of MergingException. Just so you know in case of an unexpected bug not present in the kotlin version.
             catch (Merging.MergingException e){
                 var newE = new Merging.MergingException("(procedure " + procedure.name+"): " + e.getMessage());
                 newE.setStackTrace(e.getStackTrace());

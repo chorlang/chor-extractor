@@ -25,7 +25,9 @@ public class UsedProcedures implements TreeVisitor<Set<String>, ChoreographyASTN
                 Spawn host = (Spawn) hostNode;
                 return host.getContinuation().accept(this);
             }
-            case INTRODUCTION:
+            case INTRODUCTION: {
+                return ((Introduction) hostNode).continuation.accept(this);
+            }
             case COMMUNICATION:
             case SELECTION: {
                 var host = (ChoreographyBody.Interaction) hostNode;

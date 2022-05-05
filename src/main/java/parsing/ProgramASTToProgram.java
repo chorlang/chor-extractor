@@ -63,6 +63,11 @@ class ProgramASTToProgram extends ChoreographyBaseVisitor<ChoreographyASTNode> {
         return new Introduction(introducer, process1, process2, (ChoreographyBody) continuation);
     }
 
+    @Override public ChoreographyBody visitSpawn(SpawnContext ctx){
+        ChoreographyASTNode continuation = visit(ctx.continuation);
+        return new Spawn(ctx.parent.getText(), ctx.child.getText(), (ChoreographyBody) continuation);
+    }
+
     @Override public ChoreographyBody visitCondition(ConditionContext ctx) {
         var process = ctx.process().getText();
         var expression = ctx.expression().getText();

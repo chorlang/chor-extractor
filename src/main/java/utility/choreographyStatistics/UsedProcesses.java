@@ -36,7 +36,7 @@ public class UsedProcesses implements TreeVisitor<Set<String>, ChoreographyASTNo
                 Spawn host = (Spawn) hostNode;
                 var mentionedProcesses = host.getContinuation().accept(this);
                 mentionedProcesses.add(host.spawner);
-                //I'm assuming the spawned process should not be included
+                //The child process is intentionally omitted.
                 return mentionedProcesses;
             }
             case INTRODUCTION:{

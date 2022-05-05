@@ -182,6 +182,7 @@ public class ChoreographyGenerator {
      * Because of the use of random numbers, it is possible that there are less if statements
      * than allowed. The likelihood decreases as size/numIfs increases.
      */
+    private boolean generalizedContinuations = false;//Toggle weather conditional branches can have a shared continuation.
     private ChoreographyNode generateBody(int size, int numIfs, int numSpawns, boolean doResume) {
         if (size == 0) {
             if (doResume)//No more branching can be done, so thins branch must resume
@@ -205,7 +206,7 @@ public class ChoreographyGenerator {
             int[] ifs;
             int[] sizes;
             ChoreographyNode continuation;
-            if (generator.nextBoolean()) {
+            if (generator.nextBoolean() && generalizedContinuations) {
                 //Distribute the remaining number of terms and conditionals between the pre-action,
                 //the then and else branches, and the continuation.
                 ifs = randomArray(4, numIfs-1);

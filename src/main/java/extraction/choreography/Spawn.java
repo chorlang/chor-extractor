@@ -2,7 +2,7 @@ package extraction.choreography;
 
 public class Spawn extends ChoreographyBody{
     public final String spawner, spawned;
-    final ChoreographyBody continuation;
+    public final ChoreographyBody continuation;
     public Spawn(String spawner, String spawned, ChoreographyBody continuation){
         this.spawner = spawner;
         this.spawned = spawned;

@@ -8,7 +8,7 @@ import java.util.*;
 
 public class ProcessTerm extends NetworkASTNode {
     public final HashMap<String, Behaviour> procedures;     //Map from procedure names to their behaviours
-    final HashMap<String, List<String>> parameters;         //Map from procedure names to their parameter variable names
+    public final HashMap<String, List<String>> parameters;         //Map from procedure names to their parameter variable names
                                                             //Is assumed to be readonly when extracting.
     private HashMap<String, Boolean> procedureContinues = new HashMap<>();//Map from procedure names, to whether they return to a continuation or not.
     private final int proceduresHash;

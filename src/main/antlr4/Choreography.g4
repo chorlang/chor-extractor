@@ -19,6 +19,7 @@ behaviour : communication
     |   condition
     |   procedureInvocation
     |   introduction
+    |   spawn
     |   nothing
     |   TERMINATE
     ;
@@ -36,6 +37,8 @@ procedureInvocation: procedure parameters? (';' continuation=behaviour)?;
 communication: sender=process '.' expression '->' receiver=process ';' continuation=behaviour;
 selection: sender=process '->' receiver=process '[' expression '];' continuation=behaviour;
 introduction: introducer=process '.' leftIntroductee=process '<->' rightIntroductee=process ';' continuation=behaviour;
+
+spawn : parent=process 'spawns' child=process ';' continuation = behaviour;
 
 expression : Identifier
     |   BooleanLiteral

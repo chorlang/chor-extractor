@@ -44,6 +44,9 @@ public class Merging {
             case Offering o -> merge((Offering) left, (Offering) right);
             case Condition c -> merge((Condition) left, (Condition) right);
             case ProcedureInvocation pi -> merge((ProcedureInvocation) left, (ProcedureInvocation) right);
+            case Introductee leftIntroductee -> merge(leftIntroductee, (Introductee) right);
+            case Introduce leftIntroduce -> merge(leftIntroduce, (Introduce) right);
+            case Spawn leftSpawn -> merge(leftSpawn, (Spawn) right);
             case NoneBehaviour nb -> {
                 if (consumedContinuation)
                     yield NoneBehaviour.instance;
@@ -69,9 +72,30 @@ public class Merging {
     The order in which the continuation variable is handled is important for correctness.
      */
 
+    private Behaviour merge(Introductee left, Introductee right){
+        if (!left.sender.equals(right.sender) || !left.processID.equals(right.processID))
+            throw new MergingException("Can't merge "+left+" and "+right);
+        var m = merge(left.getContinuation(), right.getContinuation());
+        return new Introductee(left.sender, left.processID, m);
+    }
+
+    private Behaviour merge(Introduce left, Introduce right){
+        if (!left.leftReceiver.equals(right.leftReceiver) || !left.rightReceiver.equals(right.rightReceiver))
+            throw new MergingException("Can't merge"+left+" and "+right);
+        var m = merge(left.getContinuation(), right.getContinuation());
+        return new Introduce(left.leftReceiver, left.rightReceiver, m);
+    }
+
+    private Behaviour merge(Spawn left, Spawn right){
+        if (!left.variable.equals(right.variable) || !left.processBehaviour.equals(right.processBehaviour))
+            throw new MergingException("Can't merge"+left+" and "+right);
+        var m = merge(left.getContinuation(), right.getContinuation());
+        return new Spawn(left.variable, left.processBehaviour, m);
+    }
+
     private Behaviour merge(Send left, Send right){
         if (!left.receiver.equals(right.receiver) || !left.expression.equals(right.expression))
-            throw new MergingException("Cant merge "+ left.receiver + " and " + right.receiver);
+            throw new MergingException("Can't merge "+ left.receiver + " and " + right.receiver);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Send(left.receiver, left.expression, m);
     }
