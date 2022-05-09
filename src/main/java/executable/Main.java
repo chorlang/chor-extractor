@@ -276,6 +276,9 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
     public static void main(String []args) {
         System.out.println("Hello World");
 
+        //Benchmarking.EndpointProjection();
+        //Benchmarking.benchmarkStrategy(Strategy.InteractionsFirst);
+        AccumulateData.accumulate(Strategy.InteractionsFirst);
         /*for (Strategy strategy : Strategy.values()){
             if (strategy != Strategy.Default)
                 AccumulateData.accumulate(strategy);
@@ -311,7 +314,7 @@ p{def A{if c1 then n + L; j + L; h + L; x + L; v + L; d + L; s + L; c + L; q + L
         //*/
 
 
-        //*
+        /*
         String chorstring = """
                 def H { j -> x[l2]; v -> x[l3]; s spawns j; s.j <-> n; s.j <-> x; s.j <-> v; if v.c4 then if s.c5 then s -> n[L]; s -> j[L]; s -> x[L]; s -> v[L]; if v.c6 then v -> n[L]; v -> j[L]; v -> x[L]; v -> s[L]; v -> n[L]; v -> j[L]; v -> x[L]; v -> s[L]; s.m4 -> v; x -> n[l4]; j -> x[l5]; H else v -> n[R]; v -> j[R]; v -> x[R]; v -> s[R]; v -> n[L]; v -> j[L]; v -> x[L]; v -> s[L]; s.m4 -> v; x -> n[l4]; j -> x[l5]; H endif else s -> n[R]; s -> j[R]; s -> x[R]; s -> v[R]; v -> n[L]; v -> j[L]; v -> x[L]; v -> s[L]; s.m4 -> v; x -> n[l4]; j -> x[l5]; H endif else if s.c5 then s -> n[L]; s -> j[L]; s -> x[L]; s -> v[L]; if v.c6 then v -> n[L]; v -> j[L]; v -> x[L]; v -> s[L]; v -> n[R]; v -> j[R]; v -> x[R]; v -> s[R]; if j.c7 then H else H endif else v -> n[R]; v -> j[R]; v -> x[R]; v -> s[R]; v -> n[R]; v -> j[R]; v -> x[R]; v -> s[R]; if j.c7 then H else H endif endif else s -> n[R]; s -> j[R]; s -> x[R]; s -> v[R]; v -> n[R]; v -> j[R]; v -> x[R]; v -> s[R]; if j.c7 then H else H endif endif endif }
                 main { if s.c1 then s spawns j; s.j <-> n; s.j <-> x; s.j <-> v; v.m1 -> x; s -> n[L]; s -> j[L]; s -> x[L]; s -> v[L]; s.m2 -> n; j -> s[l1]; if j.c2 then v spawns n; v.n <-> j; v.n <-> x; v.n <-> s; 0 else v spawns n; v.n <-> j; v.n <-> x; v.n <-> s; 0 endif else s spawns j; s.j <-> n; s.j <-> x; s.j <-> v; v.m1 -> x; s -> n[R]; s -> j[R]; s -> x[R]; s -> v[R]; x spawns n; x.n <-> j; x.n <-> v; x.n <-> s; if j.c3 then j -> n[L]; j -> x[L]; j -> v[L]; j -> s[L]; j.m3 -> n; H else j -> n[R]; j -> x[R]; j -> v[R]; j -> s[R]; 0 endif endif }

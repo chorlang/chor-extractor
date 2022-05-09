@@ -15,7 +15,7 @@ public class AccumulateData {
     static final String FORMAT = Benchmarking.FORMAT;
     static final String COMBINED_EXTRACTION_STATISTICS_HEADER =
             Benchmarking.EXTRACTION_STATISTICS_HEADER +
-            "%slength%snumProcesses%snumIfs%snumProcedures%n".formatted(SEPARATOR,SEPARATOR,SEPARATOR,SEPARATOR);
+            "%slength%snumProcesses%snumIfs%snumProcedures%snumSpawns%n".formatted(SEPARATOR,SEPARATOR,SEPARATOR,SEPARATOR,SEPARATOR);
 
     public static void accumulate(Strategy strategy){
         var dir = new File(TEST_DIR);

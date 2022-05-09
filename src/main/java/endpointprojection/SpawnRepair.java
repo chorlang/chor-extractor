@@ -60,6 +60,14 @@ public class SpawnRepair implements TreeVisitor<Behaviour, Behaviour> {
                     });
                 }
                 Behaviour childBehaviour = childRepair.Visit(sp.processBehaviour);
+                //Add procedures for children's children.
+                childRepair.spawnedProcedures.keySet().forEach(procedureName -> {
+                    if (!spawnedProcedures.containsKey(procedureName)){
+                        spawnedProcedures.put(procedureName, childRepair.spawnedProcedures.get(procedureName));
+                        spawnedProcedureParameters.put(procedureName, childRepair.spawnedProcedureParameters.get(procedureName));
+                    }
+                });
+
                 return new Spawn(sp.variable, childBehaviour, Visit(sp.continuation));
             }
             case Termination t -> { return t; }

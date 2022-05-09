@@ -160,9 +160,10 @@ public class GraphBuilder {
             if (parameters == null)
                 continue;
 
-            if (otherNode.marking.keySet().stream().anyMatch(
+            //Compare markings
+            if (marking.keySet().stream().filter(pname -> !network.processes.get(pname).isTerminated()).anyMatch(
                     pname -> !marking.get(pname) &&//If current marking is false, but the other nodes marking is true, then the process will not reduce in a loop.
-                            otherNode.marking.get(pname)))
+                            otherNode.marking.get(parameters.getOrDefault(pname,pname))))
                 continue;   //Markings are incompatible, try the next viable node
 
             //The current network and state is equivalent to a previous node, so a loop can be formed, maybe.

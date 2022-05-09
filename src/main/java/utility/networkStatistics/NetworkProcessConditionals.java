@@ -24,6 +24,12 @@ public class NetworkProcessConditionals implements TreeVisitor<Integer, NetworkA
                 return host.getContinuation().accept(this);
             case Send host:
                 return host.getContinuation().accept(this);
+            case Introductee host:
+                return host.getContinuation().accept(this);
+            case Introduce host:
+                return host.getContinuation().accept(this);
+            case Behaviour.Interaction host:
+                return host.getContinuation().accept(this);
 
             case ProcedureInvocation host: {return 0;}
             case Termination host: {return 0;}

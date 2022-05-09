@@ -1,9 +1,6 @@
 package utility.choreographyStatistics;
 
-import extraction.choreography.Choreography;
-import extraction.choreography.ChoreographyASTNode;
-import extraction.choreography.ChoreographyBody;
-import extraction.choreography.Condition;
+import extraction.choreography.*;
 import extraction.network.utils.TreeVisitor;
 
 public class NumberOfConditionals implements TreeVisitor<Integer, ChoreographyASTNode> {
@@ -19,6 +16,10 @@ public class NumberOfConditionals implements TreeVisitor<Integer, ChoreographyAS
             case SELECTION:
                 var host = (ChoreographyBody.Interaction)hostNode;
                 return host.getContinuation().accept(this);
+            case INTRODUCTION:
+                return ((Introduction)hostNode).continuation.accept(this);
+            case SPAWN:
+                return ((Spawn)hostNode).continuation.accept(this);
 
             case TERMINATION:
             case PROCEDURE_INVOCATION:

@@ -29,6 +29,12 @@ public class NetworkProcessActionsPerProcedure implements TreeVisitor<Integer, N
                 return ((Selection)hostNode).getContinuation().accept(this)+1;
             case Send host:
                 return ((Send)hostNode).getContinuation().accept(this)+1;
+            case Introductee host:
+                return host.getContinuation().accept(this)+1;
+            case Introduce host:
+                return host.getContinuation().accept(this)+1;
+            case Behaviour.Interaction host:
+                return host.getContinuation().accept(this)+1;
 
             case ProcedureInvocation host: {return 0;}
             case Termination host: {return 0;}

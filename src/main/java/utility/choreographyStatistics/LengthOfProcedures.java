@@ -23,6 +23,12 @@ public class LengthOfProcedures implements TreeVisitor<Integer, ChoreographyASTN
                 var host = (ChoreographyBody.Interaction)hostNode;
                 return host.getContinuation().accept(this) + 1;
             }
+            case SPAWN:{
+                return ((Spawn)hostNode).continuation.accept(this)+1;//Not sure if child behaviour should count.
+            }
+            case INTRODUCTION:{
+                return ((Introduction)hostNode).continuation.accept(this)+1;
+            }
 
             case TERMINATION:
             case PROCEDURE_INVOCATION:

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class Benchmarking {
-    static final String TEST_DIR = "test/";
+    static final String TEST_DIR = "GeneratedTests/";
     private static final String OUTPUT_DIR = TEST_DIR;
     private static final String CHOREOGRAPHY_PREFIX = "choreography-";
     private static final String PROJECTION_PREFIX = "projection-";
@@ -79,6 +79,7 @@ public class Benchmarking {
         }
     }
     private static void writeNetworkProjectionStatisticsToFile(Map<String, Pair<Program, Network>> projectionMap, String filename){
+        return;/*
         //Adding the file ending makes it easier to see it is a spreadsheet
         try (PrintWriter writer = new PrintWriter(OUTPUT_DIR+filename+FORMAT)){
             writer.println(PROJECTION_STATISTICS_HEADER);
@@ -110,7 +111,7 @@ public class Benchmarking {
         }catch (FileNotFoundException e){
             System.err.println("Unable to open or create file "+OUTPUT_DIR+filename);
             throw new RuntimeException(e);
-        }
+        }*/
     }
 
     /**

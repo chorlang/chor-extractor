@@ -81,14 +81,14 @@ public class Merging {
 
     private Behaviour merge(Introduce left, Introduce right){
         if (!left.leftReceiver.equals(right.leftReceiver) || !left.rightReceiver.equals(right.rightReceiver))
-            throw new MergingException("Can't merge"+left+" and "+right);
+            throw new MergingException("Can't merge "+left+" and "+right);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Introduce(left.leftReceiver, left.rightReceiver, m);
     }
 
     private Behaviour merge(Spawn left, Spawn right){
         if (!left.variable.equals(right.variable) || !left.processBehaviour.equals(right.processBehaviour))
-            throw new MergingException("Can't merge"+left+" and "+right);
+            throw new MergingException("Can't merge "+left+" and "+right);
         var m = merge(left.getContinuation(), right.getContinuation());
         return new Spawn(left.variable, left.processBehaviour, m);
     }

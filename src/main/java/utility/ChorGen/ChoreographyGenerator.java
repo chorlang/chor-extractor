@@ -43,8 +43,8 @@ public class ChoreographyGenerator {
      */
     public ChoreographyGenerator(long seed, int length, int numProcesses, int numIfs, int numProcedures, int numSpawned)
         throws GeneratorException {
-        if (numProcedures >= length || numSpawned >= numProcesses)
-            throw new GeneratorException("Total size of the body must be at least the number of procedures.");
+        if (numProcedures >= length || numSpawned >= length)
+            throw new GeneratorException("Total size of the body must be at least the number of procedures and spawns.");
         this.SEED = seed;
         this.generator = new Random(seed);
         this.LENGTH = length;
@@ -182,7 +182,7 @@ public class ChoreographyGenerator {
      * Because of the use of random numbers, it is possible that there are less if statements
      * than allowed. The likelihood decreases as size/numIfs increases.
      */
-    private boolean generalizedContinuations = false;//Toggle weather conditional branches can have a shared continuation.
+    private boolean generalizedContinuations = false;//Toggle weather conditional branches can have a shared continuation. Does not work with process spawning
     private ChoreographyNode generateBody(int size, int numIfs, int numSpawns, boolean doResume) {
         if (size == 0) {
             if (doResume)//No more branching can be done, so thins branch must resume
@@ -205,13 +205,15 @@ public class ChoreographyGenerator {
             boolean[] resumes = new boolean[2];//Initializes to false
             int[] ifs;
             int[] sizes;
+            int[] spawns;
             ChoreographyNode continuation;
             if (generator.nextBoolean() && generalizedContinuations) {
                 //Distribute the remaining number of terms and conditionals between the pre-action,
                 //the then and else branches, and the continuation.
                 ifs = randomArray(4, numIfs-1);
                 sizes = randomArray(4, size-numIfs);
-                continuation = generateBody(sizes[3], ifs[3], numSpawns, doResume);
+                spawns = randomArray(3, numSpawns);
+                continuation = generateBody(sizes[3], ifs[3], spawns[2], doResume);
                 setOneOrMore(resumes);//Ensures at least one branch resumes to the continuation
             }
             else {
@@ -221,15 +223,16 @@ public class ChoreographyGenerator {
                 //the pre-action and the branches.
                 ifs = randomArray(3, numIfs-1);
                 sizes = randomArray(3, size-numIfs);
+                spawns = randomArray(2, numSpawns);
                 continuation = new NothingNode();
             }
             String decider = processNames[generator.nextInt(NUM_PROCESSES)];
             String condition = "c" + (++ifCounter);
 
             return new ConditionalNode(decider, condition,
-                                       generateBody(sizes[0]+ifs[0],ifs[0],numSpawns, false),
-                                       generateBody(sizes[1]+ifs[1],ifs[1],numSpawns,resumes[0]),
-                                       generateBody(sizes[2]+ifs[2],ifs[2],numSpawns,resumes[1]),
+                                       generateBody(sizes[0]+ifs[0],ifs[0],0, false),//Bad things happens if spawns occur in the pre-action
+                                       generateBody(sizes[1]+ifs[1],ifs[1],spawns[0],resumes[0]),
+                                       generateBody(sizes[2]+ifs[2],ifs[2],spawns[1],resumes[1]),
                                        continuation);
         }
         else {

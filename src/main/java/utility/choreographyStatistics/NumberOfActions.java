@@ -18,6 +18,10 @@ public class NumberOfActions implements TreeVisitor<Integer, ChoreographyASTNode
             case SELECTION:
                 var host = (ChoreographyBody.Interaction)hostNode;
                 return host.getContinuation().accept(this) + 1;
+            case INTRODUCTION:
+                return ((Introduction)hostNode).continuation.accept(this)+1;
+            case SPAWN:
+                return ((Spawn)hostNode).continuation.accept(this)+1;//Not sure if child behaviour should be counted
 
             case NONE:
                 return 0;

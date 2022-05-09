@@ -1,6 +1,6 @@
 grammar CommonLexerRules;
 
-Identifier : [a-zA-Z0-9]+;
+Identifier : [a-zA-Z0-9_]+;
 process : Identifier;
 procedure : Identifier;
 BooleanLiteral : 'true' | 'false';

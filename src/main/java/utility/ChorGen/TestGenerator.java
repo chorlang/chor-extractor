@@ -69,6 +69,8 @@ public class TestGenerator {
      */
     private static void makeALotOfTestsWithSeed(long seed, int length, int numProcesses, int numIfs, int numProcedures, int numSpawns, BufferedWriter logFile)
             throws IOException, GeneratorException {
+        if (length <= 1)
+            throw new RuntimeException("At least two processes are needed to generate a choreography");
 
         // standard filename
         String testFileName = "choreography-" + length + "-" + numProcesses + "-" + numIfs + "-" + numProcedures + "-" + numSpawns;
@@ -151,26 +153,26 @@ public class TestGenerator {
 
         niceWrite(logFile, "STARTING GENERATION...");
         logFile.newLine();
-/*
+//*
 //        niceWrite(logFile, "Test 1: communications only, increasing lengths");
-        for (int i = 50; i <= 2100; i += 50)
-            makeALotOfTestsWithSeed(0L, i, 6, 0, 0, logFile);
+        for (int i = 50; i <= 2050; i += 200)
+            makeALotOfTestsWithSeed(0L, i, 6, 0, 0, 3,logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 2: communications and ifs, fixed length, increasing number of ifs");
         for (int i = 10; i <= 40; i += 10)
-            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, logFile);
+            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, 3, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 3: inserting recursion; two varying parameters - #ifs and #procs");
-        for (int i = 0; i <= 5; i++)
-            for (int j = 0; j <= 15; j += 5)
-                makeALotOfTestsWithSeed(0L, 200, 5, i, j, logFile);
+        for (int i = 2; i <= 7; i++)
+            for (int j = 0; j <= 20; j += 5)
+                makeALotOfTestsWithSeed(0L, 15*i, i, i*3, i*2, j, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 4: communications only, fixed length, increasing number of processesInChoreography");
-        for (int i = 5; i <= 100; i += 5)
-            makeALotOfTestsWithSeed(0L, 500, i, 0, 0, logFile);
+/*        for (int i = 5; i <= 100; i += 5)
+            makeALotOfTestsWithSeed(0L, 500, 6, 0, 0, 4,logFile);
 //        logFile.newLine();
 //
 */
