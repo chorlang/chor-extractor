@@ -151,7 +151,7 @@ public class GraphBuilder {
 
             if (currentNode.choicePath.startsWith(otherNode.choicePath) && flipCounter > otherNode.flipCounter && detectResourceLeak(network, otherNode.network)) {
                 System.err.println("Resource leak detected. Extraction not possible");
-                return new extensionResult(null, BuildGraphResult.FAIL);   //Fail on resource leak.
+                return new extensionResult(otherNode, BuildGraphResult.FAIL);   //Abort extraction
             }
 
             //Try to generate a bijective mapping (proving behavioural equivalence),

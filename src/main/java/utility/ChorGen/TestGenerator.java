@@ -155,13 +155,13 @@ public class TestGenerator {
         logFile.newLine();
 //*
 //        niceWrite(logFile, "Test 1: communications only, increasing lengths");
-        for (int i = 50; i <= 2050; i += 200)
-            makeALotOfTestsWithSeed(0L, i, 6, 0, 0, 3,logFile);
+//        for (int i = 50; i <= 2050; i += 200)
+ //           makeALotOfTestsWithSeed(0L, i, 6, 0, 0, 3,logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 2: communications and ifs, fixed length, increasing number of ifs");
-        for (int i = 10; i <= 40; i += 10)
-            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, 3, logFile);
+//        for (int i = 10; i <= 40; i += 10)
+//            makeALotOfTestsWithSeed(0L, 50, 6, i, 0, 3, logFile);
 //        logFile.newLine();
 //
 //        niceWrite(logFile, "Test 3: inserting recursion; two varying parameters - #ifs and #procs");
@@ -183,8 +183,8 @@ public class TestGenerator {
 //        logFile.newLine();
 
 //        niceWrite(logFile, "Test 6: 10 ifs, increasing procedures");
-        for (int i = 1; i <= 3; i++)
-            makeALotOfTestsWithSeed(0L, 20, 5, 8, i, 2, logFile);
+//        for (int i = 1; i <= 3; i++)
+//            makeALotOfTestsWithSeed(0L, 20, 5, 8, i, 2, logFile);
 //        logFile.newLine();
 
         niceWrite(logFile, "Generated " + generatedTests + " tests, of which " + badTests + " contain dead code.");

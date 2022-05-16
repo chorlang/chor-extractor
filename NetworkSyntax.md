@@ -51,10 +51,8 @@ b{ main { a&{get: a!<value>; , set: a?; }; stop }
 ```
 The reason the conditional's continuation follows after `continue` but the offering's does not is to resolve an ambiguity on where the else branch stops, and the continuation starts. Of course, not all branches needs to resume the continuation if it is there. If the behaviour `stop` is executed, the process terminates no matter what. It is also possible to have nested conditionals `... else a&{fun: X; c?;}; c+do; continue a?; stop`
 
-While this does not add to the expressive power of networks, it is nice to have, and allows for divide-and-concur algorithms, and other kinds of multi-recursion.
-```
-def sort{ if baseCase then stop else sort; sort }
-```
+While this allows for networks to use general recursion, only systems using tail recursion can currently be extracted.
+
 Nested conditionals with fewer continuations than conditionals, can lead to ambiguities which the parser will refuse. For example 
 ```
 if e1 then a+L1; else if e2 then a+L2; else a+L3; continue a!<end>; stop
